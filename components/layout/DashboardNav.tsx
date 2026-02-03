@@ -4,17 +4,17 @@ import { FileHeart, Sparkles, Settings, LogOut } from "lucide-react";
 const navItems = [
   {
     title: "내 청첩장",
-    href: "/dashboard",
+    href: "/admin",
     icon: FileHeart,
   },
   {
     title: "AI 사진 생성",
-    href: "/dashboard/ai-photos",
+    href: "/admin/ai-photos",
     icon: Sparkles,
   },
   {
     title: "설정",
-    href: "/dashboard/settings",
+    href: "/admin/settings",
     icon: Settings,
   },
 ];
