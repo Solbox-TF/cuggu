@@ -17,10 +17,9 @@ export default auth((req) => {
     nextUrl.pathname.startsWith("/signup");
 
   // 로그인 안 한 사용자가 보호된 라우트 접근 시
-  // TODO: 개발 중에는 임시로 주석 처리 (디자인 확인용)
-  // if (isProtectedRoute && !isLoggedIn) {
-  //   return NextResponse.redirect(new URL("/login", nextUrl));
-  // }
+  if (isProtectedRoute && !isLoggedIn) {
+    return NextResponse.redirect(new URL("/login", nextUrl));
+  }
 
   // 로그인한 사용자가 로그인 페이지 접근 시
   if (isAuthRoute && isLoggedIn) {
