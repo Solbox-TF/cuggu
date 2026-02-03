@@ -1,71 +1,61 @@
-import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
+"use client";
+
 import { FileHeart, Users, Eye } from "lucide-react";
+import { StatsCard } from "@/components/admin/StatsCard";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { ScrollFade } from "@/components/animations/ScrollFade";
 
 export default function DashboardPage() {
+  // TODO: 실제 데이터는 DB/API에서 가져오기
+  const stats = [
+    {
+      label: "내 청첩장",
+      value: 0,
+      icon: FileHeart,
+      gradient: "from-pink-500 to-pink-600",
+      iconColor: "text-pink-500",
+    },
+    {
+      label: "총 조회수",
+      value: 0,
+      icon: Eye,
+      gradient: "from-purple-500 to-purple-600",
+      iconColor: "text-purple-500",
+    },
+    {
+      label: "RSVP 응답",
+      value: 0,
+      icon: Users,
+      gradient: "from-blue-500 to-blue-600",
+      iconColor: "text-blue-500",
+    },
+  ];
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">대시보드</h1>
-        <p className="text-gray-600 mt-2">
-          환영합니다! 첫 청첩장을 만들어보세요.
-        </p>
-      </div>
+      {/* Header */}
+      <ScrollFade>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">대시보드</h1>
+          <p className="text-gray-600 mt-2">
+            환영합니다! 첫 청첩장을 만들어보세요.
+          </p>
+        </div>
+      </ScrollFade>
 
-      {/* Stats */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              내 청첩장
-            </CardTitle>
-            <FileHeart className="w-4 h-4 text-gray-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              총 조회수
-            </CardTitle>
-            <Eye className="w-4 h-4 text-gray-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              RSVP 응답
-            </CardTitle>
-            <Users className="w-4 h-4 text-gray-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-          </CardContent>
-        </Card>
+        {stats.map((stat, index) => (
+          <ScrollFade key={stat.label} delay={index * 0.1}>
+            <StatsCard {...stat} />
+          </ScrollFade>
+        ))}
       </div>
 
       {/* Empty State */}
-      <Card className="text-center py-12">
-        <CardHeader>
-          <CardTitle>아직 청첩장이 없습니다</CardTitle>
-          <CardDescription>
-            첫 청첩장을 만들어보세요. 5분이면 완성됩니다!
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button size="lg" disabled>
-            첫 청첩장 만들기
-          </Button>
-          <p className="text-sm text-gray-500 mt-4">
-            곧 사용 가능합니다
-          </p>
-        </CardContent>
-      </Card>
+      <ScrollFade delay={0.3}>
+        <EmptyState />
+      </ScrollFade>
     </div>
   );
 }
