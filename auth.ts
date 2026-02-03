@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 // import bcrypt from "bcryptjs"; // 향후 비밀번호 검증 시 사용
 
 export const authConfig = {
+  trustHost: true,
   adapter: DrizzleAdapter(db, {
     usersTable: users,
     accountsTable: accounts,
@@ -19,6 +20,15 @@ export const authConfig = {
     Kakao({
       clientId: process.env.KAKAO_CLIENT_ID!,
       clientSecret: process.env.KAKAO_CLIENT_SECRET!,
+      checks: ["state"], // PKCE 비활성화 (카카오 호환성)
+      profile(profile) {
+        return {
+          id: profile.id.toString(),
+          name: profile.kakao_account?.profile?.nickname || null,
+          email: profile.kakao_account?.email || null,
+          image: profile.kakao_account?.profile?.profile_image_url || null,
+        };
+      },
     }),
     // 이메일/비밀번호 로그인
     Credentials({
@@ -63,6 +73,27 @@ export const authConfig = {
     signIn: "/login",
     error: "/error",
   },
+  cookies: {
+    state: {
+      name: "next-auth.state",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: false,
+      },
+    },
+    pkceCodeVerifier: {
+      name: "next-auth.pkce.code_verifier",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: false,
+      },
+    },
+  },
+  useSecureCookies: false,
   callbacks: {
     async session({ session, user }) {
       if (session.user) {
