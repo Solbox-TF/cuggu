@@ -42,6 +42,7 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
       gallery: invitation.gallery || { images: [] },
       settings: invitation.settings || {},
 
+      isPasswordProtected: invitation.isPasswordProtected || false,
       status: 'DRAFT' as const,
       viewCount: 0,
       createdAt: new Date().toISOString(),

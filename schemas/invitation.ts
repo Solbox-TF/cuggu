@@ -168,6 +168,8 @@ export const UpdateInvitationSchema = CreateInvitationSchema.partial().extend({
   status: InvitationStatusSchema.optional(),
   gallery: GallerySchema.optional(),
   settings: SettingsSchema.partial().optional(),
+  aiPhotoUrl: z.string().url().optional(),
+  isPasswordProtected: z.boolean().optional(),
 });
 
 // ============================================================

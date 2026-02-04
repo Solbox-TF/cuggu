@@ -42,11 +42,18 @@ export function EmptyState() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("청첩장 생성 실패");
-      }
-
       const result = await response.json();
+
+      if (!response.ok) {
+        // 개수 제한 에러 (403)
+        if (response.status === 403) {
+          alert(`${result.error}\n\n${result.message}`);
+        } else {
+          alert("청첩장 생성에 실패했습니다. 다시 시도해주세요.");
+        }
+        setIsCreating(false);
+        return;
+      }
 
       if (result.success && result.data?.id) {
         // 편집기로 이동
