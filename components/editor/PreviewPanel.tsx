@@ -2,6 +2,9 @@
 
 import { useState, useMemo } from 'react';
 import { ClassicTemplate } from '@/components/templates/ClassicTemplate';
+import { ModernTemplate } from '@/components/templates/ModernTemplate';
+import { MinimalTemplate } from '@/components/templates/MinimalTemplate';
+import { FloralTemplate } from '@/components/templates/FloralTemplate';
 import { ZoomIn, ZoomOut, Smartphone, Monitor, ExternalLink } from 'lucide-react';
 
 interface PreviewPanelProps {
@@ -93,10 +96,12 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
     switch (templateId) {
       case 'classic':
         return ClassicTemplate;
-      // case 'modern':
-      //   return ModernTemplate;
-      // case 'vintage':
-      //   return VintageTemplate;
+      case 'modern':
+        return ModernTemplate;
+      case 'minimal':
+        return MinimalTemplate;
+      case 'floral':
+        return FloralTemplate;
       default:
         return ClassicTemplate;
     }
