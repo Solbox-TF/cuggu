@@ -56,10 +56,19 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const image = formData.get('image') as File;
     const styleRaw = formData.get('style') as string;
+    const role = formData.get('role') as string;
+    const model = formData.get('model') as string | null;
 
-    if (!image || !styleRaw) {
+    if (!image || !styleRaw || !role) {
       return NextResponse.json(
-        { error: 'Image and style are required' },
+        { error: 'Image, style, and role are required' },
+        { status: 400 }
+      );
+    }
+
+    if (role !== 'GROOM' && role !== 'BRIDE') {
+      return NextResponse.json(
+        { error: 'Role must be GROOM or BRIDE' },
         { status: 400 }
       );
     }
@@ -121,13 +130,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 6. 크레딧 확인
-    const { hasCredits, balance } = checkCreditsFromUser(user);
-    if (!hasCredits) {
-      return NextResponse.json(
-        { error: 'Insufficient credits', balance },
-        { status: 402 } // Payment Required
-      );
+    // 6. 크레딧 확인 (개발 모드는 스킵)
+    const isDev = process.env.NODE_ENV === 'development';
+    if (!isDev) {
+      const { hasCredits, balance } = checkCreditsFromUser(user);
+      if (!hasCredits) {
+        return NextResponse.json(
+          { error: 'Insufficient credits', balance },
+          { status: 402 } // Payment Required
+        );
+      }
     }
 
     // 8. 얼굴 감지
@@ -178,7 +190,12 @@ export async function POST(request: NextRequest) {
     let cost: number;
 
     try {
-      const result = await generateWeddingPhotos(originalUrl, styleData);
+      const result = await generateWeddingPhotos(
+        originalUrl,
+        styleData,
+        role as 'GROOM' | 'BRIDE',
+        model || undefined
+      );
       generatedUrls = result.urls;
       replicateId = result.replicateId;
       cost = result.cost;

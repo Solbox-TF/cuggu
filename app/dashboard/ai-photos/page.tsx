@@ -6,11 +6,18 @@ import { AIPhotoUploader } from './components/AIPhotoUploader';
 import { StyleSelector } from './components/StyleSelector';
 import { GenerationProgress } from './components/GenerationProgress';
 import { ResultGallery } from './components/ResultGallery';
+import { ModelSelector } from './components/ModelSelector';
+import { DEFAULT_MODEL } from '@/lib/ai/models';
+
+const IS_DEV = process.env.NODE_ENV === 'development';
 
 export default function AIPhotosPage() {
   // Credits
   const [credits, setCredits] = useState<number>(2);
   const [isLoadingCredits, setIsLoadingCredits] = useState(true);
+
+  // Model (dev mode only)
+  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL);
 
   // Groom State
   const [groomImage, setGroomImage] = useState<File | null>(null);
@@ -60,7 +67,8 @@ export default function AIPhotosPage() {
       return;
     }
 
-    if (credits === 0) {
+    // 개발 모드가 아닐 때만 크레딧 체크
+    if (!IS_DEV && credits === 0) {
       setError('크레딧이 부족합니다. 추가 구매가 필요합니다.');
       return;
     }
@@ -77,6 +85,10 @@ export default function AIPhotosPage() {
       const formData = new FormData();
       formData.append('image', image);
       formData.append('style', style);
+      formData.append('role', role);
+      if (IS_DEV) {
+        formData.append('model', selectedModel);
+      }
 
       const response = await fetch('/api/ai/generate', {
         method: 'POST',
@@ -166,6 +178,8 @@ export default function AIPhotosPage() {
           <span className="text-sm text-gray-500">잔여 크레딧:</span>
           {isLoadingCredits ? (
             <span className="text-sm text-gray-400">로딩 중...</span>
+          ) : IS_DEV ? (
+            <span className="text-lg font-bold text-green-600">∞ (무제한)</span>
           ) : (
             <span className="text-lg font-bold text-pink-600">{credits}회</span>
           )}
@@ -177,6 +191,15 @@ export default function AIPhotosPage() {
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
           {error}
         </div>
+      )}
+
+      {/* Model Selector (Dev Mode Only) */}
+      {IS_DEV && (
+        <ModelSelector
+          selectedModel={selectedModel}
+          onModelSelect={setSelectedModel}
+          disabled={groomGenerating || brideGenerating}
+        />
       )}
 
       {/* Groom Section */}
