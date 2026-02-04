@@ -45,6 +45,12 @@ export const AccountSchema = z.object({
   accountHolder: z.string().min(1, "예금주를 입력해주세요"),
 });
 
+// 부모님 계좌 (각 부모님별 복수 계좌 허용)
+export const ParentAccountsSchema = z.object({
+  father: z.array(AccountSchema).default([]),
+  mother: z.array(AccountSchema).default([]),
+}).optional();
+
 // 예식 장소
 export const VenueSchema = z.object({
   name: z.string().min(1, "예식장 이름을 입력해주세요"),
@@ -91,9 +97,11 @@ export const InvitationSchema = z.object({
   // 신랑/신부 (확장된 정보)
   groom: PersonSchema.extend({
     account: AccountSchema.optional(),
+    parentAccounts: ParentAccountsSchema,
   }),
   bride: PersonSchema.extend({
     account: AccountSchema.optional(),
+    parentAccounts: ParentAccountsSchema,
   }),
 
   // 예식 정보

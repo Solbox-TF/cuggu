@@ -34,6 +34,10 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
         relation: invitation.groom?.relation,
         phone: invitation.groom?.phone,
         account: invitation.groom?.account,
+        parentAccounts: invitation.groom?.parentAccounts || {
+          father: [],
+          mother: [],
+        },
       },
 
       bride: {
@@ -43,6 +47,10 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
         relation: invitation.bride?.relation,
         phone: invitation.bride?.phone,
         account: invitation.bride?.account,
+        parentAccounts: invitation.bride?.parentAccounts || {
+          father: [],
+          mother: [],
+        },
       },
 
       wedding: {

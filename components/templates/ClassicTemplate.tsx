@@ -248,59 +248,173 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
       )}
 
       {/* 계좌번호 섹션 */}
-      {data.settings.showAccounts && (data.groom.account || data.bride.account) && (
-        <section className="py-12 md:py-20 px-6">
-          <div className="max-w-2xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-xl md:text-2xl font-serif text-center text-gray-800 mb-8 md:mb-12">
-                마음 전하실 곳
-              </h2>
+      {data.settings.showAccounts &&
+        (data.groom.account ||
+          data.groom.parentAccounts?.father?.length > 0 ||
+          data.groom.parentAccounts?.mother?.length > 0 ||
+          data.bride.account ||
+          data.bride.parentAccounts?.father?.length > 0 ||
+          data.bride.parentAccounts?.mother?.length > 0) && (
+          <section className="py-12 md:py-20 px-6">
+            <div className="max-w-2xl mx-auto">
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+              >
+                <h2 className="text-xl md:text-2xl font-serif text-center text-gray-800 mb-8 md:mb-12">
+                  마음 전하실 곳
+                </h2>
 
-              <div className="space-y-4 md:space-y-6">
-                {/* 신랑 측 */}
-                {data.groom.account && (
-                  <div className="p-4 md:p-6 bg-white rounded-lg shadow-sm border border-amber-100">
-                    <p className="text-xs md:text-sm text-amber-800 mb-2 md:mb-3 font-medium">
-                      신랑 측
-                    </p>
-                    <div className="space-y-1 md:space-y-2">
-                      <p className="text-sm md:text-base text-gray-800 font-medium">{data.groom.name}</p>
-                      <p className="text-xs md:text-sm text-gray-600">
-                        {data.groom.account.bank} {data.groom.account.accountNumber}
+                <div className="space-y-6 md:space-y-8">
+                  {/* 신랑 측 */}
+                  {(data.groom.account ||
+                    data.groom.parentAccounts?.father?.length > 0 ||
+                    data.groom.parentAccounts?.mother?.length > 0) && (
+                    <div>
+                      <p className="text-sm md:text-base text-amber-800 mb-3 font-semibold">
+                        신랑 측
                       </p>
-                      <p className="text-xs text-gray-500">
-                        예금주: {data.groom.account.accountHolder}
-                      </p>
-                    </div>
-                  </div>
-                )}
+                      <div className="space-y-3">
+                        {/* 본인 계좌 */}
+                        {data.groom.account && (
+                          <div className="p-4 md:p-5 bg-white rounded-xl shadow-sm border border-amber-100">
+                            <p className="text-xs text-slate-500 mb-2">신랑 본인</p>
+                            <p className="text-sm md:text-base text-gray-800 font-medium mb-1">
+                              {data.groom.name}
+                            </p>
+                            <p className="text-xs md:text-sm text-gray-600">
+                              {data.groom.account.bank} {data.groom.account.accountNumber}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              예금주: {data.groom.account.accountHolder}
+                            </p>
+                          </div>
+                        )}
 
-                {/* 신부 측 */}
-                {data.bride.account && (
-                  <div className="p-4 md:p-6 bg-white rounded-lg shadow-sm border border-amber-100">
-                    <p className="text-xs md:text-sm text-amber-800 mb-2 md:mb-3 font-medium">
-                      신부 측
-                    </p>
-                    <div className="space-y-1 md:space-y-2">
-                      <p className="text-sm md:text-base text-gray-800 font-medium">{data.bride.name}</p>
-                      <p className="text-xs md:text-sm text-gray-600">
-                        {data.bride.account.bank} {data.bride.account.accountNumber}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        예금주: {data.bride.account.accountHolder}
-                      </p>
+                        {/* 아버지 계좌들 */}
+                        {data.groom.parentAccounts?.father?.map((account, idx) => (
+                          <div
+                            key={`groom-father-${idx}`}
+                            className="p-4 md:p-5 bg-white rounded-xl shadow-sm border border-amber-100"
+                          >
+                            <p className="text-xs text-slate-500 mb-2">
+                              아버지{' '}
+                              {data.groom.parentAccounts.father.length > 1 && `(계좌 ${idx + 1})`}
+                            </p>
+                            <p className="text-sm md:text-base text-gray-800 font-medium mb-1">
+                              {data.groom.fatherName || '아버지'}
+                            </p>
+                            <p className="text-xs md:text-sm text-gray-600">
+                              {account.bank} {account.accountNumber}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              예금주: {account.accountHolder}
+                            </p>
+                          </div>
+                        ))}
+
+                        {/* 어머니 계좌들 */}
+                        {data.groom.parentAccounts?.mother?.map((account, idx) => (
+                          <div
+                            key={`groom-mother-${idx}`}
+                            className="p-4 md:p-5 bg-white rounded-xl shadow-sm border border-amber-100"
+                          >
+                            <p className="text-xs text-slate-500 mb-2">
+                              어머니{' '}
+                              {data.groom.parentAccounts.mother.length > 1 && `(계좌 ${idx + 1})`}
+                            </p>
+                            <p className="text-sm md:text-base text-gray-800 font-medium mb-1">
+                              {data.groom.motherName || '어머니'}
+                            </p>
+                            <p className="text-xs md:text-sm text-gray-600">
+                              {account.bank} {account.accountNumber}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              예금주: {account.accountHolder}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        </section>
-      )}
+                  )}
+
+                  {/* 신부 측 */}
+                  {(data.bride.account ||
+                    data.bride.parentAccounts?.father?.length > 0 ||
+                    data.bride.parentAccounts?.mother?.length > 0) && (
+                    <div>
+                      <p className="text-sm md:text-base text-amber-800 mb-3 font-semibold">
+                        신부 측
+                      </p>
+                      <div className="space-y-3">
+                        {/* 본인 계좌 */}
+                        {data.bride.account && (
+                          <div className="p-4 md:p-5 bg-white rounded-xl shadow-sm border border-amber-100">
+                            <p className="text-xs text-slate-500 mb-2">신부 본인</p>
+                            <p className="text-sm md:text-base text-gray-800 font-medium mb-1">
+                              {data.bride.name}
+                            </p>
+                            <p className="text-xs md:text-sm text-gray-600">
+                              {data.bride.account.bank} {data.bride.account.accountNumber}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              예금주: {data.bride.account.accountHolder}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* 아버지 계좌들 */}
+                        {data.bride.parentAccounts?.father?.map((account, idx) => (
+                          <div
+                            key={`bride-father-${idx}`}
+                            className="p-4 md:p-5 bg-white rounded-xl shadow-sm border border-amber-100"
+                          >
+                            <p className="text-xs text-slate-500 mb-2">
+                              아버지{' '}
+                              {data.bride.parentAccounts.father.length > 1 && `(계좌 ${idx + 1})`}
+                            </p>
+                            <p className="text-sm md:text-base text-gray-800 font-medium mb-1">
+                              {data.bride.fatherName || '아버지'}
+                            </p>
+                            <p className="text-xs md:text-sm text-gray-600">
+                              {account.bank} {account.accountNumber}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              예금주: {account.accountHolder}
+                            </p>
+                          </div>
+                        ))}
+
+                        {/* 어머니 계좌들 */}
+                        {data.bride.parentAccounts?.mother?.map((account, idx) => (
+                          <div
+                            key={`bride-mother-${idx}`}
+                            className="p-4 md:p-5 bg-white rounded-xl shadow-sm border border-amber-100"
+                          >
+                            <p className="text-xs text-slate-500 mb-2">
+                              어머니{' '}
+                              {data.bride.parentAccounts.mother.length > 1 && `(계좌 ${idx + 1})`}
+                            </p>
+                            <p className="text-sm md:text-base text-gray-800 font-medium mb-1">
+                              {data.bride.motherName || '어머니'}
+                            </p>
+                            <p className="text-xs md:text-sm text-gray-600">
+                              {account.bank} {account.accountNumber}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              예금주: {account.accountHolder}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          </section>
+        )}
 
       {/* Footer */}
       <footer className="py-8 md:py-12 px-6 text-center text-xs md:text-sm text-gray-500 border-t border-amber-100">
