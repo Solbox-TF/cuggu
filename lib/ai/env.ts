@@ -9,6 +9,7 @@ const envSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().min(1, 'AWS_ACCESS_KEY_ID is required'),
   AWS_SECRET_ACCESS_KEY: z.string().min(1, 'AWS_SECRET_ACCESS_KEY is required'),
   S3_BUCKET_NAME: z.string().min(1, 'S3_BUCKET_NAME is required'),
+  CLOUDFRONT_DOMAIN: z.string().optional(),
 
   // Azure Face API
   AZURE_FACE_API_KEY: z.string().min(1, 'AZURE_FACE_API_KEY is required'),

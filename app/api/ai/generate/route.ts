@@ -162,7 +162,8 @@ export async function POST(request: NextRequest) {
     // 10. 원본 이미지 S3 업로드
     let originalUrl: string;
     try {
-      originalUrl = await uploadToS3(buffer, image.type, 'ai-originals');
+      const result = await uploadToS3(buffer, image.type, 'ai-originals');
+      originalUrl = result.url;
     } catch (error) {
       // 업로드 실패 시 크레딧 환불
       await refundCredits(user.id, 1);
