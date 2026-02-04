@@ -75,11 +75,11 @@ export function Sidebar({ activeTab, invitation }: SidebarProps) {
 
     if (tabId === 'account') {
       const hasGroomAccount =
-        invitation.groom?.bankAccount?.bank &&
-        invitation.groom?.bankAccount?.accountNumber;
+        invitation.groom?.account?.bank &&
+        invitation.groom?.account?.accountNumber;
       const hasBrideAccount =
-        invitation.bride?.bankAccount?.bank &&
-        invitation.bride?.bankAccount?.accountNumber;
+        invitation.bride?.account?.bank &&
+        invitation.bride?.account?.accountNumber;
       return hasGroomAccount || hasBrideAccount ? 'completed' : 'optional';
     }
 

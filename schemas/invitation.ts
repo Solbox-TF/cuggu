@@ -41,9 +41,15 @@ export const PersonSchema = z.object({
 // 계좌 정보
 export const AccountSchema = z.object({
   bank: z.string().min(1, "은행을 선택해주세요"),
-  number: z.string().min(1, "계좌번호를 입력해주세요"),
-  holder: z.string().min(1, "예금주를 입력해주세요"),
+  accountNumber: z.string().min(1, "계좌번호를 입력해주세요"),
+  accountHolder: z.string().min(1, "예금주를 입력해주세요"),
 });
+
+// 부모님 계좌 (각 부모님별 복수 계좌 허용)
+export const ParentAccountsSchema = z.object({
+  father: z.array(AccountSchema).default([]),
+  mother: z.array(AccountSchema).default([]),
+}).optional();
 
 // 예식 장소
 export const VenueSchema = z.object({
@@ -91,9 +97,11 @@ export const InvitationSchema = z.object({
   // 신랑/신부 (확장된 정보)
   groom: PersonSchema.extend({
     account: AccountSchema.optional(),
+    parentAccounts: ParentAccountsSchema,
   }),
   bride: PersonSchema.extend({
     account: AccountSchema.optional(),
+    parentAccounts: ParentAccountsSchema,
   }),
 
   // 예식 정보
@@ -205,8 +213,8 @@ export const SAMPLE_INVITATION: Invitation = {
     relation: "장남",
     account: {
       bank: "신한은행",
-      number: "110-123-456789",
-      holder: "김민수",
+      accountNumber: "110-123-456789",
+      accountHolder: "김민수",
     },
   },
 
@@ -218,8 +226,8 @@ export const SAMPLE_INVITATION: Invitation = {
     relation: "장녀",
     account: {
       bank: "국민은행",
-      number: "123-456-789012",
-      holder: "이지은",
+      accountNumber: "123-456-789012",
+      accountHolder: "이지은",
     },
   },
 
