@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, MapPin, Phone } from "lucide-react";
 import { Invitation } from "@/schemas/invitation";
 import {
@@ -8,6 +9,7 @@ import {
   formatWeddingTime,
   formatWeddingDateTime,
 } from "@/lib/utils/date";
+import { GalleryLightbox } from "./GalleryLightbox";
 
 interface ClassicTemplateProps {
   data: Invitation;
@@ -15,6 +17,7 @@ interface ClassicTemplateProps {
 }
 
 export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProps) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const weddingDate = new Date(data.wedding.date);
 
   // 날짜 포맷팅
@@ -232,7 +235,8 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ delay: index * 0.1 }}
-                    className="aspect-square overflow-hidden rounded-lg shadow-md"
+                    className="aspect-square overflow-hidden rounded-lg shadow-md cursor-pointer"
+                    onClick={() => setLightboxIndex(index)}
                   >
                     <img
                       src={image}
@@ -242,6 +246,16 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
                   </motion.div>
                 ))}
               </div>
+
+              <AnimatePresence>
+                {lightboxIndex !== null && (
+                  <GalleryLightbox
+                    images={data.gallery.images}
+                    initialIndex={lightboxIndex}
+                    onClose={() => setLightboxIndex(null)}
+                  />
+                )}
+              </AnimatePresence>
             </motion.div>
           </div>
         </section>
