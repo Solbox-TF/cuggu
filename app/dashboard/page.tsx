@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileHeart, Users, Eye, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { FileHeart, Users, Eye, Loader2, ArrowRight } from "lucide-react";
 import { StatsCard } from "@/components/admin/StatsCard";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { ScrollFade } from "@/components/animations/ScrollFade";
+import { InvitationCard } from "@/components/invitation/InvitationCard";
 
 interface DashboardStats {
   invitationCount: number;
@@ -12,31 +14,63 @@ interface DashboardStats {
   rsvpCount: number;
 }
 
+interface Invitation {
+  id: string;
+  groomName: string;
+  brideName: string;
+  weddingDate: string;
+  venueName: string;
+  viewCount: number;
+  status: "DRAFT" | "PUBLISHED" | "EXPIRED" | "DELETED";
+  galleryImages: string[] | null;
+  createdAt: string;
+}
+
 export default function DashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>({
     invitationCount: 0,
     totalViews: 0,
     rsvpCount: 0,
   });
+  const [recentInvitations, setRecentInvitations] = useState<Invitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchStats();
+    fetchData();
   }, []);
 
-  const fetchStats = async () => {
+  const fetchData = async () => {
     try {
-      const response = await fetch("/api/dashboard/stats");
-      const result = await response.json();
+      // 통계와 최근 청첩장 동시 요청
+      const [statsRes, invitationsRes] = await Promise.all([
+        fetch("/api/dashboard/stats"),
+        fetch("/api/invitations?page=1&pageSize=3"),
+      ]);
 
-      if (result.success) {
-        setStats(result.data);
+      const statsResult = await statsRes.json();
+      const invitationsResult = await invitationsRes.json();
+
+      if (statsResult.success) {
+        setStats(statsResult.data);
+      }
+
+      if (invitationsResult.success) {
+        setRecentInvitations(invitationsResult.data.invitations);
       }
     } catch (error) {
-      console.error("통계 조회 실패:", error);
+      console.error("데이터 조회 실패:", error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDelete = (deletedId: string) => {
+    setRecentInvitations((prev) => prev.filter((inv) => inv.id !== deletedId));
+    setStats((prev) => ({
+      ...prev,
+      invitationCount: prev.invitationCount - 1,
+    }));
   };
 
   const statsConfig = [
@@ -94,11 +128,50 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Empty State - 청첩장이 없을 때만 표시 */}
-      {stats.invitationCount === 0 && (
+      {/* Recent Invitations or Empty State */}
+      {stats.invitationCount === 0 ? (
         <ScrollFade delay={0.3}>
           <EmptyState />
         </ScrollFade>
+      ) : (
+        <div className="space-y-6">
+          {/* Section Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">최근 청첩장</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                최근에 작업한 청첩장입니다
+              </p>
+            </div>
+            <button
+              onClick={() => router.push("/dashboard/invitations")}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-pink-600 hover:text-pink-700 hover:bg-pink-50 rounded-lg transition-colors"
+            >
+              모두 보기
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Invitations Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recentInvitations.map((invitation, index) => (
+              <ScrollFade key={invitation.id} delay={0.3 + index * 0.1}>
+                <InvitationCard
+                  id={invitation.id}
+                  groomName={invitation.groomName}
+                  brideName={invitation.brideName}
+                  weddingDate={invitation.weddingDate}
+                  venueName={invitation.venueName}
+                  viewCount={invitation.viewCount}
+                  status={invitation.status}
+                  thumbnailUrl={invitation.galleryImages?.[0] || undefined}
+                  createdAt={invitation.createdAt}
+                  onDelete={handleDelete}
+                />
+              </ScrollFade>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
