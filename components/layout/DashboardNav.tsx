@@ -41,11 +41,19 @@ export function DashboardNav() {
   const percentage = (aiCredits.used / aiCredits.total) * 100;
 
   return (
-    <aside className="w-64 border-r border-gray-200 bg-white flex flex-col h-screen">
+    <aside className="w-72 border-r border-gray-100 bg-white/80 backdrop-blur-sm flex flex-col h-screen">
       {/* Logo */}
-      <div className="p-6 pb-0">
-        <Link href="/" className="text-lg font-bold text-slate-900 hover:text-pink-600 transition-colors block mb-6">
-          Cuggu
+      <div className="px-6 py-8">
+        <Link
+          href="/"
+          className="flex items-center gap-2 group"
+        >
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+            <span className="text-white font-bold text-lg">C</span>
+          </div>
+          <span className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent group-hover:from-pink-500 group-hover:to-purple-500 transition-all">
+            Cuggu
+          </span>
         </Link>
       </div>
 
@@ -53,7 +61,7 @@ export function DashboardNav() {
       <UserProfile />
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto mt-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -63,11 +71,11 @@ export function DashboardNav() {
               key={item.href}
               href={item.href}
               className={`
-                relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200
+                relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group
                 ${
                   isActive
-                    ? "bg-pink-50 text-pink-600 font-medium"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-gradient-to-r from-pink-50 to-purple-50 text-pink-600 font-semibold shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }
               `}
             >
@@ -75,50 +83,55 @@ export function DashboardNav() {
               {isActive && (
                 <motion.div
                   layoutId="activeTab"
-                  className="absolute left-0 top-0 bottom-0 w-1 bg-pink-500 rounded-r"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-pink-500 to-purple-600 rounded-r-full"
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}
 
-              <Icon className="w-6 h-6" />
-              <span>{item.title}</span>
+              <Icon className={`w-5 h-5 ${isActive ? "" : "group-hover:scale-110 transition-transform"}`} />
+              <span className="text-sm">{item.title}</span>
             </Link>
           );
         })}
       </nav>
 
-      {/* AI Credits */}
-      <div className="p-6 border-t border-gray-200">
+      {/* AI Credits Card */}
+      <div className="p-4 m-4 mb-6 rounded-2xl bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 border border-pink-100/50 shadow-sm">
         <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">AI 크레딧</span>
-            <span className="text-sm font-semibold text-gray-900">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-pink-600" />
+              <span className="text-sm font-semibold text-gray-800">AI 크레딧</span>
+            </div>
+            <span className="text-sm font-bold text-pink-600">
               {aiCredits.total - aiCredits.used} / {aiCredits.total}
             </span>
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="w-full h-2.5 bg-white/60 rounded-full overflow-hidden shadow-inner">
             <motion.div
-              className="h-full bg-gradient-to-r from-pink-500 to-purple-500"
+              className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${100 - percentage}%` }}
               transition={{ duration: 1, ease: "easeOut" }}
             />
           </div>
 
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-gray-600 mt-2.5 font-medium">
             {aiCredits.used === aiCredits.total ? "크레딧을 모두 사용했습니다" : `${aiCredits.total - aiCredits.used}회 남음`}
           </p>
         </div>
 
-        <button className="w-full px-4 py-2 text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 rounded-lg transition-colors shadow-sm mb-3">
+        <button className="w-full px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 rounded-xl transition-all shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]">
           + 크레딧 구매
         </button>
+      </div>
 
-        {/* Logout */}
-        <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors w-full">
-          <LogOut className="w-5 h-5" />
+      {/* Logout */}
+      <div className="px-4 pb-6">
+        <button className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all w-full group">
+          <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform" />
           <span className="text-sm font-medium">로그아웃</span>
         </button>
       </div>
