@@ -83,7 +83,7 @@ export function DashboardNav() {
               {isActive && (
                 <motion.div
                   layoutId="activeTab"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-pink-500 to-purple-600 rounded-r-full"
+                  className="absolute -left-4 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-pink-500 to-purple-600 rounded-r-full"
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}

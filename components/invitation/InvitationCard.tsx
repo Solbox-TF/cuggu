@@ -7,6 +7,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface InvitationCardProps {
   id: string;
@@ -41,6 +43,7 @@ export function InvitationCard({
   const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { confirm, isOpen, options, handleConfirm, handleCancel } = useConfirm();
 
   const handleEdit = () => {
     router.push(`/editor/${id}`);
@@ -69,11 +72,21 @@ export function InvitationCard({
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm("정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
-      return;
-    }
+  const handleDeleteClick = async () => {
+    const confirmed = await confirm({
+      title: "청첩장을 삭제하시겠습니까?",
+      description: `${groomName} ❤️ ${brideName}의 청첩장이 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.`,
+      confirmText: "삭제",
+      cancelText: "취소",
+      variant: "danger",
+    });
 
+    if (!confirmed) return;
+
+    await performDelete();
+  };
+
+  const performDelete = async () => {
     setIsDeleting(true);
     try {
       const response = await fetch(`/api/invitations/${id}`, {
@@ -142,7 +155,7 @@ export function InvitationCard({
             <Share2 className="w-5 h-5 text-gray-700" />
           </button>
           <button
-            onClick={handleDelete}
+            onClick={handleDeleteClick}
             disabled={isDeleting}
             className="p-3 bg-white rounded-full hover:bg-red-50 transition-colors shadow-lg disabled:opacity-50"
             title="삭제"
@@ -189,6 +202,19 @@ export function InvitationCard({
           </Link>
         </div>
       </div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={isOpen}
+        onClose={handleCancel}
+        onConfirm={handleConfirm}
+        title={options.title}
+        description={options.description}
+        confirmText={options.confirmText}
+        cancelText={options.cancelText}
+        variant={options.variant}
+        isLoading={isDeleting}
+      />
     </motion.div>
   );
 }
