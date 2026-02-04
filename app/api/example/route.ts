@@ -12,7 +12,7 @@ import {
   successResponse,
   NotFoundError,
 } from '@/lib/api-utils';
-import { CreateInvitationRequestSchema, PaginationQuerySchema } from '@/schemas';
+import { CreateInvitationSchema, PaginationQuerySchema } from '@/schemas';
 
 /**
  * POST /api/example
@@ -21,7 +21,7 @@ import { CreateInvitationRequestSchema, PaginationQuerySchema } from '@/schemas'
  */
 export const POST = withErrorHandler(async (req: NextRequest) => {
   // 1. 요청 body 검증 (Zod)
-  const data = await validateRequest(req, CreateInvitationRequestSchema);
+  const data = await validateRequest(req, CreateInvitationSchema);
 
   // 2. 인증 확인 (TODO: NextAuth.js 세션)
   // const session = await requireAuth(req);

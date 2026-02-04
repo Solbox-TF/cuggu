@@ -2,5 +2,7 @@
 import { expect } from 'vitest';
 
 // 환경 변수 설정 (테스트용)
-process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://localhost/cuggu_test';
+// NODE_ENV는 Vitest가 자동으로 'test'로 설정함
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'postgresql://localhost/cuggu_test';
+}

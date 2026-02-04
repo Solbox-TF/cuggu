@@ -22,7 +22,7 @@ export function GalleryTab() {
 
   const handleRemoveImage = (index: number) => {
     const images = invitation.gallery?.images || [];
-    const updated = images.filter((_, i) => i !== index);
+    const updated = images.filter((_img: string, i: number) => i !== index);
     updateInvitation({
       gallery: {
         ...invitation.gallery,

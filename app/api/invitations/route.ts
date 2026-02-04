@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { db } from '@/db';
-import { invitations } from '@/db/schema';
+import { invitations, users } from '@/db/schema';
 import { CreateInvitationSchema } from '@/schemas/invitation';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, sql, and, ne } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
 // POST /api/invitations - 청첩장 생성
@@ -18,6 +18,49 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 사용자 정보 조회 (premiumPlan 확인)
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, session.user.id),
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: '사용자 정보를 찾을 수 없습니다' },
+        { status: 404 }
+      );
+    }
+
+    // 현재 활성 청첩장 개수 조회 (DELETED 제외)
+    const [{ count: activeCount }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(invitations)
+      .where(
+        and(
+          eq(invitations.userId, session.user.id),
+          ne(invitations.status, 'DELETED')
+        )
+      );
+
+    // 플랜별 제한 확인
+    const limit = user.premiumPlan === 'PREMIUM' ? 20 : 3;
+
+    if (activeCount >= limit) {
+      const isPremium = user.premiumPlan === 'PREMIUM';
+      return NextResponse.json(
+        {
+          error: isPremium
+            ? '청첩장 생성 한도에 도달했습니다'
+            : '무료 플랜은 최대 3개까지 생성 가능합니다',
+          message: isPremium
+            ? '20개 이상 필요하신 경우 고객센터로 문의해주세요'
+            : '프리미엄 플랜으로 업그레이드하면 최대 20개까지 생성할 수 있습니다',
+          currentCount: activeCount,
+          limit,
+        },
+        { status: 403 }
+      );
+    }
+
     // 요청 바디 파싱
     const body = await req.json();
 
@@ -27,7 +70,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error: '입력 데이터가 올바르지 않습니다',
-          details: parsed.error.errors,
+          details: parsed.error.issues,
         },
         { status: 400 }
       );
