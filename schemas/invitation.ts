@@ -41,8 +41,8 @@ export const PersonSchema = z.object({
 // 계좌 정보
 export const AccountSchema = z.object({
   bank: z.string().min(1, "은행을 선택해주세요"),
-  number: z.string().min(1, "계좌번호를 입력해주세요"),
-  holder: z.string().min(1, "예금주를 입력해주세요"),
+  accountNumber: z.string().min(1, "계좌번호를 입력해주세요"),
+  accountHolder: z.string().min(1, "예금주를 입력해주세요"),
 });
 
 // 예식 장소
@@ -205,8 +205,8 @@ export const SAMPLE_INVITATION: Invitation = {
     relation: "장남",
     account: {
       bank: "신한은행",
-      number: "110-123-456789",
-      holder: "김민수",
+      accountNumber: "110-123-456789",
+      accountHolder: "김민수",
     },
   },
 
@@ -218,8 +218,8 @@ export const SAMPLE_INVITATION: Invitation = {
     relation: "장녀",
     account: {
       bank: "국민은행",
-      number: "123-456-789012",
-      holder: "이지은",
+      accountNumber: "123-456-789012",
+      accountHolder: "이지은",
     },
   },
 

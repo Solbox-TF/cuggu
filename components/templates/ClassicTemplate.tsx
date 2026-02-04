@@ -270,10 +270,10 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
                     <div className="space-y-1 md:space-y-2">
                       <p className="text-sm md:text-base text-gray-800 font-medium">{data.groom.name}</p>
                       <p className="text-xs md:text-sm text-gray-600">
-                        {data.groom.account.bank} {data.groom.account.number}
+                        {data.groom.account.bank} {data.groom.account.accountNumber}
                       </p>
                       <p className="text-xs text-gray-500">
-                        예금주: {data.groom.account.holder}
+                        예금주: {data.groom.account.accountHolder}
                       </p>
                     </div>
                   </div>
@@ -288,10 +288,10 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
                     <div className="space-y-1 md:space-y-2">
                       <p className="text-sm md:text-base text-gray-800 font-medium">{data.bride.name}</p>
                       <p className="text-xs md:text-sm text-gray-600">
-                        {data.bride.account.bank} {data.bride.account.number}
+                        {data.bride.account.bank} {data.bride.account.accountNumber}
                       </p>
                       <p className="text-xs text-gray-500">
-                        예금주: {data.bride.account.holder}
+                        예금주: {data.bride.account.accountHolder}
                       </p>
                     </div>
                   </div>

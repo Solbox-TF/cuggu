@@ -16,8 +16,8 @@ export function AccountTab() {
     updateInvitation({
       groom: {
         ...invitation.groom,
-        bankAccount: {
-          ...invitation.groom?.bankAccount,
+        account: {
+          ...invitation.groom?.account,
           [field]: value,
         },
       },
@@ -28,8 +28,8 @@ export function AccountTab() {
     updateInvitation({
       bride: {
         ...invitation.bride,
-        bankAccount: {
-          ...invitation.bride?.bankAccount,
+        account: {
+          ...invitation.bride?.account,
           [field]: value,
         },
       },
@@ -64,7 +64,7 @@ export function AccountTab() {
             은행
           </label>
           <select
-            value={invitation.groom?.bankAccount?.bank || ''}
+            value={invitation.groom?.account?.bank || ''}
             onChange={(e) => handleGroomAccountChange('bank', e.target.value)}
             className="w-full px-4 py-3 text-sm bg-gradient-to-br from-white to-pink-50/20 border border-pink-200/50 rounded-xl focus:ring-2 focus:ring-pink-400 focus:border-pink-300 focus:bg-white transition-all duration-200 placeholder:text-slate-400"
           >
@@ -83,7 +83,7 @@ export function AccountTab() {
           </label>
           <input
             type="text"
-            value={invitation.groom?.bankAccount?.accountNumber || ''}
+            value={invitation.groom?.account?.accountNumber || ''}
             onChange={(e) => handleGroomAccountChange('accountNumber', e.target.value)}
             placeholder="1234-5678-9012"
             className="w-full px-4 py-3 text-sm bg-gradient-to-br from-white to-pink-50/20 border border-pink-200/50 rounded-xl focus:ring-2 focus:ring-pink-400 focus:border-pink-300 focus:bg-white transition-all duration-200 placeholder:text-slate-400"
@@ -96,7 +96,7 @@ export function AccountTab() {
           </label>
           <input
             type="text"
-            value={invitation.groom?.bankAccount?.accountHolder || ''}
+            value={invitation.groom?.account?.accountHolder || ''}
             onChange={(e) => handleGroomAccountChange('accountHolder', e.target.value)}
             placeholder="홍길동"
             className="w-full px-4 py-3 text-sm bg-gradient-to-br from-white to-pink-50/20 border border-pink-200/50 rounded-xl focus:ring-2 focus:ring-pink-400 focus:border-pink-300 focus:bg-white transition-all duration-200 placeholder:text-slate-400"
@@ -113,7 +113,7 @@ export function AccountTab() {
             은행
           </label>
           <select
-            value={invitation.bride?.bankAccount?.bank || ''}
+            value={invitation.bride?.account?.bank || ''}
             onChange={(e) => handleBrideAccountChange('bank', e.target.value)}
             className="w-full px-4 py-3 text-sm bg-gradient-to-br from-white to-pink-50/20 border border-pink-200/50 rounded-xl focus:ring-2 focus:ring-pink-400 focus:border-pink-300 focus:bg-white transition-all duration-200 placeholder:text-slate-400"
           >
@@ -132,7 +132,7 @@ export function AccountTab() {
           </label>
           <input
             type="text"
-            value={invitation.bride?.bankAccount?.accountNumber || ''}
+            value={invitation.bride?.account?.accountNumber || ''}
             onChange={(e) => handleBrideAccountChange('accountNumber', e.target.value)}
             placeholder="1234-5678-9012"
             className="w-full px-4 py-3 text-sm bg-gradient-to-br from-white to-pink-50/20 border border-pink-200/50 rounded-xl focus:ring-2 focus:ring-pink-400 focus:border-pink-300 focus:bg-white transition-all duration-200 placeholder:text-slate-400"
@@ -145,7 +145,7 @@ export function AccountTab() {
           </label>
           <input
             type="text"
-            value={invitation.bride?.bankAccount?.accountHolder || ''}
+            value={invitation.bride?.account?.accountHolder || ''}
             onChange={(e) => handleBrideAccountChange('accountHolder', e.target.value)}
             placeholder="김영희"
             className="w-full px-4 py-3 text-sm bg-gradient-to-br from-white to-pink-50/20 border border-pink-200/50 rounded-xl focus:ring-2 focus:ring-pink-400 focus:border-pink-300 focus:bg-white transition-all duration-200 placeholder:text-slate-400"
