@@ -252,7 +252,7 @@ export function AccountTab() {
               </div>
 
               <div className="space-y-4">
-                {invitation.groom?.parentAccounts?.father?.map((account, idx) => (
+                {invitation.groom?.parentAccounts?.father?.map((account: any, idx: number) => (
                   <div
                     key={idx}
                     className="p-4 bg-slate-50 rounded-xl border border-slate-200"
@@ -294,7 +294,7 @@ export function AccountTab() {
               </div>
 
               <div className="space-y-4">
-                {invitation.groom?.parentAccounts?.mother?.map((account, idx) => (
+                {invitation.groom?.parentAccounts?.mother?.map((account: any, idx: number) => (
                   <div
                     key={idx}
                     className="p-4 bg-slate-50 rounded-xl border border-slate-200"
@@ -366,7 +366,7 @@ export function AccountTab() {
               </div>
 
               <div className="space-y-4">
-                {invitation.bride?.parentAccounts?.father?.map((account, idx) => (
+                {invitation.bride?.parentAccounts?.father?.map((account: any, idx: number) => (
                   <div
                     key={idx}
                     className="p-4 bg-slate-50 rounded-xl border border-slate-200"
@@ -408,7 +408,7 @@ export function AccountTab() {
               </div>
 
               <div className="space-y-4">
-                {invitation.bride?.parentAccounts?.mother?.map((account, idx) => (
+                {invitation.bride?.parentAccounts?.mother?.map((account: any, idx: number) => (
                   <div
                     key={idx}
                     className="p-4 bg-slate-50 rounded-xl border border-slate-200"

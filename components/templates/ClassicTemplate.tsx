@@ -264,11 +264,11 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
       {/* 계좌번호 섹션 */}
       {data.settings.showAccounts &&
         (data.groom.account ||
-          data.groom.parentAccounts?.father?.length > 0 ||
-          data.groom.parentAccounts?.mother?.length > 0 ||
+          (data.groom.parentAccounts?.father?.length ?? 0) > 0 ||
+          (data.groom.parentAccounts?.mother?.length ?? 0) > 0 ||
           data.bride.account ||
-          data.bride.parentAccounts?.father?.length > 0 ||
-          data.bride.parentAccounts?.mother?.length > 0) && (
+          (data.bride.parentAccounts?.father?.length ?? 0) > 0 ||
+          (data.bride.parentAccounts?.mother?.length ?? 0) > 0) && (
           <section className="py-12 md:py-20 px-6">
             <div className="max-w-2xl mx-auto">
               <motion.div
@@ -283,8 +283,8 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
                 <div className="space-y-6 md:space-y-8">
                   {/* 신랑 측 */}
                   {(data.groom.account ||
-                    data.groom.parentAccounts?.father?.length > 0 ||
-                    data.groom.parentAccounts?.mother?.length > 0) && (
+                    (data.groom.parentAccounts?.father?.length ?? 0) > 0 ||
+                    (data.groom.parentAccounts?.mother?.length ?? 0) > 0) && (
                     <div>
                       <p className="text-sm md:text-base text-amber-800 mb-3 font-semibold">
                         신랑 측
@@ -314,7 +314,7 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
                           >
                             <p className="text-xs text-slate-500 mb-2">
                               아버지{' '}
-                              {data.groom.parentAccounts.father.length > 1 && `(계좌 ${idx + 1})`}
+                              {data.groom.parentAccounts!.father.length > 1 && `(계좌 ${idx + 1})`}
                             </p>
                             <p className="text-sm md:text-base text-gray-800 font-medium mb-1">
                               {data.groom.fatherName || '아버지'}
@@ -336,7 +336,7 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
                           >
                             <p className="text-xs text-slate-500 mb-2">
                               어머니{' '}
-                              {data.groom.parentAccounts.mother.length > 1 && `(계좌 ${idx + 1})`}
+                              {data.groom.parentAccounts!.mother.length > 1 && `(계좌 ${idx + 1})`}
                             </p>
                             <p className="text-sm md:text-base text-gray-800 font-medium mb-1">
                               {data.groom.motherName || '어머니'}
@@ -355,8 +355,8 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
 
                   {/* 신부 측 */}
                   {(data.bride.account ||
-                    data.bride.parentAccounts?.father?.length > 0 ||
-                    data.bride.parentAccounts?.mother?.length > 0) && (
+                    (data.bride.parentAccounts?.father?.length ?? 0) > 0 ||
+                    (data.bride.parentAccounts?.mother?.length ?? 0) > 0) && (
                     <div>
                       <p className="text-sm md:text-base text-amber-800 mb-3 font-semibold">
                         신부 측
@@ -386,7 +386,7 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
                           >
                             <p className="text-xs text-slate-500 mb-2">
                               아버지{' '}
-                              {data.bride.parentAccounts.father.length > 1 && `(계좌 ${idx + 1})`}
+                              {data.bride.parentAccounts!.father.length > 1 && `(계좌 ${idx + 1})`}
                             </p>
                             <p className="text-sm md:text-base text-gray-800 font-medium mb-1">
                               {data.bride.fatherName || '아버지'}
@@ -408,7 +408,7 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
                           >
                             <p className="text-xs text-slate-500 mb-2">
                               어머니{' '}
-                              {data.bride.parentAccounts.mother.length > 1 && `(계좌 ${idx + 1})`}
+                              {data.bride.parentAccounts!.mother.length > 1 && `(계좌 ${idx + 1})`}
                             </p>
                             <p className="text-sm md:text-base text-gray-800 font-medium mb-1">
                               {data.bride.motherName || '어머니'}
