@@ -71,10 +71,10 @@ export function EmptyState() {
           <div className="text-6xl mb-4">💌</div>
 
           {/* Title & Description */}
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">
+          <h3 className="text-2xl font-bold text-slate-900 mb-2">
             첫 청첩장을 만들어보세요
           </h3>
-          <p className="text-gray-600 mb-8">
+          <p className="text-sm text-slate-600 mb-8">
             AI가 도와주는 5분 완성 청첩장
           </p>
 
@@ -88,8 +88,8 @@ export function EmptyState() {
               <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-pink-600 font-bold text-lg">1</span>
               </div>
-              <p className="text-sm font-medium text-gray-700">템플릿 선택</p>
-              <p className="text-xs text-gray-500 mt-1">20+ 프리미엄 디자인</p>
+              <p className="text-sm font-medium text-slate-700">템플릿 선택</p>
+              <p className="text-xs text-slate-500 mt-1">20+ 프리미엄 디자인</p>
             </motion.div>
 
             <motion.div
@@ -100,8 +100,8 @@ export function EmptyState() {
               <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-purple-600 font-bold text-lg">2</span>
               </div>
-              <p className="text-sm font-medium text-gray-700">내용 입력</p>
-              <p className="text-xs text-gray-500 mt-1">드래그 앤 드롭 편집</p>
+              <p className="text-sm font-medium text-slate-700">내용 입력</p>
+              <p className="text-xs text-slate-500 mt-1">드래그 앤 드롭 편집</p>
             </motion.div>
 
             <motion.div
@@ -112,8 +112,8 @@ export function EmptyState() {
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-blue-600 font-bold text-lg">3</span>
               </div>
-              <p className="text-sm font-medium text-gray-700">공유하기</p>
-              <p className="text-xs text-gray-500 mt-1">카카오톡 & QR 코드</p>
+              <p className="text-sm font-medium text-slate-700">공유하기</p>
+              <p className="text-xs text-slate-500 mt-1">카카오톡 & QR 코드</p>
             </motion.div>
           </div>
 
@@ -138,7 +138,7 @@ export function EmptyState() {
                 "첫 청첩장 만들기"
               )}
             </Button>
-            <p className="text-sm text-gray-500 mt-4">
+            <p className="text-sm text-slate-500 mt-4">
               무료로 시작하고, 필요한 기능만 결제하세요
             </p>
           </motion.div>

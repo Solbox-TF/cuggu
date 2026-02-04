@@ -36,8 +36,8 @@ export default function DashboardPage() {
       {/* Header */}
       <ScrollFade>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">대시보드</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-2xl font-bold text-slate-900">대시보드</h1>
+          <p className="text-sm text-slate-600 mt-2">
             환영합니다! 첫 청첩장을 만들어보세요.
           </p>
         </div>

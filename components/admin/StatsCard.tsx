@@ -29,10 +29,10 @@ export function StatsCard({ label, value, icon: Icon, gradient, iconColor }: Sta
           </div>
 
           <div className="space-y-1">
-            <div className="text-4xl font-bold text-gray-900">
+            <div className="text-4xl font-bold text-slate-900">
               <CountUp end={value} duration={1.5} />
             </div>
-            <p className="text-sm text-gray-600">{label}</p>
+            <p className="text-sm text-slate-600">{label}</p>
           </div>
         </CardContent>
       </Card>

@@ -44,7 +44,7 @@ export function DashboardNav() {
     <aside className="w-64 border-r border-gray-200 bg-white flex flex-col h-screen">
       {/* Logo */}
       <div className="p-6 pb-0">
-        <Link href="/" className="text-2xl font-bold text-pink-500 block mb-6">
+        <Link href="/" className="text-lg font-bold text-slate-900 hover:text-pink-600 transition-colors block mb-6">
           Cuggu
         </Link>
       </div>
@@ -112,12 +112,12 @@ export function DashboardNav() {
           </p>
         </div>
 
-        <button className="w-full px-4 py-2 text-sm font-medium text-pink-600 bg-pink-50 rounded-lg hover:bg-pink-100 transition-colors mb-3">
+        <button className="w-full px-4 py-2 text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 rounded-lg transition-colors shadow-sm mb-3">
           + 크레딧 구매
         </button>
 
         {/* Logout */}
-        <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors w-full">
+        <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors w-full">
           <LogOut className="w-5 h-5" />
           <span className="text-sm font-medium">로그아웃</span>
         </button>
