@@ -80,7 +80,7 @@ export const authConfig = {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
-        secure: false,
+        secure: process.env.NODE_ENV === "production",
       },
     },
     pkceCodeVerifier: {
@@ -89,11 +89,11 @@ export const authConfig = {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
-        secure: false,
+        secure: process.env.NODE_ENV === "production",
       },
     },
   },
-  useSecureCookies: false,
+  useSecureCookies: process.env.NODE_ENV === "production",
   callbacks: {
     async session({ session, user }) {
       if (session.user) {
