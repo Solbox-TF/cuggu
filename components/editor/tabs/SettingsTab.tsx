@@ -1,6 +1,23 @@
 'use client';
 
-import { ChevronUp, ChevronDown, RotateCcw } from 'lucide-react';
+import { RotateCcw, Lock, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useInvitationEditor } from '@/stores/invitation-editor';
 import {
   DEFAULT_SECTION_ORDER,
@@ -8,15 +25,82 @@ import {
   type SectionId,
 } from '@/schemas/invitation';
 
+interface SortableItemProps {
+  id: SectionId;
+  index: number;
+  isActive: boolean;
+  note: string | null;
+}
+
+function SortableItem({ id, index, isActive, note }: SortableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center justify-between p-3 rounded-lg border ${
+        isDragging
+          ? 'bg-pink-50 border-pink-200 shadow-lg z-10'
+          : isActive
+            ? 'bg-white border-stone-200'
+            : 'bg-stone-50 border-stone-100'
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <span className={`text-xs font-medium w-5 ${isActive ? 'text-stone-400' : 'text-stone-300'}`}>
+          {index + 2}.
+        </span>
+        <span className={`text-sm ${isActive ? 'text-stone-700' : 'text-stone-400'}`}>
+          {SECTION_LABELS[id]}
+        </span>
+        {note && (
+          <span className="text-[10px] px-1.5 py-0.5 bg-stone-100 text-stone-400 rounded">
+            {note}
+          </span>
+        )}
+      </div>
+
+      <button
+        {...attributes}
+        {...listeners}
+        className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded cursor-grab active:cursor-grabbing transition-colors"
+        aria-label="드래그하여 이동"
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
 /**
  * 설정 탭
  *
- * - 섹션 순서 변경
+ * - 섹션 순서 변경 (드래그앤드롭)
  * - 비밀번호 보호
  * - 삭제 예정일
  */
 export function SettingsTab() {
   const { invitation, updateInvitation } = useInvitationEditor();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const handleSettingsChange = (field: string, value: any) => {
     updateInvitation({
@@ -46,13 +130,16 @@ export function SettingsTab() {
     return null;
   };
 
-  // 섹션 이동
-  const moveSection = (index: number, direction: 'up' | 'down') => {
-    const newOrder = [...sectionOrder];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newOrder.length) return;
-    [newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[index]];
-    handleSettingsChange('sectionOrder', newOrder);
+  // 드래그 종료 시 순서 업데이트
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = sectionOrder.indexOf(active.id as SectionId);
+      const newIndex = sectionOrder.indexOf(over.id as SectionId);
+      const newOrder = arrayMove(sectionOrder, oldIndex, newIndex);
+      handleSettingsChange('sectionOrder', newOrder);
+    }
   };
 
   // 기본 순서로 리셋
@@ -77,7 +164,7 @@ export function SettingsTab() {
           <div>
             <h3 className="text-sm font-medium text-stone-700">섹션 순서</h3>
             <p className="text-xs text-stone-500 mt-1">
-              청첩장 섹션의 표시 순서를 변경하세요
+              드래그하여 섹션 순서를 변경하세요
             </p>
           </div>
           <button
@@ -91,54 +178,41 @@ export function SettingsTab() {
         </div>
 
         <div className="space-y-1">
-          {sectionOrder.map((id, index) => {
-            const isActive = isSectionActive(id);
-            const note = getSectionNote(id);
+          {/* 커버 섹션 (고정) */}
+          <div className="flex items-center justify-between p-3 rounded-lg border bg-stone-50 border-stone-200">
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-medium w-5 text-stone-400">1.</span>
+              <span className="text-sm text-stone-700">커버</span>
+              <span className="text-[10px] px-1.5 py-0.5 bg-stone-200 text-stone-500 rounded">
+                고정
+              </span>
+            </div>
+            <div className="p-1.5 text-stone-300">
+              <Lock className="w-4 h-4" />
+            </div>
+          </div>
 
-            return (
-              <div
-                key={id}
-                className={`flex items-center justify-between p-3 rounded-lg border ${
-                  isActive
-                    ? 'bg-white border-stone-200'
-                    : 'bg-stone-50 border-stone-100'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className={`text-xs font-medium w-5 ${isActive ? 'text-stone-400' : 'text-stone-300'}`}>
-                    {index + 1}.
-                  </span>
-                  <span className={`text-sm ${isActive ? 'text-stone-700' : 'text-stone-400'}`}>
-                    {SECTION_LABELS[id]}
-                  </span>
-                  {note && (
-                    <span className="text-[10px] px-1.5 py-0.5 bg-stone-100 text-stone-400 rounded">
-                      {note}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-0.5">
-                  <button
-                    onClick={() => moveSection(index, 'up')}
-                    disabled={index === 0}
-                    className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    aria-label="위로 이동"
-                  >
-                    <ChevronUp className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => moveSection(index, 'down')}
-                    disabled={index === sectionOrder.length - 1}
-                    className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    aria-label="아래로 이동"
-                  >
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+          {/* 이동 가능한 섹션들 */}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={sectionOrder}
+              strategy={verticalListSortingStrategy}
+            >
+              {sectionOrder.map((id, index) => (
+                <SortableItem
+                  key={id}
+                  id={id}
+                  index={index}
+                  isActive={isSectionActive(id)}
+                  note={getSectionNote(id)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
       </div>
 
