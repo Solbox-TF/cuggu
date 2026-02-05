@@ -64,25 +64,45 @@ export function getStaticMapUrl(
 
 // ============================================================
 // Navigation URL helpers
+// Android Intent URL: 앱이 없으면 자동으로 fallback URL로 이동
 // ============================================================
 
-export function getKakaoNaviUrl(lat: number, lng: number, name: string) {
+export interface NavUrls {
+  app: string;
+  androidIntent: string;
+  web: string;
+}
+
+export function getKakaoNaviUrl(lat: number, lng: number, name: string): NavUrls {
+  const appPath = `navigate?name=${encodeURIComponent(name)}&lat=${lat}&lng=${lng}`;
+  const webUrl = `https://map.kakao.com/link/to/${encodeURIComponent(name)},${lat},${lng}`;
+
   return {
-    app: `kakaonavi://navigate?name=${encodeURIComponent(name)}&lat=${lat}&lng=${lng}`,
-    web: `https://map.kakao.com/link/to/${encodeURIComponent(name)},${lat},${lng}`,
+    app: `kakaonavi://${appPath}`,
+    androidIntent: `intent://${appPath}#Intent;scheme=kakaonavi;package=com.locnall.KimGiSa;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`,
+    web: webUrl,
   };
 }
 
-export function getNaverMapUrl(lat: number, lng: number, name: string) {
+export function getNaverMapUrl(lat: number, lng: number, name: string): NavUrls {
+  const appPath = `route/car?dlat=${lat}&dlng=${lng}&dname=${encodeURIComponent(name)}&appname=cuggu`;
+  const webUrl = `https://map.naver.com/p/directions/-/-/${lng},${lat},${encodeURIComponent(name)}/-/car`;
+
   return {
-    app: `nmap://route/car?dlat=${lat}&dlng=${lng}&dname=${encodeURIComponent(name)}`,
-    web: `https://map.naver.com/v5/directions/-,-/-,${lat},${lng},${encodeURIComponent(name)}`,
+    app: `nmap://${appPath}`,
+    androidIntent: `intent://${appPath}#Intent;scheme=nmap;package=com.nhn.android.nmap;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`,
+    web: webUrl,
   };
 }
 
-export function getTMapUrl(lat: number, lng: number, name: string) {
+export function getTMapUrl(lat: number, lng: number, name: string): NavUrls {
+  const appPath = `route?goalname=${encodeURIComponent(name)}&goaly=${lat}&goalx=${lng}`;
+  // 티맵 웹은 좌표 전달 불가 → 구글 지도로 fallback
+  const webUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+
   return {
-    app: `tmap://route?goalname=${encodeURIComponent(name)}&goaly=${lat}&goalx=${lng}`,
-    web: `https://tmap.life/routes`,
+    app: `tmap://${appPath}`,
+    androidIntent: `intent://${appPath}#Intent;scheme=tmap;package=com.skt.tmap.ku;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`,
+    web: webUrl,
   };
 }
