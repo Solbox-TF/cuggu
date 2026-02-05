@@ -167,6 +167,22 @@ export async function PUT(
       updateData.status = data.status;
     }
 
+    // 확장 데이터 (deep merge - 기존 데이터 보존)
+    if (data.extendedData !== undefined) {
+      const existingExtended = (existing.extendedData as Record<string, unknown>) || {};
+      updateData.extendedData = {
+        ...existingExtended,
+        ...data.extendedData,
+        // 중첩 객체는 개별 merge
+        groom: { ...(existingExtended.groom as object || {}), ...(data.extendedData.groom || {}) },
+        bride: { ...(existingExtended.bride as object || {}), ...(data.extendedData.bride || {}) },
+        venue: { ...(existingExtended.venue as object || {}), ...(data.extendedData.venue || {}) },
+        content: { ...(existingExtended.content as object || {}), ...(data.extendedData.content || {}) },
+        gallery: { ...(existingExtended.gallery as object || {}), ...(data.extendedData.gallery || {}) },
+        settings: { ...(existingExtended.settings as object || {}), ...(data.extendedData.settings || {}) },
+      };
+    }
+
     const [updated] = await db
       .update(invitations)
       .set(updateData)

@@ -85,6 +85,45 @@ export const SettingsSchema = z.object({
 });
 
 // ============================================================
+// 확장 데이터 스키마 (JSONB 저장용)
+// DB에 개별 컬럼이 없는 필드들을 한 덩어리로 저장
+// ============================================================
+
+const ExtendedPersonSchema = z.object({
+  fatherName: z.string().optional(),
+  motherName: z.string().optional(),
+  isDeceased: z.object({
+    father: z.boolean().optional(),
+    mother: z.boolean().optional(),
+  }).optional(),
+  phone: z.string().optional(),
+  relation: z.string().optional(),
+  account: AccountSchema.optional(),
+  parentAccounts: ParentAccountsSchema,
+}).partial();
+
+export const ExtendedDataSchema = z.object({
+  groom: ExtendedPersonSchema.optional(),
+  bride: ExtendedPersonSchema.optional(),
+  venue: z.object({
+    hall: z.string().optional(),
+    lat: z.number().optional(),
+    lng: z.number().optional(),
+    tel: z.string().optional(),
+    transportation: z.string().optional(),
+  }).optional(),
+  content: z.object({
+    notice: z.string().optional(),
+  }).optional(),
+  gallery: z.object({
+    coverImage: z.string().url().optional(),
+  }).optional(),
+  settings: SettingsSchema.partial().optional(),
+}).default({});
+
+export type ExtendedData = z.infer<typeof ExtendedDataSchema>;
+
+// ============================================================
 // Main Invitation Schema
 // ============================================================
 
@@ -178,6 +217,7 @@ export const UpdateInvitationSchema = CreateInvitationSchema.partial().extend({
   settings: SettingsSchema.partial().optional(),
   aiPhotoUrl: z.string().url().optional(),
   isPasswordProtected: z.boolean().optional(),
+  extendedData: ExtendedDataSchema.optional(),
 });
 
 // ============================================================

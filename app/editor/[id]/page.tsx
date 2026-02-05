@@ -24,6 +24,7 @@ export default function InvitationEditorPage() {
   const {
     invitation,
     setInvitation,
+    updateInvitation,
     activeTab,
     isSaving,
     lastSaved,
@@ -96,6 +97,7 @@ export default function InvitationEditorPage() {
         invitation={invitation}
         isSaving={isSaving}
         lastSaved={lastSaved}
+        onUpdateInvitation={updateInvitation}
       />
 
       {/* 3-패널 레이아웃 */}
