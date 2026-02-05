@@ -60,16 +60,28 @@ export function NavigationButtons({ lat, lng, venueName }: NavigationButtonsProp
         }
       }, 1000);
     } else if (isIOS) {
-      // iOS: 기존 방식 (앱 스킴 → 웹 fallback)
-      const start = Date.now();
+      // iOS: visibilitychange로 앱 전환 감지
+      let didLeave = false;
+
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          didLeave = true;
+          document.removeEventListener('visibilitychange', handleVisibilityChange);
+        }
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
       window.location.href = urls.app;
+
+      // 1.5초 후에도 페이지를 안 떠났으면 앱이 없는 것
       setTimeout(() => {
-        if (!document.hidden && Date.now() - start < 1500) {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        if (!didLeave && !document.hidden) {
           window.open(urls.web, '_blank');
           setToast({ app: appType, visible: true });
           setTimeout(() => setToast(null), 5000);
         }
-      }, 500);
+      }, 1500);
     } else {
       // Desktop: 웹 버전 직접 열기
       window.open(urls.web, '_blank');
