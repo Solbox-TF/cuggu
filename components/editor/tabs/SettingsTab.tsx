@@ -1,12 +1,18 @@
 'use client';
 
+import { ChevronUp, ChevronDown, RotateCcw } from 'lucide-react';
 import { useInvitationEditor } from '@/stores/invitation-editor';
+import {
+  DEFAULT_SECTION_ORDER,
+  SECTION_LABELS,
+  type SectionId,
+} from '@/schemas/invitation';
 
 /**
  * 설정 탭
  *
+ * - 섹션 순서 변경
  * - 비밀번호 보호
- * - 공개 범위
  * - 삭제 예정일
  */
 export function SettingsTab() {
@@ -21,12 +27,119 @@ export function SettingsTab() {
     });
   };
 
+  // 섹션 순서 (기본값 fallback)
+  const sectionOrder: SectionId[] = (invitation.settings?.sectionOrder as SectionId[] | undefined) ?? [...DEFAULT_SECTION_ORDER];
+
+  // 섹션 활성 상태 확인
+  const isSectionActive = (id: SectionId): boolean => {
+    if (id === 'parents') return invitation.settings?.showParents !== false;
+    if (id === 'accounts') return invitation.settings?.showAccounts !== false;
+    if (id === 'gallery') return (invitation.gallery?.images?.length ?? 0) > 0;
+    return true;
+  };
+
+  // 비활성 섹션 상태 노트
+  const getSectionNote = (id: SectionId): string | null => {
+    if (id === 'parents' && !isSectionActive(id)) return '숨김';
+    if (id === 'accounts' && !isSectionActive(id)) return '숨김';
+    if (id === 'gallery' && !isSectionActive(id)) return '사진 없음';
+    return null;
+  };
+
+  // 섹션 이동
+  const moveSection = (index: number, direction: 'up' | 'down') => {
+    const newOrder = [...sectionOrder];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newOrder.length) return;
+    [newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[index]];
+    handleSettingsChange('sectionOrder', newOrder);
+  };
+
+  // 기본 순서로 리셋
+  const resetOrder = () => {
+    handleSettingsChange('sectionOrder', [...DEFAULT_SECTION_ORDER]);
+  };
+
+  // 현재 순서가 기본 순서와 같은지 확인
+  const isDefaultOrder = sectionOrder.every((id, i) => id === DEFAULT_SECTION_ORDER[i]);
+
   return (
     <div className="space-y-6">
       {/* 헤더 */}
       <div>
         <h2 className="text-xl font-semibold text-stone-900 tracking-tight mb-1">설정</h2>
         <p className="text-sm text-stone-500">청첩장 공개 설정을 관리하세요</p>
+      </div>
+
+      {/* 섹션 순서 */}
+      <div className="bg-white rounded-xl p-6 space-y-4 border border-stone-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-stone-700">섹션 순서</h3>
+            <p className="text-xs text-stone-500 mt-1">
+              청첩장 섹션의 표시 순서를 변경하세요
+            </p>
+          </div>
+          <button
+            onClick={resetOrder}
+            disabled={isDefaultOrder}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            초기화
+          </button>
+        </div>
+
+        <div className="space-y-1">
+          {sectionOrder.map((id, index) => {
+            const isActive = isSectionActive(id);
+            const note = getSectionNote(id);
+
+            return (
+              <div
+                key={id}
+                className={`flex items-center justify-between p-3 rounded-lg border ${
+                  isActive
+                    ? 'bg-white border-stone-200'
+                    : 'bg-stone-50 border-stone-100'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs font-medium w-5 ${isActive ? 'text-stone-400' : 'text-stone-300'}`}>
+                    {index + 1}.
+                  </span>
+                  <span className={`text-sm ${isActive ? 'text-stone-700' : 'text-stone-400'}`}>
+                    {SECTION_LABELS[id]}
+                  </span>
+                  {note && (
+                    <span className="text-[10px] px-1.5 py-0.5 bg-stone-100 text-stone-400 rounded">
+                      {note}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-0.5">
+                  <button
+                    onClick={() => moveSection(index, 'up')}
+                    disabled={index === 0}
+                    className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    aria-label="위로 이동"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => moveSection(index, 'down')}
+                    disabled={index === sectionOrder.length - 1}
+                    className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    aria-label="아래로 이동"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* 비밀번호 보호 */}

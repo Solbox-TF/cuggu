@@ -26,6 +26,49 @@ export const InvitationStatusSchema = z.enum([
 ]);
 
 // ============================================================
+// Section Ordering (섹션 순서 변경)
+// ============================================================
+
+// 재정렬 가능한 섹션 ID (커버/푸터 제외)
+export const REORDERABLE_SECTIONS = [
+  'greeting',
+  'parents',
+  'ceremony',
+  'gallery',
+  'accounts',
+] as const;
+
+export type SectionId = typeof REORDERABLE_SECTIONS[number];
+
+// 기본 순서 (하위 호환용)
+export const DEFAULT_SECTION_ORDER: SectionId[] = [...REORDERABLE_SECTIONS];
+
+// 섹션 레이블 (UI용)
+export const SECTION_LABELS: Record<SectionId, string> = {
+  greeting: '인사말',
+  parents: '신랑/신부 정보',
+  ceremony: '예식 정보',
+  gallery: '갤러리',
+  accounts: '계좌번호',
+};
+
+// 순서 데이터 정합성 보장 (누락/중복/잘못된 값 방어)
+export function sanitizeSectionOrder(order: SectionId[] | undefined): SectionId[] {
+  if (!order) return [...DEFAULT_SECTION_ORDER];
+
+  const seen = new Set<string>();
+  const valid = order.filter((id): id is SectionId => {
+    if (seen.has(id) || !(REORDERABLE_SECTIONS as readonly string[]).includes(id)) return false;
+    seen.add(id);
+    return true;
+  });
+
+  // 누락된 섹션은 끝에 추가
+  const missing = DEFAULT_SECTION_ORDER.filter((id) => !valid.includes(id));
+  return [...valid, ...missing];
+}
+
+// ============================================================
 // Sub-schemas (청첩장 내부 데이터)
 // ============================================================
 
@@ -89,6 +132,7 @@ export const SettingsSchema = z.object({
   enableRsvp: z.boolean().default(true),
   backgroundColor: z.string().optional(),
   fontFamily: z.string().optional(),
+  sectionOrder: z.array(z.string()).optional(), // 섹션 표시 순서
 });
 
 // ============================================================

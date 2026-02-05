@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, MapPin, Phone } from "lucide-react";
-import { Invitation } from "@/schemas/invitation";
+import {
+  Invitation,
+  sanitizeSectionOrder,
+  type SectionId,
+} from "@/schemas/invitation";
 import {
   formatWeddingDate,
   formatWeddingTime,
@@ -25,66 +29,22 @@ export function ModernTemplate({ data, isPreview = false }: ModernTemplateProps)
   const timeStr = formatWeddingTime(weddingDate);
   const fullDateStr = formatWeddingDateTime(weddingDate);
 
-  return (
-    <div className="min-h-screen bg-zinc-50">
-      {/* 커버 섹션 */}
-      <section className="relative min-h-[70vh] md:min-h-screen flex items-end overflow-hidden pb-16 md:pb-20">
-        {/* 배경 이미지 */}
-        {data.gallery.coverImage && (
-          <div className="absolute inset-0">
-            <img
-              src={data.gallery.coverImage}
-              alt="Wedding Cover"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 via-zinc-900/30 to-transparent" />
-          </div>
-        )}
+  // 섹션 순서
+  const sectionOrder = sanitizeSectionOrder(data.settings.sectionOrder as SectionId[] | undefined);
 
-        {/* 커버 이미지 없을 때 배경 */}
-        {!data.gallery.coverImage && (
-          <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900" />
-        )}
+  // 계좌 데이터 존재 여부
+  const hasAccounts =
+    data.groom.account ||
+    (data.groom.parentAccounts?.father?.length ?? 0) > 0 ||
+    (data.groom.parentAccounts?.mother?.length ?? 0) > 0 ||
+    data.bride.account ||
+    (data.bride.parentAccounts?.father?.length ?? 0) > 0 ||
+    (data.bride.parentAccounts?.mother?.length ?? 0) > 0;
 
-        {/* 커버 콘텐츠 - 좌정렬 */}
-        <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="relative z-10 px-8 md:px-12 w-full"
-        >
-          <p className="text-xs tracking-[0.4em] text-emerald-400 uppercase mb-4">
-            Wedding Invitation
-          </p>
-
-          <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight mb-2">
-            {data.groom.name}
-          </h1>
-          <div className="flex items-center gap-4 mb-2">
-            <div className="h-px w-12 bg-emerald-400" />
-            <span className="text-emerald-400 text-lg">&</span>
-            <div className="h-px w-12 bg-emerald-400" />
-          </div>
-          <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight mb-8">
-            {data.bride.name}
-          </h1>
-
-          <div className="text-sm text-zinc-300 space-y-1">
-            <p>{dateStr}</p>
-            <p>{timeStr}</p>
-            <p className="text-zinc-400">
-              {data.wedding.venue.name}
-              {data.wedding.venue.hall && ` ${data.wedding.venue.hall}`}
-            </p>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* 디바이더 */}
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
-
-      {/* 인사말 섹션 */}
-      <section className="py-16 md:py-24 px-8 md:px-12">
+  // 섹션 렌더러
+  const sections: Record<SectionId, () => React.ReactNode> = {
+    greeting: () => (
+      <section key="greeting" className="py-16 md:py-24 px-8 md:px-12">
         <div className="max-w-2xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -101,13 +61,12 @@ export function ModernTemplate({ data, isPreview = false }: ModernTemplateProps)
           </motion.div>
         </div>
       </section>
+    ),
 
-      {/* 디바이더 */}
-      <div className="h-px bg-zinc-200 mx-8 md:mx-12" />
-
-      {/* 신랑/신부 정보 섹션 */}
-      {data.settings.showParents && (
-        <section className="py-16 md:py-20 px-8 md:px-12">
+    parents: () => {
+      if (!data.settings.showParents) return null;
+      return (
+        <section key="parents" className="py-16 md:py-20 px-8 md:px-12">
           <div className="max-w-2xl">
             <p className="text-xs tracking-[0.3em] text-emerald-600 uppercase mb-10">
               Bride & Groom
@@ -164,13 +123,11 @@ export function ModernTemplate({ data, isPreview = false }: ModernTemplateProps)
             </div>
           </div>
         </section>
-      )}
+      );
+    },
 
-      {/* 디바이더 */}
-      <div className="h-px bg-zinc-200 mx-8 md:mx-12" />
-
-      {/* 예식 정보 섹션 */}
-      <section className="py-16 md:py-24 px-8 md:px-12">
+    ceremony: () => (
+      <section key="ceremony" className="py-16 md:py-24 px-8 md:px-12">
         <div className="max-w-2xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -227,10 +184,12 @@ export function ModernTemplate({ data, isPreview = false }: ModernTemplateProps)
           </motion.div>
         </div>
       </section>
+    ),
 
-      {/* 갤러리 섹션 */}
-      {data.gallery.images.length > 0 && (
-        <section className="py-16 md:py-24 px-8 md:px-12 bg-zinc-100">
+    gallery: () => {
+      if (data.gallery.images.length === 0) return null;
+      return (
+        <section key="gallery" className="py-16 md:py-24 px-8 md:px-12 bg-zinc-100">
           <div className="max-w-4xl">
             <motion.div
               initial={{ opacity: 0 }}
@@ -273,156 +232,228 @@ export function ModernTemplate({ data, isPreview = false }: ModernTemplateProps)
             </motion.div>
           </div>
         </section>
-      )}
+      );
+    },
 
-      {/* 계좌번호 섹션 */}
-      {data.settings.showAccounts &&
-        (data.groom.account ||
-          (data.groom.parentAccounts?.father?.length ?? 0) > 0 ||
-          (data.groom.parentAccounts?.mother?.length ?? 0) > 0 ||
-          data.bride.account ||
-          (data.bride.parentAccounts?.father?.length ?? 0) > 0 ||
-          (data.bride.parentAccounts?.mother?.length ?? 0) > 0) && (
-          <section className="py-16 md:py-24 px-8 md:px-12">
-            <div className="max-w-2xl">
-              <motion.div
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-              >
-                <p className="text-xs tracking-[0.3em] text-emerald-600 uppercase mb-10">
-                  Account
-                </p>
+    accounts: () => {
+      if (!data.settings.showAccounts || !hasAccounts) return null;
+      return (
+        <section key="accounts" className="py-16 md:py-24 px-8 md:px-12">
+          <div className="max-w-2xl">
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+            >
+              <p className="text-xs tracking-[0.3em] text-emerald-600 uppercase mb-10">
+                Account
+              </p>
 
-                <div className="space-y-8">
-                  {/* 신랑 측 */}
-                  {(data.groom.account ||
-                    (data.groom.parentAccounts?.father?.length ?? 0) > 0 ||
-                    (data.groom.parentAccounts?.mother?.length ?? 0) > 0) && (
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-800 mb-4">
-                        신랑 측
-                      </p>
-                      <div className="space-y-3">
-                        {data.groom.account && (
-                          <div className="py-4 border-b border-zinc-200">
-                            <p className="text-xs text-zinc-400 mb-1">신랑 본인</p>
-                            <p className="text-sm text-zinc-800 font-medium">{data.groom.name}</p>
-                            <p className="text-sm text-zinc-500 mt-1">
-                              {data.groom.account.bank} {data.groom.account.accountNumber}
-                            </p>
-                            <p className="text-xs text-zinc-400 mt-0.5">
-                              예금주: {data.groom.account.accountHolder}
-                            </p>
-                          </div>
-                        )}
+              <div className="space-y-8">
+                {/* 신랑 측 */}
+                {(data.groom.account ||
+                  (data.groom.parentAccounts?.father?.length ?? 0) > 0 ||
+                  (data.groom.parentAccounts?.mother?.length ?? 0) > 0) && (
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-800 mb-4">
+                      신랑 측
+                    </p>
+                    <div className="space-y-3">
+                      {data.groom.account && (
+                        <div className="py-4 border-b border-zinc-200">
+                          <p className="text-xs text-zinc-400 mb-1">신랑 본인</p>
+                          <p className="text-sm text-zinc-800 font-medium">{data.groom.name}</p>
+                          <p className="text-sm text-zinc-500 mt-1">
+                            {data.groom.account.bank} {data.groom.account.accountNumber}
+                          </p>
+                          <p className="text-xs text-zinc-400 mt-0.5">
+                            예금주: {data.groom.account.accountHolder}
+                          </p>
+                        </div>
+                      )}
 
-                        {data.groom.parentAccounts?.father?.map((account, idx) => (
-                          <div key={`groom-father-${idx}`} className="py-4 border-b border-zinc-200">
-                            <p className="text-xs text-zinc-400 mb-1">
-                              아버지{' '}
-                              {data.groom.parentAccounts!.father.length > 1 && `(계좌 ${idx + 1})`}
-                            </p>
-                            <p className="text-sm text-zinc-800 font-medium">
-                              {data.groom.fatherName || '아버지'}
-                            </p>
-                            <p className="text-sm text-zinc-500 mt-1">
-                              {account.bank} {account.accountNumber}
-                            </p>
-                            <p className="text-xs text-zinc-400 mt-0.5">
-                              예금주: {account.accountHolder}
-                            </p>
-                          </div>
-                        ))}
+                      {data.groom.parentAccounts?.father?.map((account, idx) => (
+                        <div key={`groom-father-${idx}`} className="py-4 border-b border-zinc-200">
+                          <p className="text-xs text-zinc-400 mb-1">
+                            아버지{' '}
+                            {data.groom.parentAccounts!.father.length > 1 && `(계좌 ${idx + 1})`}
+                          </p>
+                          <p className="text-sm text-zinc-800 font-medium">
+                            {data.groom.fatherName || '아버지'}
+                          </p>
+                          <p className="text-sm text-zinc-500 mt-1">
+                            {account.bank} {account.accountNumber}
+                          </p>
+                          <p className="text-xs text-zinc-400 mt-0.5">
+                            예금주: {account.accountHolder}
+                          </p>
+                        </div>
+                      ))}
 
-                        {data.groom.parentAccounts?.mother?.map((account, idx) => (
-                          <div key={`groom-mother-${idx}`} className="py-4 border-b border-zinc-200">
-                            <p className="text-xs text-zinc-400 mb-1">
-                              어머니{' '}
-                              {data.groom.parentAccounts!.mother.length > 1 && `(계좌 ${idx + 1})`}
-                            </p>
-                            <p className="text-sm text-zinc-800 font-medium">
-                              {data.groom.motherName || '어머니'}
-                            </p>
-                            <p className="text-sm text-zinc-500 mt-1">
-                              {account.bank} {account.accountNumber}
-                            </p>
-                            <p className="text-xs text-zinc-400 mt-0.5">
-                              예금주: {account.accountHolder}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
+                      {data.groom.parentAccounts?.mother?.map((account, idx) => (
+                        <div key={`groom-mother-${idx}`} className="py-4 border-b border-zinc-200">
+                          <p className="text-xs text-zinc-400 mb-1">
+                            어머니{' '}
+                            {data.groom.parentAccounts!.mother.length > 1 && `(계좌 ${idx + 1})`}
+                          </p>
+                          <p className="text-sm text-zinc-800 font-medium">
+                            {data.groom.motherName || '어머니'}
+                          </p>
+                          <p className="text-sm text-zinc-500 mt-1">
+                            {account.bank} {account.accountNumber}
+                          </p>
+                          <p className="text-xs text-zinc-400 mt-0.5">
+                            예금주: {account.accountHolder}
+                          </p>
+                        </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* 신부 측 */}
-                  {(data.bride.account ||
-                    (data.bride.parentAccounts?.father?.length ?? 0) > 0 ||
-                    (data.bride.parentAccounts?.mother?.length ?? 0) > 0) && (
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-800 mb-4">
-                        신부 측
-                      </p>
-                      <div className="space-y-3">
-                        {data.bride.account && (
-                          <div className="py-4 border-b border-zinc-200">
-                            <p className="text-xs text-zinc-400 mb-1">신부 본인</p>
-                            <p className="text-sm text-zinc-800 font-medium">{data.bride.name}</p>
-                            <p className="text-sm text-zinc-500 mt-1">
-                              {data.bride.account.bank} {data.bride.account.accountNumber}
-                            </p>
-                            <p className="text-xs text-zinc-400 mt-0.5">
-                              예금주: {data.bride.account.accountHolder}
-                            </p>
-                          </div>
-                        )}
+                {/* 신부 측 */}
+                {(data.bride.account ||
+                  (data.bride.parentAccounts?.father?.length ?? 0) > 0 ||
+                  (data.bride.parentAccounts?.mother?.length ?? 0) > 0) && (
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-800 mb-4">
+                      신부 측
+                    </p>
+                    <div className="space-y-3">
+                      {data.bride.account && (
+                        <div className="py-4 border-b border-zinc-200">
+                          <p className="text-xs text-zinc-400 mb-1">신부 본인</p>
+                          <p className="text-sm text-zinc-800 font-medium">{data.bride.name}</p>
+                          <p className="text-sm text-zinc-500 mt-1">
+                            {data.bride.account.bank} {data.bride.account.accountNumber}
+                          </p>
+                          <p className="text-xs text-zinc-400 mt-0.5">
+                            예금주: {data.bride.account.accountHolder}
+                          </p>
+                        </div>
+                      )}
 
-                        {data.bride.parentAccounts?.father?.map((account, idx) => (
-                          <div key={`bride-father-${idx}`} className="py-4 border-b border-zinc-200">
-                            <p className="text-xs text-zinc-400 mb-1">
-                              아버지{' '}
-                              {data.bride.parentAccounts!.father.length > 1 && `(계좌 ${idx + 1})`}
-                            </p>
-                            <p className="text-sm text-zinc-800 font-medium">
-                              {data.bride.fatherName || '아버지'}
-                            </p>
-                            <p className="text-sm text-zinc-500 mt-1">
-                              {account.bank} {account.accountNumber}
-                            </p>
-                            <p className="text-xs text-zinc-400 mt-0.5">
-                              예금주: {account.accountHolder}
-                            </p>
-                          </div>
-                        ))}
+                      {data.bride.parentAccounts?.father?.map((account, idx) => (
+                        <div key={`bride-father-${idx}`} className="py-4 border-b border-zinc-200">
+                          <p className="text-xs text-zinc-400 mb-1">
+                            아버지{' '}
+                            {data.bride.parentAccounts!.father.length > 1 && `(계좌 ${idx + 1})`}
+                          </p>
+                          <p className="text-sm text-zinc-800 font-medium">
+                            {data.bride.fatherName || '아버지'}
+                          </p>
+                          <p className="text-sm text-zinc-500 mt-1">
+                            {account.bank} {account.accountNumber}
+                          </p>
+                          <p className="text-xs text-zinc-400 mt-0.5">
+                            예금주: {account.accountHolder}
+                          </p>
+                        </div>
+                      ))}
 
-                        {data.bride.parentAccounts?.mother?.map((account, idx) => (
-                          <div key={`bride-mother-${idx}`} className="py-4 border-b border-zinc-200">
-                            <p className="text-xs text-zinc-400 mb-1">
-                              어머니{' '}
-                              {data.bride.parentAccounts!.mother.length > 1 && `(계좌 ${idx + 1})`}
-                            </p>
-                            <p className="text-sm text-zinc-800 font-medium">
-                              {data.bride.motherName || '어머니'}
-                            </p>
-                            <p className="text-sm text-zinc-500 mt-1">
-                              {account.bank} {account.accountNumber}
-                            </p>
-                            <p className="text-xs text-zinc-400 mt-0.5">
-                              예금주: {account.accountHolder}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
+                      {data.bride.parentAccounts?.mother?.map((account, idx) => (
+                        <div key={`bride-mother-${idx}`} className="py-4 border-b border-zinc-200">
+                          <p className="text-xs text-zinc-400 mb-1">
+                            어머니{' '}
+                            {data.bride.parentAccounts!.mother.length > 1 && `(계좌 ${idx + 1})`}
+                          </p>
+                          <p className="text-sm text-zinc-800 font-medium">
+                            {data.bride.motherName || '어머니'}
+                          </p>
+                          <p className="text-sm text-zinc-500 mt-1">
+                            {account.bank} {account.accountNumber}
+                          </p>
+                          <p className="text-xs text-zinc-400 mt-0.5">
+                            예금주: {account.accountHolder}
+                          </p>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                </div>
-              </motion.div>
-            </div>
-          </section>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      );
+    },
+  };
+
+  // 동적 섹션 렌더링 (섹션 간 디바이더 포함)
+  const renderSections = () => {
+    const result: React.ReactNode[] = [];
+    sectionOrder.forEach((id) => {
+      const content = sections[id]();
+      if (!content) return;
+      if (result.length > 0) {
+        result.push(
+          <div key={`div-${id}`} className="h-px bg-zinc-200 mx-8 md:mx-12" />
+        );
+      }
+      result.push(<Fragment key={id}>{content}</Fragment>);
+    });
+    return result;
+  };
+
+  return (
+    <div className="min-h-screen bg-zinc-50">
+      {/* 커버 섹션 - 항상 첫 번째 */}
+      <section className="relative min-h-[70vh] md:min-h-screen flex items-end overflow-hidden pb-16 md:pb-20">
+        {data.gallery.coverImage && (
+          <div className="absolute inset-0">
+            <img
+              src={data.gallery.coverImage}
+              alt="Wedding Cover"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 via-zinc-900/30 to-transparent" />
+          </div>
         )}
 
-      {/* Footer */}
+        {!data.gallery.coverImage && (
+          <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900" />
+        )}
+
+        <motion.div
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="relative z-10 px-8 md:px-12 w-full"
+        >
+          <p className="text-xs tracking-[0.4em] text-emerald-400 uppercase mb-4">
+            Wedding Invitation
+          </p>
+
+          <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight mb-2">
+            {data.groom.name}
+          </h1>
+          <div className="flex items-center gap-4 mb-2">
+            <div className="h-px w-12 bg-emerald-400" />
+            <span className="text-emerald-400 text-lg">&</span>
+            <div className="h-px w-12 bg-emerald-400" />
+          </div>
+          <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight mb-8">
+            {data.bride.name}
+          </h1>
+
+          <div className="text-sm text-zinc-300 space-y-1">
+            <p>{dateStr}</p>
+            <p>{timeStr}</p>
+            <p className="text-zinc-400">
+              {data.wedding.venue.name}
+              {data.wedding.venue.hall && ` ${data.wedding.venue.hall}`}
+            </p>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* 커버 직후 gradient 디바이더 */}
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
+
+      {/* 동적 섹션 */}
+      {renderSections()}
+
+      {/* Footer - 항상 마지막 */}
       <footer className="py-10 md:py-14 px-8 md:px-12 border-t border-zinc-200">
         <div className="flex items-center justify-between text-xs text-zinc-400">
           <p>{data.groom.name} & {data.bride.name}</p>

@@ -103,6 +103,7 @@ export function dbRecordToInvitation(row: DbInvitationRow): Invitation {
       enableRsvp: ext.settings?.enableRsvp ?? true,
       backgroundColor: ext.settings?.backgroundColor,
       fontFamily: ext.settings?.fontFamily,
+      sectionOrder: ext.settings?.sectionOrder,
     },
 
     aiPhotoUrl: row.aiPhotoUrl || undefined,
