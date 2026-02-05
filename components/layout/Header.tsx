@@ -1,33 +1,98 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { Menu, X } from "lucide-react";
+
+const navLinks = [
+  { href: "#before-after", label: "AI 사진" },
+  { href: "#pricing", label: "가격" },
+];
 
 export function Header() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <header className="border-b border-gray-200 bg-white">
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? "bg-white/95 backdrop-blur-sm shadow-sm"
+          : "bg-transparent"
+      }`}
+    >
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="text-2xl font-bold text-pink-500">
+        {/* 로고 */}
+        <Link
+          href="/"
+          className="text-2xl font-bold text-rose-500 hover:text-rose-600 transition-colors"
+        >
           Cuggu
         </Link>
-        <nav className="hidden md:flex items-center gap-6">
-          <a
-            href="#features"
-            className="text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            템플릿
-          </a>
-          <a
-            href="#pricing"
-            className="text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            가격
-          </a>
+
+        {/* 데스크톱 네비게이션 */}
+        <nav className="hidden md:flex items-center gap-8">
+          {navLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className={`text-sm font-medium transition-colors ${
+                isScrolled
+                  ? "text-gray-600 hover:text-rose-500"
+                  : "text-gray-700 hover:text-rose-500"
+              }`}
+            >
+              {link.label}
+            </a>
+          ))}
           <Link href="/login">
-            <Button variant="outline" size="sm">
-              로그인
-            </Button>
+            <Button size="sm">시작하기</Button>
           </Link>
         </nav>
+
+        {/* 모바일 햄버거 버튼 */}
+        <button
+          className="md:hidden p-2 text-gray-700"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label="메뉴 열기"
+        >
+          {isMobileMenuOpen ? (
+            <X className="w-6 h-6" />
+          ) : (
+            <Menu className="w-6 h-6" />
+          )}
+        </button>
       </div>
+
+      {/* 모바일 메뉴 */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-white border-t border-gray-100 shadow-lg">
+          <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-gray-700 hover:text-rose-500 py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {link.label}
+              </a>
+            ))}
+            <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+              <Button className="w-full">시작하기</Button>
+            </Link>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }
