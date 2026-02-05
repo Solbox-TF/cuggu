@@ -5,12 +5,6 @@ export default auth((req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
 
-  // 하위 호환: /admin/* → /dashboard/* 리다이렉트
-  if (nextUrl.pathname.startsWith("/admin")) {
-    const newPath = nextUrl.pathname.replace("/admin", "/dashboard");
-    return NextResponse.redirect(new URL(newPath + nextUrl.search, nextUrl));
-  }
-
   // 보호된 라우트
   const isProtectedRoute =
     nextUrl.pathname.startsWith("/dashboard") ||

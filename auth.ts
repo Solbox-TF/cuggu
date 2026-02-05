@@ -101,6 +101,13 @@ export const authConfig = {
         session.user.name = user.name;
         session.user.email = user.email;
         session.user.image = user.image;
+
+        // role 조회 (Admin 권한 체크용)
+        const dbUser = await db.query.users.findFirst({
+          where: eq(users.id, user.id),
+          columns: { role: true },
+        });
+        session.user.role = dbUser?.role || "USER";
       }
       return session;
     },
