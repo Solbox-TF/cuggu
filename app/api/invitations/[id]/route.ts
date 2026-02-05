@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { db } from '@/db';
 import { invitations } from '@/db/schema';
 import { UpdateInvitationSchema } from '@/schemas/invitation';
+import { dbRecordToInvitation, invitationToDbUpdate } from '@/lib/invitation-utils';
 import { eq } from 'drizzle-orm';
 
 // GET /api/invitations/[id] - 단건 조회 (권한 체크)
@@ -45,7 +46,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: invitation,
+      data: dbRecordToInvitation(invitation as any),
     });
   } catch (error) {
     console.error('청첩장 조회 실패:', error);
@@ -107,81 +108,25 @@ export async function PUT(
 
     const data = parsed.data;
 
-    // DB 업데이트 (부분 업데이트 지원)
-    const updateData: any = {
-      updatedAt: new Date(),
-    };
+    // invitationToDbUpdate()로 flat 컬럼 + extendedData 분리
+    const dbUpdate = invitationToDbUpdate(data);
 
-    // 템플릿 변경
-    if (data.templateId !== undefined) {
-      updateData.templateId = data.templateId;
-    }
-
-    // 신랑 정보
-    if (data.groom?.name !== undefined) {
-      updateData.groomName = data.groom.name;
-    }
-
-    // 신부 정보
-    if (data.bride?.name !== undefined) {
-      updateData.brideName = data.bride.name;
-    }
-
-    // 예식 정보
-    if (data.wedding?.date !== undefined) {
-      updateData.weddingDate = new Date(data.wedding.date);
-      // 만료일도 함께 업데이트 (결혼식 90일 후)
-      updateData.expiresAt = new Date(
-        new Date(data.wedding.date).getTime() + 90 * 24 * 60 * 60 * 1000
-      );
-    }
-    if (data.wedding?.venue?.name !== undefined) {
-      updateData.venueName = data.wedding.venue.name;
-    }
-    if (data.wedding?.venue?.address !== undefined) {
-      updateData.venueAddress = data.wedding.venue.address;
-    }
-
-    // 인사말
-    if (data.content?.greeting !== undefined) {
-      updateData.introMessage = data.content.greeting;
-    }
-
-    // 갤러리
-    if (data.gallery?.images !== undefined) {
-      updateData.galleryImages = data.gallery.images;
-    }
-
-    // AI 사진
-    if (data.aiPhotoUrl !== undefined) {
-      updateData.aiPhotoUrl = data.aiPhotoUrl;
-    }
-
-    // 비밀번호 보호
-    if (data.isPasswordProtected !== undefined) {
-      updateData.isPasswordProtected = data.isPasswordProtected;
-    }
-
-    // 상태
-    if (data.status !== undefined) {
-      updateData.status = data.status;
-    }
-
-    // 확장 데이터 (deep merge - 기존 데이터 보존)
-    if (data.extendedData !== undefined) {
-      const existingExtended = (existing.extendedData as Record<string, unknown>) || {};
-      updateData.extendedData = {
-        ...existingExtended,
-        ...data.extendedData,
-        // 중첩 객체는 개별 merge
-        groom: { ...(existingExtended.groom as object || {}), ...(data.extendedData.groom || {}) },
-        bride: { ...(existingExtended.bride as object || {}), ...(data.extendedData.bride || {}) },
-        venue: { ...(existingExtended.venue as object || {}), ...(data.extendedData.venue || {}) },
-        content: { ...(existingExtended.content as object || {}), ...(data.extendedData.content || {}) },
-        gallery: { ...(existingExtended.gallery as object || {}), ...(data.extendedData.gallery || {}) },
-        settings: { ...(existingExtended.settings as object || {}), ...(data.extendedData.settings || {}) },
+    // extendedData deep merge (기존 데이터 보존)
+    if (dbUpdate.extendedData) {
+      const existingExt = (existing.extendedData as Record<string, any>) || {};
+      dbUpdate.extendedData = {
+        ...existingExt,
+        ...(dbUpdate.extendedData as Record<string, any>),
+        groom: { ...(existingExt.groom || {}), ...((dbUpdate.extendedData as any).groom || {}) },
+        bride: { ...(existingExt.bride || {}), ...((dbUpdate.extendedData as any).bride || {}) },
+        venue: { ...(existingExt.venue || {}), ...((dbUpdate.extendedData as any).venue || {}) },
+        content: { ...(existingExt.content || {}), ...((dbUpdate.extendedData as any).content || {}) },
+        gallery: { ...(existingExt.gallery || {}), ...((dbUpdate.extendedData as any).gallery || {}) },
+        settings: { ...(existingExt.settings || {}), ...((dbUpdate.extendedData as any).settings || {}) },
       };
     }
+
+    const updateData: any = { ...dbUpdate, updatedAt: new Date() };
 
     const [updated] = await db
       .update(invitations)

@@ -10,6 +10,7 @@ import {
   formatWeddingDateTime,
 } from "@/lib/utils/date";
 import { GalleryLightbox } from "./GalleryLightbox";
+import { formatFamilyName } from "@/lib/utils/family-display";
 
 interface MinimalTemplateProps {
   data: Invitation;
@@ -118,7 +119,7 @@ export function MinimalTemplate({ data, isPreview = false }: MinimalTemplateProp
                   Groom
                 </p>
                 <p className="text-xs text-stone-400 mb-2">
-                  {data.groom.relation ? `${data.groom.fatherName}·${data.groom.motherName}의 ${data.groom.relation}` : "신랑"}
+                  {formatFamilyName(data.groom) || "신랑"}
                 </p>
                 <h3 className="text-xl font-light tracking-[0.1em] text-stone-900 mb-3">
                   {data.groom.name}
@@ -146,7 +147,7 @@ export function MinimalTemplate({ data, isPreview = false }: MinimalTemplateProp
                   Bride
                 </p>
                 <p className="text-xs text-stone-400 mb-2">
-                  {data.bride.relation ? `${data.bride.fatherName}·${data.bride.motherName}의 ${data.bride.relation}` : "신부"}
+                  {formatFamilyName(data.bride) || "신부"}
                 </p>
                 <h3 className="text-xl font-light tracking-[0.1em] text-stone-900 mb-3">
                   {data.bride.name}

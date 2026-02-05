@@ -10,6 +10,7 @@ import {
   formatWeddingDateTime,
 } from "@/lib/utils/date";
 import { GalleryLightbox } from "./GalleryLightbox";
+import { formatFamilyName } from "@/lib/utils/family-display";
 
 interface FloralTemplateProps {
   data: Invitation;
@@ -130,7 +131,7 @@ export function FloralTemplate({ data, isPreview = false }: FloralTemplateProps)
                 className="text-center bg-white/50 rounded-2xl p-6 border border-rose-100"
               >
                 <p className="text-xs text-rose-400 mb-3">
-                  {data.groom.relation ? `${data.groom.fatherName}·${data.groom.motherName}의 ${data.groom.relation}` : "신랑"}
+                  {formatFamilyName(data.groom) || "신랑"}
                 </p>
                 <h3 className="font-serif text-2xl text-rose-900 mb-3">
                   {data.groom.name}
@@ -155,7 +156,7 @@ export function FloralTemplate({ data, isPreview = false }: FloralTemplateProps)
                 className="text-center bg-white/50 rounded-2xl p-6 border border-rose-100"
               >
                 <p className="text-xs text-rose-400 mb-3">
-                  {data.bride.relation ? `${data.bride.fatherName}·${data.bride.motherName}의 ${data.bride.relation}` : "신부"}
+                  {formatFamilyName(data.bride) || "신부"}
                 </p>
                 <h3 className="font-serif text-2xl text-rose-900 mb-3">
                   {data.bride.name}

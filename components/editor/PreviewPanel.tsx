@@ -34,7 +34,9 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
         name: invitation.groom?.name || '신랑',
         fatherName: invitation.groom?.fatherName,
         motherName: invitation.groom?.motherName,
+        isDeceased: invitation.groom?.isDeceased,
         relation: invitation.groom?.relation,
+        displayMode: invitation.groom?.displayMode,
         phone: invitation.groom?.phone,
         account: invitation.groom?.account,
         parentAccounts: invitation.groom?.parentAccounts || {
@@ -47,7 +49,9 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
         name: invitation.bride?.name || '신부',
         fatherName: invitation.bride?.fatherName,
         motherName: invitation.bride?.motherName,
+        isDeceased: invitation.bride?.isDeceased,
         relation: invitation.bride?.relation,
+        displayMode: invitation.bride?.displayMode,
         phone: invitation.bride?.phone,
         account: invitation.bride?.account,
         parentAccounts: invitation.bride?.parentAccounts || {

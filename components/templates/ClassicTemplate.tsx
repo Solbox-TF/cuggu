@@ -10,6 +10,7 @@ import {
   formatWeddingDateTime,
 } from "@/lib/utils/date";
 import { GalleryLightbox } from "./GalleryLightbox";
+import { formatFamilyName } from "@/lib/utils/family-display";
 
 interface ClassicTemplateProps {
   data: Invitation;
@@ -116,7 +117,7 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
                 className="text-center"
               >
                 <p className="text-xs md:text-sm text-amber-800 mb-3 md:mb-4 font-medium">
-                  {data.groom.relation ? `${data.groom.fatherName}·${data.groom.motherName}의 ${data.groom.relation}` : "신랑"}
+                  {formatFamilyName(data.groom) || "신랑"}
                 </p>
                 <h3 className="text-2xl md:text-3xl font-serif text-gray-800 mb-3 md:mb-4">
                   {data.groom.name}
@@ -140,7 +141,7 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
                 className="text-center"
               >
                 <p className="text-xs md:text-sm text-amber-800 mb-3 md:mb-4 font-medium">
-                  {data.bride.relation ? `${data.bride.fatherName}·${data.bride.motherName}의 ${data.bride.relation}` : "신부"}
+                  {formatFamilyName(data.bride) || "신부"}
                 </p>
                 <h3 className="text-2xl md:text-3xl font-serif text-gray-800 mb-3 md:mb-4">
                   {data.bride.name}

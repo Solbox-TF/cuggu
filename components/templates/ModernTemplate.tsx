@@ -10,6 +10,7 @@ import {
   formatWeddingDateTime,
 } from "@/lib/utils/date";
 import { GalleryLightbox } from "./GalleryLightbox";
+import { formatFamilyName } from "@/lib/utils/family-display";
 
 interface ModernTemplateProps {
   data: Invitation;
@@ -121,7 +122,7 @@ export function ModernTemplate({ data, isPreview = false }: ModernTemplateProps)
                 transition={{ duration: 0.5 }}
               >
                 <p className="text-xs text-zinc-400 mb-2">
-                  {data.groom.relation ? `${data.groom.fatherName}·${data.groom.motherName}의 ${data.groom.relation}` : "신랑"}
+                  {formatFamilyName(data.groom) || "신랑"}
                 </p>
                 <h3 className="text-2xl md:text-3xl font-bold text-zinc-900 mb-3">
                   {data.groom.name}
@@ -145,7 +146,7 @@ export function ModernTemplate({ data, isPreview = false }: ModernTemplateProps)
                 transition={{ duration: 0.5 }}
               >
                 <p className="text-xs text-zinc-400 mb-2">
-                  {data.bride.relation ? `${data.bride.fatherName}·${data.bride.motherName}의 ${data.bride.relation}` : "신부"}
+                  {formatFamilyName(data.bride) || "신부"}
                 </p>
                 <h3 className="text-2xl md:text-3xl font-bold text-zinc-900 mb-3">
                   {data.bride.name}

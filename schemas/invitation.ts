@@ -4,6 +4,12 @@ import { z } from "zod";
 // Enums
 // ============================================================
 
+export const FamilyDisplayModeSchema = z.enum([
+  'full_names',           // 양부모 실명 (기본)
+  'single_parent_father', // 아버지만
+  'single_parent_mother', // 어머니만
+]);
+
 export const TemplateCategorySchema = z.enum([
   "CLASSIC",
   "MODERN",
@@ -36,6 +42,7 @@ export const PersonSchema = z.object({
     .optional(),
   phone: z.string().optional(),
   relation: z.string().optional(), // "장남", "차남", "장녀", "차녀" 등
+  displayMode: FamilyDisplayModeSchema.optional(),
 });
 
 // 계좌 정보
@@ -98,6 +105,7 @@ const ExtendedPersonSchema = z.object({
   }).optional(),
   phone: z.string().optional(),
   relation: z.string().optional(),
+  displayMode: FamilyDisplayModeSchema.optional(),
   account: AccountSchema.optional(),
   parentAccounts: ParentAccountsSchema,
 }).partial();
@@ -183,14 +191,30 @@ export const CreateInvitationSchema = z.object({
     name: z.string().min(1, "신랑 이름을 입력해주세요"),
     fatherName: z.string().optional(),
     motherName: z.string().optional(),
+    isDeceased: z.object({
+      father: z.boolean().optional(),
+      mother: z.boolean().optional(),
+    }).optional(),
     phone: z.string().optional(),
+    relation: z.string().optional(),
+    displayMode: FamilyDisplayModeSchema.optional(),
+    account: AccountSchema.optional(),
+    parentAccounts: ParentAccountsSchema,
   }),
 
   bride: z.object({
     name: z.string().min(1, "신부 이름을 입력해주세요"),
     fatherName: z.string().optional(),
     motherName: z.string().optional(),
+    isDeceased: z.object({
+      father: z.boolean().optional(),
+      mother: z.boolean().optional(),
+    }).optional(),
     phone: z.string().optional(),
+    relation: z.string().optional(),
+    displayMode: FamilyDisplayModeSchema.optional(),
+    account: AccountSchema.optional(),
+    parentAccounts: ParentAccountsSchema,
   }),
 
   wedding: z.object({
@@ -224,6 +248,7 @@ export const UpdateInvitationSchema = CreateInvitationSchema.partial().extend({
 // Types (Zod에서 자동 추론)
 // ============================================================
 
+export type FamilyDisplayMode = z.infer<typeof FamilyDisplayModeSchema>;
 export type TemplateCategory = z.infer<typeof TemplateCategorySchema>;
 export type InvitationStatus = z.infer<typeof InvitationStatusSchema>;
 export type Person = z.infer<typeof PersonSchema>;

@@ -56,6 +56,7 @@ export function dbRecordToInvitation(row: DbInvitationRow): Invitation {
       isDeceased: ext.groom?.isDeceased,
       phone: ext.groom?.phone,
       relation: ext.groom?.relation,
+      displayMode: ext.groom?.displayMode,
       account: ext.groom?.account,
       parentAccounts: ext.groom?.parentAccounts,
     },
@@ -67,6 +68,7 @@ export function dbRecordToInvitation(row: DbInvitationRow): Invitation {
       isDeceased: ext.bride?.isDeceased,
       phone: ext.bride?.phone,
       relation: ext.bride?.relation,
+      displayMode: ext.bride?.displayMode,
       account: ext.bride?.account,
       parentAccounts: ext.bride?.parentAccounts,
     },
@@ -119,7 +121,7 @@ export function dbRecordToInvitation(row: DbInvitationRow): Invitation {
  * PUT API에서 사용. 기존 컬럼에 해당하는 값은 flat으로,
  * 나머지는 extendedData JSONB로 분리.
  */
-export function invitationToDbUpdate(data: Partial<Invitation>) {
+export function invitationToDbUpdate(data: Record<string, any>) {
   const updateData: Record<string, unknown> = {};
   const extendedData: Record<string, unknown> = {};
 
