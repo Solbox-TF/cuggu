@@ -2,6 +2,9 @@
 
 import { useState, useMemo } from 'react';
 import { ClassicTemplate } from '@/components/templates/ClassicTemplate';
+import { ModernTemplate } from '@/components/templates/ModernTemplate';
+import { MinimalTemplate } from '@/components/templates/MinimalTemplate';
+import { FloralTemplate } from '@/components/templates/FloralTemplate';
 import { ZoomIn, ZoomOut, Smartphone, Monitor, ExternalLink } from 'lucide-react';
 
 interface PreviewPanelProps {
@@ -21,6 +24,7 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
   const [phoneModel, setPhoneModel] = useState<'iphone' | 'galaxy'>('iphone');
 
   // 미리보기용 데이터 변환 (기본값 채우기)
+  // useMemo 의존성을 더 세부적으로 지정하여 실시간 반영 보장
   const previewData = useMemo(() => {
     return {
       id: invitation.id || 'preview',
@@ -31,7 +35,9 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
         name: invitation.groom?.name || '신랑',
         fatherName: invitation.groom?.fatherName,
         motherName: invitation.groom?.motherName,
+        isDeceased: invitation.groom?.isDeceased,
         relation: invitation.groom?.relation,
+        displayMode: invitation.groom?.displayMode,
         phone: invitation.groom?.phone,
         account: invitation.groom?.account,
         parentAccounts: invitation.groom?.parentAccounts || {
@@ -44,7 +50,9 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
         name: invitation.bride?.name || '신부',
         fatherName: invitation.bride?.fatherName,
         motherName: invitation.bride?.motherName,
+        isDeceased: invitation.bride?.isDeceased,
         relation: invitation.bride?.relation,
+        displayMode: invitation.bride?.displayMode,
         phone: invitation.bride?.phone,
         account: invitation.bride?.account,
         parentAccounts: invitation.bride?.parentAccounts || {
@@ -60,7 +68,9 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
           address: invitation.wedding?.venue?.address || '주소를 입력하세요',
           hall: invitation.wedding?.venue?.hall,
           tel: invitation.wedding?.venue?.tel,
-          directions: invitation.wedding?.venue?.directions,
+          lat: invitation.wedding?.venue?.lat,
+          lng: invitation.wedding?.venue?.lng,
+          transportation: invitation.wedding?.venue?.transportation,
         },
       },
 
@@ -77,6 +87,9 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
       settings: {
         showParents: invitation.settings?.showParents ?? true,
         showAccounts: invitation.settings?.showAccounts ?? true,
+        showMap: invitation.settings?.showMap ?? true,
+        enableRsvp: invitation.settings?.enableRsvp ?? true,
+        sectionOrder: invitation.settings?.sectionOrder,
         ...invitation.settings,
       },
 
@@ -86,17 +99,31 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-  }, [invitation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    invitation.id,
+    invitation.userId,
+    invitation.templateId,
+    invitation.groom,
+    invitation.bride,
+    invitation.wedding,
+    invitation.content,
+    invitation.gallery,
+    invitation.settings,
+    invitation.isPasswordProtected,
+  ]);
 
   // 템플릿 컴포넌트 선택
   const getTemplateComponent = (templateId: string) => {
     switch (templateId) {
       case 'classic':
         return ClassicTemplate;
-      // case 'modern':
-      //   return ModernTemplate;
-      // case 'vintage':
-      //   return VintageTemplate;
+      case 'modern':
+        return ModernTemplate;
+      case 'minimal':
+        return MinimalTemplate;
+      case 'floral':
+        return FloralTemplate;
       default:
         return ClassicTemplate;
     }
@@ -105,21 +132,21 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
   const TemplateComponent = getTemplateComponent(invitation.templateId || 'classic');
 
   return (
-    <aside className="w-[420px] bg-gradient-to-br from-pink-50/30 via-white to-rose-50/30 flex flex-col flex-shrink-0 shadow-sm">
+    <aside className="w-[420px] bg-stone-50 border-l border-stone-200 flex flex-col flex-shrink-0">
       {/* 컨트롤 */}
-      <div className="p-4 bg-white/60 backdrop-blur-md">
+      <div className="p-4 bg-white">
         <div className="space-y-3 mb-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">Preview</span>
+            <span className="text-xs font-medium text-stone-600 uppercase tracking-wide">Preview</span>
 
             {/* 디바이스 전환 */}
-            <div className="flex gap-1 bg-slate-200 rounded-md p-0.5">
+            <div className="flex gap-1 bg-stone-200 rounded-md p-0.5">
               <button
                 onClick={() => setDevice('mobile')}
                 className={`p-1.5 rounded transition-all ${
                   device === 'mobile'
-                    ? 'bg-white shadow-sm text-pink-600'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-white shadow-sm text-stone-900'
+                    : 'text-stone-500 hover:text-stone-700'
                 }`}
                 title="모바일"
               >
@@ -129,8 +156,8 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
                 onClick={() => setDevice('desktop')}
                 className={`p-1.5 rounded transition-all ${
                   device === 'desktop'
-                    ? 'bg-white shadow-sm text-pink-600'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-white shadow-sm text-stone-900'
+                    : 'text-stone-500 hover:text-stone-700'
                 }`}
                 title="데스크톱"
               >
@@ -141,13 +168,13 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
 
           {/* 폰 모델 선택 (모바일일 때만) */}
           {device === 'mobile' && (
-            <div className="flex gap-1 bg-slate-100 rounded-md p-0.5">
+            <div className="flex gap-1 bg-stone-100 rounded-md p-0.5">
               <button
                 onClick={() => setPhoneModel('iphone')}
                 className={`flex-1 px-2 py-1 text-xs rounded transition-all ${
                   phoneModel === 'iphone'
-                    ? 'bg-white shadow-sm text-pink-600 font-medium'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-white shadow-sm text-stone-900 font-medium'
+                    : 'text-stone-500 hover:text-stone-700'
                 }`}
               >
                 iPhone
@@ -156,8 +183,8 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
                 onClick={() => setPhoneModel('galaxy')}
                 className={`flex-1 px-2 py-1 text-xs rounded transition-all ${
                   phoneModel === 'galaxy'
-                    ? 'bg-white shadow-sm text-pink-600 font-medium'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-white shadow-sm text-stone-900 font-medium'
+                    : 'text-stone-500 hover:text-stone-700'
                 }`}
               >
                 Galaxy
@@ -170,10 +197,10 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setZoom(Math.max(50, zoom - 25))}
-            className="p-1 hover:bg-slate-100 rounded transition-colors disabled:opacity-30"
+            className="p-1 hover:bg-stone-100 rounded transition-colors disabled:opacity-30"
             disabled={zoom <= 50}
           >
-            <ZoomOut className="w-3.5 h-3.5 text-slate-600" />
+            <ZoomOut className="w-3.5 h-3.5 text-stone-600" />
           </button>
 
           <input
@@ -183,18 +210,18 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
             step="25"
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
-            className="flex-1 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-pink-600 [&::-webkit-slider-thumb]:cursor-pointer"
+            className="flex-1 h-1.5 bg-stone-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-stone-900 [&::-webkit-slider-thumb]:cursor-pointer"
           />
 
           <button
             onClick={() => setZoom(Math.min(150, zoom + 25))}
-            className="p-1 hover:bg-slate-100 rounded transition-colors disabled:opacity-30"
+            className="p-1 hover:bg-stone-100 rounded transition-colors disabled:opacity-30"
             disabled={zoom >= 150}
           >
-            <ZoomIn className="w-3.5 h-3.5 text-slate-600" />
+            <ZoomIn className="w-3.5 h-3.5 text-stone-600" />
           </button>
 
-          <span className="text-xs text-slate-500 font-mono w-10 text-right">
+          <span className="text-xs text-stone-500 font-mono w-10 text-right">
             {zoom}%
           </span>
         </div>
@@ -295,11 +322,11 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
       </div>
 
       {/* 하단 버튼 */}
-      <div className="p-4 bg-white/60 backdrop-blur-md">
+      <div className="p-4 bg-white border-t border-stone-200">
         <button
           onClick={() => window.open(`/inv/${invitation.id}`, '_blank')}
           disabled={!invitation.id}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-lg text-sm font-medium transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-stone-900 hover:bg-stone-800 disabled:bg-stone-200 disabled:text-stone-400 text-white rounded-lg text-sm font-medium transition-colors"
         >
           <ExternalLink className="w-4 h-4" />
           새 탭에서 보기

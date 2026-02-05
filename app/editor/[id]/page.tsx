@@ -24,6 +24,7 @@ export default function InvitationEditorPage() {
   const {
     invitation,
     setInvitation,
+    updateInvitation,
     activeTab,
     isSaving,
     lastSaved,
@@ -43,6 +44,8 @@ export default function InvitationEditorPage() {
         const result = await response.json();
 
         if (result.success && result.data) {
+          console.log('[Editor] loaded invitation:', result.data);
+          console.log('[Editor] venue:', result.data.wedding?.venue);
           setInvitation(result.data);
         }
       } catch (error) {
@@ -82,7 +85,7 @@ export default function InvitationEditorPage() {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-8 h-8 border-4 border-stone-800 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-600">청첩장을 불러오는 중...</p>
         </div>
       </div>
@@ -96,6 +99,7 @@ export default function InvitationEditorPage() {
         invitation={invitation}
         isSaving={isSaving}
         lastSaved={lastSaved}
+        onUpdateInvitation={updateInvitation}
       />
 
       {/* 3-패널 레이아웃 */}

@@ -4,6 +4,12 @@ import { z } from "zod";
 // Enums
 // ============================================================
 
+export const FamilyDisplayModeSchema = z.enum([
+  'full_names',           // 양부모 실명 (기본)
+  'single_parent_father', // 아버지만
+  'single_parent_mother', // 어머니만
+]);
+
 export const TemplateCategorySchema = z.enum([
   "CLASSIC",
   "MODERN",
@@ -18,6 +24,49 @@ export const InvitationStatusSchema = z.enum([
   "EXPIRED",
   "DELETED",
 ]);
+
+// ============================================================
+// Section Ordering (섹션 순서 변경)
+// ============================================================
+
+// 재정렬 가능한 섹션 ID (커버/푸터 제외)
+export const REORDERABLE_SECTIONS = [
+  'greeting',
+  'parents',
+  'ceremony',
+  'gallery',
+  'accounts',
+] as const;
+
+export type SectionId = typeof REORDERABLE_SECTIONS[number];
+
+// 기본 순서 (하위 호환용)
+export const DEFAULT_SECTION_ORDER: SectionId[] = [...REORDERABLE_SECTIONS];
+
+// 섹션 레이블 (UI용)
+export const SECTION_LABELS: Record<SectionId, string> = {
+  greeting: '인사말',
+  parents: '신랑/신부 정보',
+  ceremony: '예식 정보',
+  gallery: '갤러리',
+  accounts: '계좌번호',
+};
+
+// 순서 데이터 정합성 보장 (누락/중복/잘못된 값 방어)
+export function sanitizeSectionOrder(order: SectionId[] | undefined): SectionId[] {
+  if (!order) return [...DEFAULT_SECTION_ORDER];
+
+  const seen = new Set<string>();
+  const valid = order.filter((id): id is SectionId => {
+    if (seen.has(id) || !(REORDERABLE_SECTIONS as readonly string[]).includes(id)) return false;
+    seen.add(id);
+    return true;
+  });
+
+  // 누락된 섹션은 끝에 추가
+  const missing = DEFAULT_SECTION_ORDER.filter((id) => !valid.includes(id));
+  return [...valid, ...missing];
+}
 
 // ============================================================
 // Sub-schemas (청첩장 내부 데이터)
@@ -36,6 +85,7 @@ export const PersonSchema = z.object({
     .optional(),
   phone: z.string().optional(),
   relation: z.string().optional(), // "장남", "차남", "장녀", "차녀" 등
+  displayMode: FamilyDisplayModeSchema.optional(),
 });
 
 // 계좌 정보
@@ -82,7 +132,48 @@ export const SettingsSchema = z.object({
   enableRsvp: z.boolean().default(true),
   backgroundColor: z.string().optional(),
   fontFamily: z.string().optional(),
+  sectionOrder: z.array(z.string()).optional(), // 섹션 표시 순서
 });
+
+// ============================================================
+// 확장 데이터 스키마 (JSONB 저장용)
+// DB에 개별 컬럼이 없는 필드들을 한 덩어리로 저장
+// ============================================================
+
+const ExtendedPersonSchema = z.object({
+  fatherName: z.string().optional(),
+  motherName: z.string().optional(),
+  isDeceased: z.object({
+    father: z.boolean().optional(),
+    mother: z.boolean().optional(),
+  }).optional(),
+  phone: z.string().optional(),
+  relation: z.string().optional(),
+  displayMode: FamilyDisplayModeSchema.optional(),
+  account: AccountSchema.optional(),
+  parentAccounts: ParentAccountsSchema,
+}).partial();
+
+export const ExtendedDataSchema = z.object({
+  groom: ExtendedPersonSchema.optional(),
+  bride: ExtendedPersonSchema.optional(),
+  venue: z.object({
+    hall: z.string().optional(),
+    lat: z.number().optional(),
+    lng: z.number().optional(),
+    tel: z.string().optional(),
+    transportation: z.string().optional(),
+  }).optional(),
+  content: z.object({
+    notice: z.string().optional(),
+  }).optional(),
+  gallery: z.object({
+    coverImage: z.string().url().optional(),
+  }).optional(),
+  settings: SettingsSchema.partial().optional(),
+}).default({});
+
+export type ExtendedData = z.infer<typeof ExtendedDataSchema>;
 
 // ============================================================
 // Main Invitation Schema
@@ -144,23 +235,35 @@ export const CreateInvitationSchema = z.object({
     name: z.string().min(1, "신랑 이름을 입력해주세요"),
     fatherName: z.string().optional(),
     motherName: z.string().optional(),
+    isDeceased: z.object({
+      father: z.boolean().optional(),
+      mother: z.boolean().optional(),
+    }).optional(),
     phone: z.string().optional(),
+    relation: z.string().optional(),
+    displayMode: FamilyDisplayModeSchema.optional(),
+    account: AccountSchema.optional(),
+    parentAccounts: ParentAccountsSchema,
   }),
 
   bride: z.object({
     name: z.string().min(1, "신부 이름을 입력해주세요"),
     fatherName: z.string().optional(),
     motherName: z.string().optional(),
+    isDeceased: z.object({
+      father: z.boolean().optional(),
+      mother: z.boolean().optional(),
+    }).optional(),
     phone: z.string().optional(),
+    relation: z.string().optional(),
+    displayMode: FamilyDisplayModeSchema.optional(),
+    account: AccountSchema.optional(),
+    parentAccounts: ParentAccountsSchema,
   }),
 
   wedding: z.object({
     date: z.string().datetime("올바른 날짜 형식을 입력해주세요"),
-    venue: z.object({
-      name: z.string().min(1, "예식장 이름을 입력해주세요"),
-      hall: z.string().optional(),
-      address: z.string().min(1, "주소를 입력해주세요"),
-    }),
+    venue: VenueSchema,
   }),
 
   content: z.object({
@@ -172,18 +275,19 @@ export const CreateInvitationSchema = z.object({
 // 청첩장 업데이트 스키마
 // ============================================================
 
-export const UpdateInvitationSchema = CreateInvitationSchema.partial().extend({
-  status: InvitationStatusSchema.optional(),
-  gallery: GallerySchema.optional(),
-  settings: SettingsSchema.partial().optional(),
-  aiPhotoUrl: z.string().url().optional(),
-  isPasswordProtected: z.boolean().optional(),
+export const UpdateInvitationSchema = InvitationSchema.partial().omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+  viewCount: true,
 });
 
 // ============================================================
 // Types (Zod에서 자동 추론)
 // ============================================================
 
+export type FamilyDisplayMode = z.infer<typeof FamilyDisplayModeSchema>;
 export type TemplateCategory = z.infer<typeof TemplateCategorySchema>;
 export type InvitationStatus = z.infer<typeof InvitationStatusSchema>;
 export type Person = z.infer<typeof PersonSchema>;

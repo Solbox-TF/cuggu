@@ -100,9 +100,10 @@ describe('POST /api/ai/generate', () => {
       faceCount: 1,
     });
 
-    vi.mocked(uploadToS3).mockResolvedValue(
-      'https://s3.amazonaws.com/bucket/image.jpg'
-    );
+    vi.mocked(uploadToS3).mockResolvedValue({
+      key: 'ai-originals/test.jpg',
+      url: 'https://s3.amazonaws.com/bucket/image.jpg',
+    });
 
     vi.mocked(generateWeddingPhotos).mockResolvedValue({
       urls: [

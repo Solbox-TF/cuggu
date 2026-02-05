@@ -9,6 +9,7 @@ import {
   index,
   unique,
   real,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
@@ -148,6 +149,9 @@ export const invitations = pgTable(
     introMessage: text('intro_message'),
     galleryImages: text('gallery_images').array(),
     aiPhotoUrl: varchar('ai_photo_url', { length: 500 }),
+
+    // 확장 데이터 (부모님 정보, 계좌, 설정 등)
+    extendedData: jsonb('extended_data').default({}).$type<Record<string, unknown>>(),
 
     // Security
     isPasswordProtected: boolean('is_password_protected')

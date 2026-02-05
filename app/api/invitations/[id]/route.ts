@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { db } from '@/db';
 import { invitations } from '@/db/schema';
 import { UpdateInvitationSchema } from '@/schemas/invitation';
+import { dbRecordToInvitation, invitationToDbUpdate } from '@/lib/invitation-utils';
 import { eq } from 'drizzle-orm';
 
 // GET /api/invitations/[id] - 단건 조회 (권한 체크)
@@ -43,9 +44,12 @@ export async function GET(
       );
     }
 
+    console.log('[GET] raw extendedData:', invitation.extendedData);
+    const converted = dbRecordToInvitation(invitation as any);
+    console.log('[GET] converted venue:', converted.wedding.venue);
     return NextResponse.json({
       success: true,
-      data: invitation,
+      data: converted,
     });
   } catch (error) {
     console.error('청첩장 조회 실패:', error);
@@ -93,7 +97,17 @@ export async function PUT(
 
     // 요청 바디 파싱 및 검증
     const body = await req.json();
-    const parsed = UpdateInvitationSchema.safeParse(body);
+
+    // 불완전한 account 객체 제거 (빈 객체 또는 필수 필드 누락)
+    const cleanBody = { ...body };
+    if (cleanBody.groom?.account && !cleanBody.groom.account.accountNumber) {
+      delete cleanBody.groom.account;
+    }
+    if (cleanBody.bride?.account && !cleanBody.bride.account.accountNumber) {
+      delete cleanBody.bride.account;
+    }
+
+    const parsed = UpdateInvitationSchema.safeParse(cleanBody);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -106,66 +120,28 @@ export async function PUT(
     }
 
     const data = parsed.data;
+    console.log('[PUT] incoming venue:', data.wedding?.venue);
 
-    // DB 업데이트 (부분 업데이트 지원)
-    const updateData: any = {
-      updatedAt: new Date(),
-    };
+    // invitationToDbUpdate()로 flat 컬럼 + extendedData 분리
+    const dbUpdate = invitationToDbUpdate(data);
+    console.log('[PUT] dbUpdate.extendedData:', dbUpdate.extendedData);
 
-    // 템플릿 변경
-    if (data.templateId !== undefined) {
-      updateData.templateId = data.templateId;
-    }
-
-    // 신랑 정보
-    if (data.groom?.name !== undefined) {
-      updateData.groomName = data.groom.name;
-    }
-
-    // 신부 정보
-    if (data.bride?.name !== undefined) {
-      updateData.brideName = data.bride.name;
-    }
-
-    // 예식 정보
-    if (data.wedding?.date !== undefined) {
-      updateData.weddingDate = new Date(data.wedding.date);
-      // 만료일도 함께 업데이트 (결혼식 90일 후)
-      updateData.expiresAt = new Date(
-        new Date(data.wedding.date).getTime() + 90 * 24 * 60 * 60 * 1000
-      );
-    }
-    if (data.wedding?.venue?.name !== undefined) {
-      updateData.venueName = data.wedding.venue.name;
-    }
-    if (data.wedding?.venue?.address !== undefined) {
-      updateData.venueAddress = data.wedding.venue.address;
+    // extendedData deep merge (기존 데이터 보존)
+    if (dbUpdate.extendedData) {
+      const existingExt = (existing.extendedData as Record<string, any>) || {};
+      dbUpdate.extendedData = {
+        ...existingExt,
+        ...(dbUpdate.extendedData as Record<string, any>),
+        groom: { ...(existingExt.groom || {}), ...((dbUpdate.extendedData as any).groom || {}) },
+        bride: { ...(existingExt.bride || {}), ...((dbUpdate.extendedData as any).bride || {}) },
+        venue: { ...(existingExt.venue || {}), ...((dbUpdate.extendedData as any).venue || {}) },
+        content: { ...(existingExt.content || {}), ...((dbUpdate.extendedData as any).content || {}) },
+        gallery: { ...(existingExt.gallery || {}), ...((dbUpdate.extendedData as any).gallery || {}) },
+        settings: { ...(existingExt.settings || {}), ...((dbUpdate.extendedData as any).settings || {}) },
+      };
     }
 
-    // 인사말
-    if (data.content?.greeting !== undefined) {
-      updateData.introMessage = data.content.greeting;
-    }
-
-    // 갤러리
-    if (data.gallery?.images !== undefined) {
-      updateData.galleryImages = data.gallery.images;
-    }
-
-    // AI 사진
-    if (data.aiPhotoUrl !== undefined) {
-      updateData.aiPhotoUrl = data.aiPhotoUrl;
-    }
-
-    // 비밀번호 보호
-    if (data.isPasswordProtected !== undefined) {
-      updateData.isPasswordProtected = data.isPasswordProtected;
-    }
-
-    // 상태
-    if (data.status !== undefined) {
-      updateData.status = data.status;
-    }
+    const updateData: any = { ...dbUpdate, updatedAt: new Date() };
 
     const [updated] = await db
       .update(invitations)
