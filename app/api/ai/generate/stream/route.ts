@@ -14,11 +14,16 @@ import { AI_CONFIG } from '@/lib/ai/constants';
 import { logger } from '@/lib/ai/logger';
 
 const AIStyleSchema = z.enum([
-  'CLASSIC',
-  'MODERN',
-  'VINTAGE',
-  'ROMANTIC',
-  'CINEMATIC',
+  'CLASSIC_STUDIO',
+  'OUTDOOR_GARDEN',
+  'SUNSET_BEACH',
+  'TRADITIONAL_HANBOK',
+  'VINTAGE_CINEMATIC',
+  'LUXURY_HOTEL',
+  'CITY_LIFESTYLE',
+  'ENCHANTED_FOREST',
+  'BLACK_AND_WHITE',
+  'MINIMALIST_GALLERY',
 ]);
 
 const IS_DEV = process.env.NODE_ENV === 'development';
@@ -79,7 +84,7 @@ export async function POST(request: NextRequest) {
       const image = formData.get('image') as File;
       const styleRaw = formData.get('style') as string;
       const role = formData.get('role') as string;
-      const model = formData.get('model') as string | null;
+      const modelId = formData.get('modelId') as string | null;
 
       if (!image || !styleRaw || !role) {
         await sendEvent('error', { error: 'Image, style, and role are required' });
@@ -191,7 +196,7 @@ export async function POST(request: NextRequest) {
               total: AI_CONFIG.BATCH_SIZE,
             });
           },
-          model || undefined
+          modelId || undefined
         );
 
         // 11. DB 저장

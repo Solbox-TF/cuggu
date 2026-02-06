@@ -15,11 +15,16 @@ import { logger } from '@/lib/ai/logger';
 
 // Style 런타임 검증 스키마
 const AIStyleSchema = z.enum([
-  'CLASSIC',
-  'MODERN',
-  'VINTAGE',
-  'ROMANTIC',
-  'CINEMATIC',
+  'CLASSIC_STUDIO',
+  'OUTDOOR_GARDEN',
+  'SUNSET_BEACH',
+  'TRADITIONAL_HANBOK',
+  'VINTAGE_CINEMATIC',
+  'LUXURY_HOTEL',
+  'CITY_LIFESTYLE',
+  'ENCHANTED_FOREST',
+  'BLACK_AND_WHITE',
+  'MINIMALIST_GALLERY',
 ]);
 
 export async function POST(request: NextRequest) {
@@ -58,7 +63,7 @@ export async function POST(request: NextRequest) {
     const image = formData.get('image') as File;
     const styleRaw = formData.get('style') as string;
     const role = formData.get('role') as string;
-    const model = formData.get('model') as string | null;
+    const modelId = formData.get('modelId') as string | null;
 
     if (!image || !styleRaw || !role) {
       return NextResponse.json(
@@ -79,8 +84,7 @@ export async function POST(request: NextRequest) {
     if (!styleValidation.success) {
       return NextResponse.json(
         {
-          error:
-            'Invalid style. Must be one of: CLASSIC, MODERN, VINTAGE, ROMANTIC, CINEMATIC',
+          error: 'Invalid style',
         },
         { status: 400 }
       );
@@ -180,7 +184,7 @@ export async function POST(request: NextRequest) {
         originalUrl,
         styleData,
         role as 'GROOM' | 'BRIDE',
-        model || undefined
+        modelId || undefined
       );
       generatedUrls = result.urls;
       replicateId = result.replicateId;

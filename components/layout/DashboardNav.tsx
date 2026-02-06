@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { FileHeart, Sparkles, Settings, LogOut, Home, Users } from "lucide-react";
 import { UserProfile } from "./UserProfile";
+import { useCredits } from "@/hooks/useCredits";
 
 const navItems = [
   {
@@ -35,14 +37,7 @@ const navItems = [
 
 export function DashboardNav() {
   const pathname = usePathname();
-
-  // TODO: 실제 데이터는 DB/API에서 가져오기
-  const aiCredits = {
-    used: 0,
-    total: 2,
-  };
-
-  const percentage = (aiCredits.used / aiCredits.total) * 100;
+  const { credits, isLoading: creditsLoading } = useCredits();
 
   return (
     <aside className="w-64 border-r border-stone-200 bg-white flex flex-col h-screen">
@@ -99,20 +94,16 @@ export function DashboardNav() {
               <span className="text-sm font-medium text-stone-700">AI 크레딧</span>
             </div>
             <span className="text-sm font-semibold text-stone-900">
-              {aiCredits.total - aiCredits.used} / {aiCredits.total}
+              {creditsLoading ? '...' : credits ?? 0}
             </span>
           </div>
 
-          {/* Progress Bar */}
-          <div className="w-full h-1.5 bg-stone-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-rose-500 rounded-full"
-              style={{ width: `${100 - percentage}%` }}
-            />
-          </div>
-
-          <p className="text-xs text-stone-500 mt-2">
-            {aiCredits.used === aiCredits.total ? "크레딧을 모두 사용했습니다" : `${aiCredits.total - aiCredits.used}회 남음`}
+          <p className="text-xs text-stone-500">
+            {creditsLoading
+              ? '로딩 중...'
+              : credits === 0
+                ? '크레딧을 모두 사용했습니다'
+                : `${credits}회 사용 가능`}
           </p>
         </div>
 
@@ -123,7 +114,10 @@ export function DashboardNav() {
 
       {/* Logout */}
       <div className="px-3 pb-4">
-        <button className="flex items-center gap-3 px-3 py-2 rounded-md text-stone-500 hover:bg-stone-50 hover:text-stone-700 transition-colors w-full">
+        <button
+          onClick={() => signOut({ callbackUrl: "/" })}
+          className="flex items-center gap-3 px-3 py-2 rounded-md text-stone-500 hover:bg-stone-50 hover:text-stone-700 transition-colors w-full"
+        >
           <LogOut className="w-4 h-4" />
           <span className="text-sm">로그아웃</span>
         </button>

@@ -47,7 +47,8 @@ export function dbRecordToInvitation(row: DbInvitationRow): Invitation {
   return {
     id: row.id,
     userId: row.userId,
-    templateId: resolveTemplateId(row),
+    // extendedData에 저장된 templateId 우선 사용
+    templateId: (ext as any).templateId || resolveTemplateId(row),
 
     groom: {
       name: row.groomName,
@@ -128,13 +129,10 @@ export function invitationToDbUpdate(data: Record<string, any>) {
   const extendedData: Record<string, unknown> = {};
 
   // 기존 flat 컬럼 매핑
-  // templateId는 FK이므로 단순 문자열(classic, floral 등)이면 제외
-  // 실제 templates 테이블의 UUID인 경우에만 업데이트
+  // templateId는 FK이므로 단순 문자열(classic, modern 등)은 extendedData에 저장
+  // (templates 테이블에 없는 ID는 FK 제약에 걸림)
   if (data.templateId !== undefined) {
-    const simpleTemplateIds = ['classic', 'modern', 'vintage', 'floral', 'minimal'];
-    if (!simpleTemplateIds.includes(data.templateId)) {
-      updateData.templateId = data.templateId;
-    }
+    extendedData.templateId = data.templateId;
   }
   if (data.groom?.name !== undefined) updateData.groomName = data.groom.name;
   if (data.bride?.name !== undefined) updateData.brideName = data.bride.name;

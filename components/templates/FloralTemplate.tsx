@@ -14,6 +14,8 @@ import {
   formatWeddingDateTime,
 } from "@/lib/utils/date";
 import { GalleryLightbox } from "./GalleryLightbox";
+import { MapSection } from "./MapSection";
+import { NavigationButtons } from "./NavigationButtons";
 import { formatFamilyName } from "@/lib/utils/family-display";
 import { RSVPSection } from "@/components/rsvp/RSVPSection";
 
@@ -45,8 +47,12 @@ export function FloralTemplate({ data, isPreview = false }: FloralTemplateProps)
   // 섹션 렌더러
   const sections: Record<SectionId, () => React.ReactNode> = {
     greeting: () => (
-      <section key="greeting" className="py-14 md:py-20 px-6">
-        <div className="max-w-lg mx-auto">
+      <section
+        key="greeting"
+        className="flex items-center justify-center py-14 md:py-20 px-6"
+        style={{ minHeight: 'var(--screen-height, 100vh)' }}
+      >
+        <div className="max-w-lg w-full">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -78,8 +84,12 @@ export function FloralTemplate({ data, isPreview = false }: FloralTemplateProps)
     parents: () => {
       if (!data.settings.showParents) return null;
       return (
-        <section key="parents" className="py-14 md:py-16 px-6">
-          <div className="max-w-lg mx-auto">
+        <section
+          key="parents"
+          className="flex items-center justify-center px-6"
+          style={{ minHeight: 'var(--screen-height, 100vh)' }}
+        >
+          <div className="max-w-lg w-full">
             <div className="grid md:grid-cols-2 gap-8">
               {/* 신랑 측 */}
               <motion.div
@@ -191,6 +201,65 @@ export function FloralTemplate({ data, isPreview = false }: FloralTemplateProps)
         </div>
       </section>
     ),
+
+    map: () => {
+      if (!data.settings.showMap || !data.wedding.venue.lat || !data.wedding.venue.lng) {
+        return null;
+      }
+      return (
+        <section key="map" className="py-14 md:py-20 px-6">
+          <div className="max-w-lg mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              {/* 꽃 장식 타이틀 */}
+              <div className="flex items-center justify-center gap-3 mb-8">
+                <div className="h-px w-12 bg-gradient-to-r from-transparent to-rose-200" />
+                <h2 className="font-serif text-xl text-rose-800">오시는 길</h2>
+                <div className="h-px w-12 bg-gradient-to-l from-transparent to-rose-200" />
+              </div>
+
+              <MapSection
+                lat={data.wedding.venue.lat}
+                lng={data.wedding.venue.lng}
+                venueName={data.wedding.venue.name}
+              />
+
+              {/* 장소 정보 */}
+              <div className="mt-6 p-4 bg-white/60 rounded-2xl border border-rose-100 text-center">
+                <p className="text-sm text-rose-800 font-medium">
+                  {data.wedding.venue.name}
+                  {data.wedding.venue.hall && ` ${data.wedding.venue.hall}`}
+                </p>
+                <p className="text-xs text-rose-500/70 mt-1">
+                  {data.wedding.venue.address}
+                </p>
+              </div>
+
+              {/* 길찾기 버튼 */}
+              <NavigationButtons
+                lat={data.wedding.venue.lat}
+                lng={data.wedding.venue.lng}
+                venueName={data.wedding.venue.name}
+              />
+
+              {/* 교통편 안내 */}
+              {data.wedding.venue.transportation && (
+                <div className="mt-4 p-5 bg-pink-50/60 rounded-2xl border border-rose-100">
+                  <p className="text-xs font-semibold text-rose-700 mb-2">교통편 안내</p>
+                  <p className="text-xs text-rose-500/70 whitespace-pre-line leading-relaxed">
+                    {data.wedding.venue.transportation}
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </section>
+      );
+    },
 
     gallery: () => {
       if (data.gallery.images.length === 0) return null;
@@ -397,7 +466,10 @@ export function FloralTemplate({ data, isPreview = false }: FloralTemplateProps)
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-50 via-pink-50/30 to-rose-50">
       {/* 커버 섹션 - 항상 첫 번째 */}
-      <section className="relative min-h-[70vh] md:min-h-screen flex items-center justify-center overflow-hidden py-16 md:py-12">
+      <section
+        className="relative flex flex-col items-center justify-center overflow-hidden px-6"
+        style={{ minHeight: 'var(--screen-height, 100vh)' }}
+      >
         {data.gallery.coverImage && (
           <div className="absolute inset-0">
             <img
@@ -409,17 +481,17 @@ export function FloralTemplate({ data, isPreview = false }: FloralTemplateProps)
           </div>
         )}
 
-        {/* 상단 꽃 장식 */}
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 text-3xl opacity-60">
-          &#x1F33A;
-        </div>
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.2 }}
           className="relative z-10 text-center px-6"
         >
+          {/* 상단 꽃 장식 */}
+          <div className="text-3xl opacity-60 mb-4">
+            &#x1F33A;
+          </div>
+
           <p className="font-serif text-xs tracking-[0.3em] text-rose-400 mb-8">
             Wedding Invitation
           </p>
@@ -444,12 +516,12 @@ export function FloralTemplate({ data, isPreview = false }: FloralTemplateProps)
               {data.wedding.venue.hall && ` ${data.wedding.venue.hall}`}
             </p>
           </div>
-        </motion.div>
 
-        {/* 하단 꽃 장식 */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-3xl opacity-60">
-          &#x1F338;
-        </div>
+          {/* 하단 꽃 장식 */}
+          <div className="text-3xl opacity-60 mt-8">
+            &#x1F338;
+          </div>
+        </motion.div>
       </section>
 
       {/* 동적 섹션 */}

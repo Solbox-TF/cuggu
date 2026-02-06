@@ -48,8 +48,12 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
   // 섹션 렌더러
   const sections: Record<SectionId, () => React.ReactNode> = {
     greeting: () => (
-      <section key="greeting" className="py-12 md:py-20 px-6">
-        <div className="max-w-2xl mx-auto">
+      <section
+        key="greeting"
+        className="flex items-center justify-center py-12 md:py-20 px-6"
+        style={{ minHeight: 'var(--screen-height, 100vh)' }}
+      >
+        <div className="max-w-2xl w-full">
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -71,8 +75,12 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
     parents: () => {
       if (!data.settings.showParents) return null;
       return (
-        <section key="parents" className="py-12 md:py-16 px-6 bg-amber-50/30">
-          <div className="max-w-2xl mx-auto">
+        <section
+          key="parents"
+          className="flex items-center justify-center px-6 bg-amber-50/30"
+          style={{ minHeight: 'var(--screen-height, 100vh)' }}
+        >
+          <div className="max-w-2xl w-full">
             <div className="grid md:grid-cols-2 gap-8 md:gap-12">
               {/* 신랑 측 */}
               <motion.div
@@ -178,15 +186,22 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
               </div>
             )}
           </motion.div>
+        </div>
+      </section>
+    ),
 
-          {/* 오시는 길 (지도) */}
-          {data.settings.showMap && data.wedding.venue.lat && data.wedding.venue.lng && (
+    map: () => {
+      if (!data.settings.showMap || !data.wedding.venue.lat || !data.wedding.venue.lng) {
+        return null;
+      }
+      return (
+        <section key="map" className="py-12 md:py-20 px-6">
+          <div className="max-w-2xl mx-auto">
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="mt-8"
             >
               <h2 className="text-xl md:text-2xl font-serif text-center text-gray-800 mb-8 md:mb-12">
                 오시는 길
@@ -232,10 +247,10 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
                 </div>
               )}
             </motion.div>
-          )}
-        </div>
-      </section>
-    ),
+          </div>
+        </section>
+      );
+    },
 
     gallery: () => {
       if (data.gallery.images.length === 0) return null;
@@ -458,7 +473,10 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-amber-50">
       {/* 커버 섹션 - 항상 첫 번째 */}
-      <section className="relative min-h-[70vh] md:min-h-screen flex items-center justify-center overflow-hidden py-16 md:py-12">
+      <section
+        className="relative flex flex-col items-center justify-center overflow-hidden px-6"
+        style={{ minHeight: 'var(--screen-height, 100vh)' }}
+      >
         {data.gallery.coverImage && (
           <div className="absolute inset-0">
             <img

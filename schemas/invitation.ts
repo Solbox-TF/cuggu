@@ -34,6 +34,7 @@ export const REORDERABLE_SECTIONS = [
   'greeting',
   'parents',
   'ceremony',
+  'map',
   'gallery',
   'accounts',
   'rsvp',
@@ -49,6 +50,7 @@ export const SECTION_LABELS: Record<SectionId, string> = {
   greeting: '인사말',
   parents: '신랑/신부 정보',
   ceremony: '예식 정보',
+  map: '오시는 길',
   gallery: '갤러리',
   accounts: '계좌번호',
   rsvp: '참석 여부',
@@ -168,6 +170,7 @@ const ExtendedPersonSchema = z.object({
 }).partial();
 
 export const ExtendedDataSchema = z.object({
+  templateId: z.string().optional(),
   groom: ExtendedPersonSchema.optional(),
   bride: ExtendedPersonSchema.optional(),
   venue: z.object({

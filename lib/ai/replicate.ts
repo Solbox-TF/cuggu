@@ -14,22 +14,38 @@ const replicate = new Replicate({
 const COST_PER_IMAGE = parseFloat(process.env.REPLICATE_COST_PER_IMAGE || '0.04');
 
 export type AIStyle =
-  | 'CLASSIC'
-  | 'MODERN'
-  | 'VINTAGE'
-  | 'ROMANTIC'
-  | 'CINEMATIC';
+  | 'CLASSIC_STUDIO'
+  | 'OUTDOOR_GARDEN'
+  | 'SUNSET_BEACH'
+  | 'TRADITIONAL_HANBOK'
+  | 'VINTAGE_CINEMATIC'
+  | 'LUXURY_HOTEL'
+  | 'CITY_LIFESTYLE'
+  | 'ENCHANTED_FOREST'
+  | 'BLACK_AND_WHITE'
+  | 'MINIMALIST_GALLERY';
 
 const STYLE_PROMPTS: Record<AIStyle, string> = {
-  CLASSIC:
-    'elegant traditional Korean wedding hanbok, soft lighting, professional studio photography',
-  MODERN:
-    'contemporary wedding dress, minimalist background, natural light, editorial style',
-  VINTAGE:
-    'vintage wedding attire, warm sepia tones, romantic atmosphere, film photography',
-  ROMANTIC: 'romantic wedding scene, soft focus, dreamy lighting, pastel colors',
-  CINEMATIC:
-    'cinematic wedding portrait, dramatic lighting, high fashion, magazine cover',
+  CLASSIC_STUDIO:
+    'Transform the scene into a classic, elegant studio wedding portrait. The couple is posing formally. The bride wears a sophisticated white lace gown with a long veil, and the groom wears a tailored black tuxedo with a bow tie. The background is a clean, minimalist interior with soft, professional studio lighting and subtle cream-colored floral arrangements.',
+  OUTDOOR_GARDEN:
+    'A romantic outdoor wedding photo in a lush, blooming garden. The couple is smiling candidly, holding hands. The bride wears a flowing bohemian-style wedding dress with floral details, and the groom wears a light beige linen suit. Sunlight filters through the green leaves, creating a soft, dreamy atmosphere with many flowers in the background.',
+  SUNSET_BEACH:
+    'A dramatic wedding photo on a tropical beach during golden hour sunset. The couple is embracing by the ocean. The bride wears a simple, elegant beach wedding gown, and the groom is in a relaxed white shirt and khaki trousers. The sky is filled with vibrant orange, pink, and purple hues reflecting on the water.',
+  TRADITIONAL_HANBOK:
+    'A traditional Korean wedding portrait set in an ancient palace courtyard. The couple wears elaborate, colorful traditional Korean wedding Hanbok with intricate embroidery. They are standing respectfully. The background features historical Korean architecture with vibrant Dancheong colors and a stone wall under clear daylight.',
+  VINTAGE_CINEMATIC:
+    'A vintage, cinematic wedding photograph with a retro film grain look. The style is 1950s or 60s. The bride wears a vintage tea-length dress and a birdcage veil, the groom wears a retro wool suit. The colors are slightly muted and warm. They are posing in front of an old, classic car on a cobblestone street.',
+  LUXURY_HOTEL:
+    'A glamorous and luxurious wedding photo inside a grand hotel ballroom. The bride is in a voluminous ball gown with sparkling details and a tiara, the groom in a sharp tuxedo. They are on a grand staircase. The background is opulent, featuring large crystal chandeliers, marble columns, and rich architectural details with dramatic, warm lighting.',
+  CITY_LIFESTYLE:
+    'A candid, lifestyle wedding snapshot in a bustling city street scene (e.g., New York or Paris). The couple is laughing and walking across a crosswalk, holding hands. They are wearing modern, chic wedding attire. The background shows city architecture, blurred pedestrians, and yellow taxi cabs. The vibe is energetic and joyful.',
+  ENCHANTED_FOREST:
+    'A fairytale wedding photo set in a magical, enchanted forest. The lighting is misty and soft with dappled sunbeams. The bride wears an ethereal, flowing tulle dress with vine and flower motifs, maybe a floral crown. The background is moss-covered trees and soft glowing lights, creating a dreamlike quality.',
+  BLACK_AND_WHITE:
+    'A timeless black and white wedding portrait. The focus is entirely on the couple\'s emotion and connection. It\'s a close-up or medium shot. The lighting is dramatic and high-contrast, highlighting textures of the wedding dress and suit. The background is simple and dark to keep the attention on the subjects.',
+  MINIMALIST_GALLERY:
+    'A minimalist, modern wedding photo suitable for an art gallery. The couple is posing artistically against a completely plain, seamless bright white studio wall. No props. The bride wears a very modern, structured architectural wedding dress, and the groom wears a sleek, contemporary monochrome suit. The lighting is clean and even.',
 };
 
 /**
