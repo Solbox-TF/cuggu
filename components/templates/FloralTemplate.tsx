@@ -84,8 +84,12 @@ export function FloralTemplate({ data, isPreview = false }: FloralTemplateProps)
     parents: () => {
       if (!data.settings.showParents) return null;
       return (
-        <section key="parents" className="py-14 md:py-16 px-6">
-          <div className="max-w-lg mx-auto">
+        <section
+          key="parents"
+          className="flex items-center justify-center px-6"
+          style={{ minHeight: 'var(--screen-height, 100vh)' }}
+        >
+          <div className="max-w-lg w-full">
             <div className="grid md:grid-cols-2 gap-8">
               {/* 신랑 측 */}
               <motion.div
@@ -462,7 +466,10 @@ export function FloralTemplate({ data, isPreview = false }: FloralTemplateProps)
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-50 via-pink-50/30 to-rose-50">
       {/* 커버 섹션 - 항상 첫 번째 */}
-      <section className="relative md:min-h-screen flex flex-col items-center overflow-hidden pt-0 pb-16 md:py-20">
+      <section
+        className="relative flex flex-col items-center justify-center overflow-hidden px-6"
+        style={{ minHeight: 'var(--screen-height, 100vh)' }}
+      >
         {data.gallery.coverImage && (
           <div className="absolute inset-0">
             <img

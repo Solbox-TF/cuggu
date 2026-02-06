@@ -71,8 +71,12 @@ export function MinimalTemplate({ data, isPreview = false }: MinimalTemplateProp
     parents: () => {
       if (!data.settings.showParents) return null;
       return (
-        <section key="parents" className="pt-0 pb-16 md:py-20 px-6">
-          <div className="max-w-md mx-auto">
+        <section
+          key="parents"
+          className="flex items-center justify-center px-6"
+          style={{ minHeight: 'var(--screen-height, 100vh)' }}
+        >
+          <div className="max-w-md w-full">
             <div className="grid grid-cols-2 gap-12">
               {/* 신랑 측 */}
               <motion.div
@@ -483,7 +487,10 @@ export function MinimalTemplate({ data, isPreview = false }: MinimalTemplateProp
   return (
     <div className="min-h-screen bg-white">
       {/* 커버 섹션 - 항상 첫 번째 */}
-      <section className="relative md:min-h-screen flex flex-col items-center overflow-hidden pt-0 pb-16 md:py-20">
+      <section
+        className="relative flex flex-col items-center justify-center overflow-hidden px-6"
+        style={{ minHeight: 'var(--screen-height, 100vh)' }}
+      >
         {data.gallery.coverImage && (
           <div className="absolute inset-0">
             <img

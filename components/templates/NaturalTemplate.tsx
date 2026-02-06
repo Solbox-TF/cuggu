@@ -82,8 +82,12 @@ export function NaturalTemplate({ data, isPreview = false }: NaturalTemplateProp
     parents: () => {
       if (!data.settings.showParents) return null;
       return (
-        <section key="parents" className="pt-0 pb-16 md:py-20 px-6 bg-emerald-50/30">
-          <div className="max-w-2xl mx-auto">
+        <section
+          key="parents"
+          className="flex items-center justify-center px-6 bg-emerald-50/30"
+          style={{ minHeight: 'var(--screen-height, 100vh)' }}
+        >
+          <div className="max-w-2xl w-full">
             <div className="grid md:grid-cols-2 gap-10">
               {/* 신랑 측 */}
               <motion.div
@@ -453,7 +457,10 @@ export function NaturalTemplate({ data, isPreview = false }: NaturalTemplateProp
   return (
     <div className="min-h-screen bg-gradient-to-b from-stone-50 via-emerald-50/20 to-stone-50">
       {/* 커버 섹션 */}
-      <section className="relative md:min-h-screen flex flex-col items-center overflow-hidden pt-0 pb-16 md:py-20">
+      <section
+        className="relative flex flex-col items-center justify-center overflow-hidden px-6"
+        style={{ minHeight: 'var(--screen-height, 100vh)' }}
+      >
         {data.gallery.coverImage && (
           <div className="absolute inset-0">
             <img

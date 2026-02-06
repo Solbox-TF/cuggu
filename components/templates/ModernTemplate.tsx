@@ -73,8 +73,12 @@ export function ModernTemplate({ data, isPreview = false }: ModernTemplateProps)
     parents: () => {
       if (!data.settings.showParents) return null;
       return (
-        <section key="parents" className="pt-0 pb-16 md:py-20 px-8 md:px-12">
-          <div className="max-w-2xl">
+        <section
+          key="parents"
+          className="flex items-center justify-center px-8 md:px-12"
+          style={{ minHeight: 'var(--screen-height, 100vh)' }}
+        >
+          <div className="max-w-2xl w-full">
             <p className="text-xs tracking-[0.3em] text-emerald-600 uppercase mb-10">
               Bride & Groom
             </p>
@@ -468,7 +472,10 @@ export function ModernTemplate({ data, isPreview = false }: ModernTemplateProps)
   return (
     <div className="min-h-screen bg-zinc-50">
       {/* 커버 섹션 - 항상 첫 번째 */}
-      <section className="relative md:min-h-screen flex flex-col items-center overflow-hidden pt-0 pb-16 md:py-20">
+      <section
+        className="relative flex flex-col items-end justify-end overflow-hidden pb-16 md:pb-20"
+        style={{ minHeight: 'var(--screen-height, 100vh)' }}
+      >
         {data.gallery.coverImage && (
           <div className="absolute inset-0">
             <img

@@ -86,8 +86,12 @@ export function ElegantTemplate({ data, isPreview = false }: ElegantTemplateProp
     parents: () => {
       if (!data.settings.showParents) return null;
       return (
-        <section key="parents" className="pt-0 pb-16 md:py-20 px-6 bg-slate-800">
-          <div className="max-w-2xl mx-auto">
+        <section
+          key="parents"
+          className="flex items-center justify-center px-6 bg-slate-800"
+          style={{ minHeight: 'var(--screen-height, 100vh)' }}
+        >
+          <div className="max-w-2xl w-full">
             <div className="grid md:grid-cols-2 gap-10">
               {/* 신랑 측 */}
               <motion.div
@@ -458,7 +462,10 @@ export function ElegantTemplate({ data, isPreview = false }: ElegantTemplateProp
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50/30 via-white to-slate-50">
       {/* 커버 섹션 */}
-      <section className="relative md:min-h-screen flex flex-col items-center overflow-hidden pt-0 pb-16 md:py-20">
+      <section
+        className="relative flex flex-col items-center justify-center overflow-hidden px-6"
+        style={{ minHeight: 'var(--screen-height, 100vh)' }}
+      >
         {data.gallery.coverImage && (
           <div className="absolute inset-0">
             <img
