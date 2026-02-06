@@ -123,7 +123,7 @@ export const authConfig = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub!;
-        session.user.role = (token.role as string) || "USER";
+        session.user.role = (token.role as "USER" | "ADMIN") || "USER";
       }
       return session;
     },

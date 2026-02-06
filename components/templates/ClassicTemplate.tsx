@@ -178,15 +178,22 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
               </div>
             )}
           </motion.div>
+        </div>
+      </section>
+    ),
 
-          {/* 오시는 길 (지도) */}
-          {data.settings.showMap && data.wedding.venue.lat && data.wedding.venue.lng && (
+    map: () => {
+      if (!data.settings.showMap || !data.wedding.venue.lat || !data.wedding.venue.lng) {
+        return null;
+      }
+      return (
+        <section key="map" className="py-12 md:py-20 px-6">
+          <div className="max-w-2xl mx-auto">
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="mt-8"
             >
               <h2 className="text-xl md:text-2xl font-serif text-center text-gray-800 mb-8 md:mb-12">
                 오시는 길
@@ -232,10 +239,10 @@ export function ClassicTemplate({ data, isPreview = false }: ClassicTemplateProp
                 </div>
               )}
             </motion.div>
-          )}
-        </div>
-      </section>
-    ),
+          </div>
+        </section>
+      );
+    },
 
     gallery: () => {
       if (data.gallery.images.length === 0) return null;

@@ -14,6 +14,8 @@ import {
   formatWeddingDateTime,
 } from "@/lib/utils/date";
 import { GalleryLightbox } from "./GalleryLightbox";
+import { MapSection } from "./MapSection";
+import { NavigationButtons } from "./NavigationButtons";
 import { formatFamilyName } from "@/lib/utils/family-display";
 import { RSVPSection } from "@/components/rsvp/RSVPSection";
 
@@ -186,6 +188,60 @@ export function ModernTemplate({ data, isPreview = false }: ModernTemplateProps)
         </div>
       </section>
     ),
+
+    map: () => {
+      if (!data.settings.showMap || !data.wedding.venue.lat || !data.wedding.venue.lng) {
+        return null;
+      }
+      return (
+        <section key="map" className="py-16 md:py-24 px-8 md:px-12">
+          <div className="max-w-2xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <p className="text-xs tracking-[0.3em] text-emerald-600 uppercase mb-6">
+                Location
+              </p>
+
+              <MapSection
+                lat={data.wedding.venue.lat}
+                lng={data.wedding.venue.lng}
+                venueName={data.wedding.venue.name}
+              />
+
+              {/* 장소 정보 */}
+              <div className="mt-6 space-y-2">
+                <p className="text-base font-medium text-zinc-800">
+                  {data.wedding.venue.name}
+                  {data.wedding.venue.hall && ` ${data.wedding.venue.hall}`}
+                </p>
+                <p className="text-sm text-zinc-500">{data.wedding.venue.address}</p>
+              </div>
+
+              {/* 길찾기 버튼 */}
+              <NavigationButtons
+                lat={data.wedding.venue.lat}
+                lng={data.wedding.venue.lng}
+                venueName={data.wedding.venue.name}
+              />
+
+              {/* 교통편 안내 */}
+              {data.wedding.venue.transportation && (
+                <div className="mt-6 p-4 bg-zinc-100 rounded-lg">
+                  <p className="text-xs font-semibold text-zinc-700 mb-2">교통편 안내</p>
+                  <p className="text-sm text-zinc-600 whitespace-pre-line leading-relaxed">
+                    {data.wedding.venue.transportation}
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </section>
+      );
+    },
 
     gallery: () => {
       if (data.gallery.images.length === 0) return null;

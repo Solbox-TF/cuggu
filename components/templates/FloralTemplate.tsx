@@ -14,6 +14,8 @@ import {
   formatWeddingDateTime,
 } from "@/lib/utils/date";
 import { GalleryLightbox } from "./GalleryLightbox";
+import { MapSection } from "./MapSection";
+import { NavigationButtons } from "./NavigationButtons";
 import { formatFamilyName } from "@/lib/utils/family-display";
 import { RSVPSection } from "@/components/rsvp/RSVPSection";
 
@@ -191,6 +193,65 @@ export function FloralTemplate({ data, isPreview = false }: FloralTemplateProps)
         </div>
       </section>
     ),
+
+    map: () => {
+      if (!data.settings.showMap || !data.wedding.venue.lat || !data.wedding.venue.lng) {
+        return null;
+      }
+      return (
+        <section key="map" className="py-14 md:py-20 px-6">
+          <div className="max-w-lg mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              {/* 꽃 장식 타이틀 */}
+              <div className="flex items-center justify-center gap-3 mb-8">
+                <div className="h-px w-12 bg-gradient-to-r from-transparent to-rose-200" />
+                <h2 className="font-serif text-xl text-rose-800">오시는 길</h2>
+                <div className="h-px w-12 bg-gradient-to-l from-transparent to-rose-200" />
+              </div>
+
+              <MapSection
+                lat={data.wedding.venue.lat}
+                lng={data.wedding.venue.lng}
+                venueName={data.wedding.venue.name}
+              />
+
+              {/* 장소 정보 */}
+              <div className="mt-6 p-4 bg-white/60 rounded-2xl border border-rose-100 text-center">
+                <p className="text-sm text-rose-800 font-medium">
+                  {data.wedding.venue.name}
+                  {data.wedding.venue.hall && ` ${data.wedding.venue.hall}`}
+                </p>
+                <p className="text-xs text-rose-500/70 mt-1">
+                  {data.wedding.venue.address}
+                </p>
+              </div>
+
+              {/* 길찾기 버튼 */}
+              <NavigationButtons
+                lat={data.wedding.venue.lat}
+                lng={data.wedding.venue.lng}
+                venueName={data.wedding.venue.name}
+              />
+
+              {/* 교통편 안내 */}
+              {data.wedding.venue.transportation && (
+                <div className="mt-4 p-5 bg-pink-50/60 rounded-2xl border border-rose-100">
+                  <p className="text-xs font-semibold text-rose-700 mb-2">교통편 안내</p>
+                  <p className="text-xs text-rose-500/70 whitespace-pre-line leading-relaxed">
+                    {data.wedding.venue.transportation}
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </section>
+      );
+    },
 
     gallery: () => {
       if (data.gallery.images.length === 0) return null;
