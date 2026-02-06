@@ -47,8 +47,12 @@ export function FloralTemplate({ data, isPreview = false }: FloralTemplateProps)
   // 섹션 렌더러
   const sections: Record<SectionId, () => React.ReactNode> = {
     greeting: () => (
-      <section key="greeting" className="py-14 md:py-20 px-6">
-        <div className="max-w-lg mx-auto">
+      <section
+        key="greeting"
+        className="flex items-center justify-center py-14 md:py-20 px-6"
+        style={{ minHeight: 'var(--screen-height, 100vh)' }}
+      >
+        <div className="max-w-lg w-full">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -458,7 +462,7 @@ export function FloralTemplate({ data, isPreview = false }: FloralTemplateProps)
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-50 via-pink-50/30 to-rose-50">
       {/* 커버 섹션 - 항상 첫 번째 */}
-      <section className="relative min-h-[70vh] md:min-h-screen flex items-center justify-center overflow-hidden py-16 md:py-12">
+      <section className="relative md:min-h-screen flex flex-col items-center overflow-hidden pt-0 pb-16 md:py-20">
         {data.gallery.coverImage && (
           <div className="absolute inset-0">
             <img

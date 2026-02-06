@@ -5,6 +5,8 @@ import { ClassicTemplate } from '@/components/templates/ClassicTemplate';
 import { ModernTemplate } from '@/components/templates/ModernTemplate';
 import { MinimalTemplate } from '@/components/templates/MinimalTemplate';
 import { FloralTemplate } from '@/components/templates/FloralTemplate';
+import { ElegantTemplate } from '@/components/templates/ElegantTemplate';
+import { NaturalTemplate } from '@/components/templates/NaturalTemplate';
 import { ZoomIn, ZoomOut, Smartphone, Monitor } from 'lucide-react';
 
 interface PreviewPanelProps {
@@ -124,6 +126,10 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
         return MinimalTemplate;
       case 'floral':
         return FloralTemplate;
+      case 'elegant':
+        return ElegantTemplate;
+      case 'natural':
+        return NaturalTemplate;
       default:
         return ClassicTemplate;
     }
@@ -308,15 +314,22 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
 
           {/* 실제 콘텐츠 */}
           <div
-            className={`relative bg-white ${
+            className={`relative bg-white overflow-hidden ${
               device === 'mobile'
-                ? `w-[375px] h-[812px] overflow-y-auto shadow-inner ${
+                ? `w-[375px] h-[812px] ${
                     phoneModel === 'iphone' ? 'rounded-[2.75rem]' : 'rounded-[2.25rem]'
                   }`
-                : 'w-full rounded-lg overflow-hidden shadow-xl'
+                : 'w-full rounded-lg shadow-xl'
             }`}
           >
-            <TemplateComponent data={previewData} isPreview />
+            {/* 스크롤 영역 */}
+            <div
+              className="h-full overflow-y-auto"
+              style={{ '--screen-height': '812px' } as React.CSSProperties}
+            >
+              <TemplateComponent data={previewData} isPreview />
+            </div>
+
           </div>
         </div>
       </div>

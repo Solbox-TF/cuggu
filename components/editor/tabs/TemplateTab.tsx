@@ -84,6 +84,54 @@ function TemplateMiniPreview({ templateId }: { templateId: string }) {
         </div>
       );
 
+    case 'elegant':
+      return (
+        <div className="w-full h-full bg-gradient-to-b from-amber-50/30 via-white to-slate-100 flex flex-col items-center justify-center p-3 gap-1.5">
+          <div className="flex items-center gap-1">
+            <div className="h-px w-3 bg-amber-400/60" />
+            <div className="w-1.5 h-1.5 rotate-45 border border-amber-400/60" />
+            <div className="h-px w-3 bg-amber-400/60" />
+          </div>
+          <div className="text-[5px] tracking-[0.3em] text-amber-600 uppercase">Wedding</div>
+          <div className="space-y-0.5 text-center mt-1">
+            <div className="h-1.5 w-8 bg-slate-700/40 rounded-full mx-auto" />
+            <div className="text-[6px] text-amber-500">&</div>
+            <div className="h-1.5 w-8 bg-slate-700/40 rounded-full mx-auto" />
+          </div>
+          <div className="flex items-center gap-1 mt-1">
+            <div className="h-px w-3 bg-amber-400/60" />
+            <div className="w-1.5 h-1.5 rotate-45 border border-amber-400/60" />
+            <div className="h-px w-3 bg-amber-400/60" />
+          </div>
+          <div className="mt-1 space-y-0.5">
+            <div className="h-0.5 w-6 bg-slate-300 rounded-full mx-auto" />
+            <div className="h-0.5 w-5 bg-slate-300 rounded-full mx-auto" />
+          </div>
+        </div>
+      );
+
+    case 'natural':
+      return (
+        <div className="w-full h-full bg-gradient-to-b from-stone-50 via-emerald-50/30 to-stone-50 flex flex-col items-center justify-center p-3 gap-1.5">
+          <div className="text-emerald-400/60 text-sm">&#x1F343;</div>
+          <div className="text-[5px] tracking-[0.2em] text-emerald-600/70 uppercase">Wedding</div>
+          <div className="space-y-0.5 text-center mt-1">
+            <div className="h-1.5 w-9 bg-stone-600/30 rounded-full mx-auto" />
+            <div className="flex items-center justify-center gap-1">
+              <div className="h-px w-2 bg-emerald-400/50" />
+              <div className="text-[5px] text-emerald-500/70">&</div>
+              <div className="h-px w-2 bg-emerald-400/50" />
+            </div>
+            <div className="h-1.5 w-9 bg-stone-600/30 rounded-full mx-auto" />
+          </div>
+          <div className="text-emerald-400/60 text-xs mt-1">&#x1F33F;</div>
+          <div className="space-y-0.5 mt-1">
+            <div className="h-0.5 w-6 bg-stone-300 rounded-full mx-auto" />
+            <div className="h-0.5 w-5 bg-stone-300 rounded-full mx-auto" />
+          </div>
+        </div>
+      );
+
     default:
       return (
         <div className="w-full h-full bg-slate-100 flex items-center justify-center">
@@ -118,6 +166,18 @@ export function TemplateTab() {
       id: 'floral',
       name: 'Floral',
       description: '꽃무늬 파스텔 디자인',
+      tier: 'FREE',
+    },
+    {
+      id: 'elegant',
+      name: 'Elegant',
+      description: '호텔웨딩 고급 스타일',
+      tier: 'FREE',
+    },
+    {
+      id: 'natural',
+      name: 'Natural',
+      description: '가든웨딩 자연 스타일',
       tier: 'FREE',
     },
   ];

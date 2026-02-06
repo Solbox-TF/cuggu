@@ -47,8 +47,12 @@ export function ModernTemplate({ data, isPreview = false }: ModernTemplateProps)
   // 섹션 렌더러
   const sections: Record<SectionId, () => React.ReactNode> = {
     greeting: () => (
-      <section key="greeting" className="py-16 md:py-24 px-8 md:px-12">
-        <div className="max-w-2xl">
+      <section
+        key="greeting"
+        className="flex items-center justify-center py-16 md:py-24 px-8 md:px-12"
+        style={{ minHeight: 'var(--screen-height, 100vh)' }}
+      >
+        <div className="max-w-2xl w-full">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -69,7 +73,7 @@ export function ModernTemplate({ data, isPreview = false }: ModernTemplateProps)
     parents: () => {
       if (!data.settings.showParents) return null;
       return (
-        <section key="parents" className="py-16 md:py-20 px-8 md:px-12">
+        <section key="parents" className="pt-0 pb-16 md:py-20 px-8 md:px-12">
           <div className="max-w-2xl">
             <p className="text-xs tracking-[0.3em] text-emerald-600 uppercase mb-10">
               Bride & Groom
@@ -464,7 +468,7 @@ export function ModernTemplate({ data, isPreview = false }: ModernTemplateProps)
   return (
     <div className="min-h-screen bg-zinc-50">
       {/* 커버 섹션 - 항상 첫 번째 */}
-      <section className="relative min-h-[70vh] md:min-h-screen flex items-end overflow-hidden pb-16 md:pb-20">
+      <section className="relative md:min-h-screen flex flex-col items-center overflow-hidden pt-0 pb-16 md:py-20">
         {data.gallery.coverImage && (
           <div className="absolute inset-0">
             <img
