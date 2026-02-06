@@ -18,7 +18,7 @@ export function StyleSelector({
     <div className="space-y-3">
       <h3 className="text-sm font-medium text-stone-700">웨딩 스타일 선택</h3>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-2 gap-2">
         {AI_STYLES.map((style) => {
           const isSelected = selectedStyle === style.value;
 
@@ -28,7 +28,7 @@ export function StyleSelector({
               onClick={() => !disabled && onStyleSelect(style.value)}
               disabled={disabled}
               className={`
-                relative rounded-md border-2 px-5 py-3 text-left transition-colors
+                relative rounded-lg border-2 px-3 py-2.5 text-left transition-colors
                 ${
                   isSelected
                     ? 'border-rose-500 bg-rose-50 text-rose-700'
@@ -37,14 +37,14 @@ export function StyleSelector({
                 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
               `}
             >
-              <div className="space-y-1">
-                <p className="text-sm font-medium">{style.label}</p>
-                <p className="text-xs text-stone-500">{style.description}</p>
+              <div className="space-y-0.5">
+                <p className="text-xs font-medium">{style.label}</p>
+                <p className="text-[10px] text-stone-500 line-clamp-1">{style.description}</p>
               </div>
 
               {isSelected && (
-                <div className="absolute right-2 top-2">
-                  <Check className="w-4 h-4 text-rose-500" />
+                <div className="absolute right-1.5 top-1.5">
+                  <Check className="w-3.5 h-3.5 text-rose-500" />
                 </div>
               )}
             </button>

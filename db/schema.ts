@@ -50,11 +50,23 @@ export const mealOptionEnum = pgEnum('meal_option', [
 ]);
 
 export const aiStyleEnum = pgEnum('ai_style', [
+  // Legacy (하위 호환)
   'CLASSIC',
   'MODERN',
   'VINTAGE',
   'ROMANTIC',
   'CINEMATIC',
+  // New styles
+  'CLASSIC_STUDIO',
+  'OUTDOOR_GARDEN',
+  'SUNSET_BEACH',
+  'TRADITIONAL_HANBOK',
+  'VINTAGE_CINEMATIC',
+  'LUXURY_HOTEL',
+  'CITY_LIFESTYLE',
+  'ENCHANTED_FOREST',
+  'BLACK_AND_WHITE',
+  'MINIMALIST_GALLERY',
 ]);
 export const aiGenerationStatusEnum = pgEnum('ai_generation_status', [
   'PENDING',
