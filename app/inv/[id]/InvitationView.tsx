@@ -7,6 +7,7 @@ import { MinimalTemplate } from '@/components/templates/MinimalTemplate';
 import { FloralTemplate } from '@/components/templates/FloralTemplate';
 import { ElegantTemplate } from '@/components/templates/ElegantTemplate';
 import { NaturalTemplate } from '@/components/templates/NaturalTemplate';
+import { ShareBar } from '@/components/invitation/ShareBar';
 
 interface InvitationViewProps {
   data: Invitation;
@@ -22,8 +23,13 @@ export function InvitationView({ data }: InvitationViewProps) {
   const TemplateComponent = getTemplateComponent(data.templateId);
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen pb-16">
       <TemplateComponent data={data} />
+      <ShareBar
+        invitationId={data.id}
+        groomName={data.groom.name}
+        brideName={data.bride.name}
+      />
     </main>
   );
 }
