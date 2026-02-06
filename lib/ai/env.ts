@@ -18,6 +18,12 @@ const envSchema = z.object({
   // Replicate
   REPLICATE_API_TOKEN: z.string().min(1, 'REPLICATE_API_TOKEN is required'),
 
+  // OpenAI (optional - OpenAI 모델 활성화 시 필요)
+  OPENAI_API_KEY: z.string().optional(),
+
+  // Google AI / Gemini (optional - Gemini/Imagen 모델 활성화 시 필요)
+  GOOGLE_AI_API_KEY: z.string().optional(),
+
   // Upstash Redis
   UPSTASH_REDIS_REST_URL: z.string().url('UPSTASH_REDIS_REST_URL must be a valid URL'),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1, 'UPSTASH_REDIS_REST_TOKEN is required'),

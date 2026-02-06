@@ -41,8 +41,17 @@ vi.mock('@/lib/ai/s3', () => ({
   uploadToS3: vi.fn(),
 }));
 
-vi.mock('@/lib/ai/replicate', () => ({
+vi.mock('@/lib/ai/generate', () => ({
   generateWeddingPhotos: vi.fn(),
+  modelSupportsReferenceImage: vi.fn().mockReturnValue(true),
+}));
+
+vi.mock('@/lib/ai/models', () => ({
+  findModelById: vi.fn().mockReturnValue({
+    id: 'flux-pro',
+    providerType: 'replicate',
+    supportsReferenceImage: true,
+  }),
 }));
 
 import { auth } from '@/auth';
@@ -50,7 +59,7 @@ import { db } from '@/db';
 import { rateLimit } from '@/lib/ai/rate-limit';
 import { detectFace } from '@/lib/ai/face-detection';
 import { uploadToS3 } from '@/lib/ai/s3';
-import { generateWeddingPhotos } from '@/lib/ai/replicate';
+import { generateWeddingPhotos } from '@/lib/ai/generate';
 
 describe('POST /api/ai/generate', () => {
   const mockUser = {
@@ -112,7 +121,7 @@ describe('POST /api/ai/generate', () => {
         'https://replicate.com/output3.png',
         'https://replicate.com/output4.png',
       ],
-      replicateId: 'pred-abc123',
+      providerJobId: 'pred-abc123',
       cost: 0.16,
     });
 

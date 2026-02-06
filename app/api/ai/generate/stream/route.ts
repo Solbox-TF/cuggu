@@ -6,7 +6,8 @@ import { eq } from 'drizzle-orm';
 import { checkCreditsFromUser, deductCredits, refundCredits } from '@/lib/ai/credits';
 import { detectFace } from '@/lib/ai/face-detection';
 import { uploadToS3, copyToS3 } from '@/lib/ai/s3';
-import { generateWeddingPhotosStream, AIStyle } from '@/lib/ai/replicate';
+import { generateWeddingPhotosStream, modelSupportsReferenceImage, type AIStyle } from '@/lib/ai/generate';
+import { findModelById } from '@/lib/ai/models';
 import { rateLimit } from '@/lib/ai/rate-limit';
 import { isValidImageBuffer } from '@/lib/ai/validation';
 import { z } from 'zod';
@@ -140,13 +141,15 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 7. 얼굴 감지
-      await sendEvent('status', { message: '얼굴 분석 중...' });
-      const faceResult = await detectFace(buffer);
-      if (!faceResult.success) {
-        await sendEvent('error', { error: faceResult.error });
-        await writer.close();
-        return;
+      // 7. 얼굴 감지 (참조 이미지 지원 모델만)
+      if (modelSupportsReferenceImage(modelId || undefined)) {
+        await sendEvent('status', { message: '얼굴 분석 중...' });
+        const faceResult = await detectFace(buffer);
+        if (!faceResult.success) {
+          await sendEvent('error', { error: faceResult.error });
+          await writer.close();
+          return;
+        }
       }
 
       // 8. 크레딧 차감
@@ -170,25 +173,30 @@ export async function POST(request: NextRequest) {
       await sendEvent('status', { message: 'AI 사진 생성 시작...', total: AI_CONFIG.BATCH_SIZE });
 
       const persistedUrls: string[] = [];
+      const selectedModel = findModelById(modelId || 'flux-pro');
+      const isReplicateProvider = selectedModel?.providerType === 'replicate';
 
       try {
         const result = await generateWeddingPhotosStream(
           originalUrl,
           styleData,
           role as 'GROOM' | 'BRIDE',
-          async (index, replicateUrl) => {
-            // S3로 복사
-            let finalUrl = replicateUrl;
-            try {
-              const s3Result = await copyToS3(replicateUrl, `ai-generated/${user.id}`);
-              finalUrl = s3Result.url;
-            } catch {
-              // S3 복사 실패 시 Replicate URL 사용
+          async (index, generatedUrl) => {
+            let finalUrl = generatedUrl;
+
+            // Replicate: CDN URL → S3 복사 필요
+            // OpenAI/Gemini: generate.ts에서 이미 S3 업로드 완료
+            if (isReplicateProvider) {
+              try {
+                const s3Result = await copyToS3(generatedUrl, `ai-generated/${user.id}`);
+                finalUrl = s3Result.url;
+              } catch {
+                // S3 복사 실패 시 원본 URL 사용
+              }
             }
 
             persistedUrls[index] = finalUrl;
 
-            // 클라이언트로 이미지 전송
             await sendEvent('image', {
               index,
               url: finalUrl,
@@ -210,7 +218,9 @@ export async function POST(request: NextRequest) {
             status: 'COMPLETED',
             creditsUsed: 1,
             cost: result.cost,
-            replicateId: result.replicateId,
+            replicateId: isReplicateProvider ? result.providerJobId : null,
+            providerJobId: result.providerJobId,
+            providerType: selectedModel?.providerType ?? 'replicate',
             completedAt: new Date(),
           })
           .returning();

@@ -6,7 +6,8 @@ import { eq } from 'drizzle-orm';
 import { checkCreditsFromUser, deductCredits, refundCredits } from '@/lib/ai/credits';
 import { detectFace } from '@/lib/ai/face-detection';
 import { uploadToS3, copyToS3 } from '@/lib/ai/s3';
-import { generateWeddingPhotos, AIStyle } from '@/lib/ai/replicate';
+import { generateWeddingPhotos, modelSupportsReferenceImage, type AIStyle } from '@/lib/ai/generate';
+import { findModelById } from '@/lib/ai/models';
 import { rateLimit } from '@/lib/ai/rate-limit';
 import { isValidImageBuffer } from '@/lib/ai/validation';
 import { z } from 'zod';
@@ -131,10 +132,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 8. 얼굴 감지
-    const faceResult = await detectFace(buffer);
-    if (!faceResult.success) {
-      return NextResponse.json({ error: faceResult.error }, { status: 400 });
+    // 8. 얼굴 감지 (참조 이미지 지원 모델만)
+    if (modelSupportsReferenceImage(modelId || undefined)) {
+      const faceResult = await detectFace(buffer);
+      if (!faceResult.success) {
+        return NextResponse.json({ error: faceResult.error }, { status: 400 });
+      }
     }
 
     // TODO: Drizzle 트랜잭션으로 크레딧 차감~이력 저장 묶기
@@ -176,8 +179,9 @@ export async function POST(request: NextRequest) {
 
     // 11. AI 생성 요청
     let generatedUrls: string[];
-    let replicateId: string;
+    let providerJobId: string;
     let cost: number;
+    const selectedModel = findModelById(modelId || 'flux-pro');
 
     try {
       const result = await generateWeddingPhotos(
@@ -187,7 +191,7 @@ export async function POST(request: NextRequest) {
         modelId || undefined
       );
       generatedUrls = result.urls;
-      replicateId = result.replicateId;
+      providerJobId = result.providerJobId;
       cost = result.cost;
     } catch (error) {
       // AI 생성 실패 시 크레딧 환불
@@ -206,18 +210,20 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    // 12. 생성된 이미지를 S3로 복사 (Replicate CDN → S3 영구 저장)
-    const s3CopyResults = await Promise.allSettled(
-      generatedUrls.map((url) =>
-        copyToS3(url, `ai-generated/${user.id}`)
-      )
-    );
-
-    // S3 복사 성공 시 URL 교체, 실패 시 Replicate URL 유지
-    const persistedUrls = generatedUrls.map((replicateUrl, i) => {
-      const result = s3CopyResults[i];
-      return result.status === 'fulfilled' ? result.value.url : replicateUrl;
-    });
+    // 12. 생성된 이미지를 S3로 복사 (URL 타입인 경우만 - Replicate CDN → S3)
+    // base64 프로바이더(OpenAI, Gemini)는 generate.ts에서 이미 S3 업로드 완료
+    let persistedUrls = generatedUrls;
+    if (selectedModel?.providerType === 'replicate') {
+      const s3CopyResults = await Promise.allSettled(
+        generatedUrls.map((url) =>
+          copyToS3(url, `ai-generated/${user.id}`)
+        )
+      );
+      persistedUrls = generatedUrls.map((originalUrl, i) => {
+        const result = s3CopyResults[i];
+        return result.status === 'fulfilled' ? result.value.url : originalUrl;
+      });
+    }
 
     // 13. 생성 이력 저장
     const [generation] = await db
@@ -230,7 +236,9 @@ export async function POST(request: NextRequest) {
         status: 'COMPLETED',
         creditsUsed: 1,
         cost,
-        replicateId,
+        replicateId: selectedModel?.providerType === 'replicate' ? providerJobId : null,
+        providerJobId,
+        providerType: selectedModel?.providerType ?? 'replicate',
         completedAt: new Date(),
       })
       .returning();

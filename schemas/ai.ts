@@ -35,7 +35,9 @@ export const AIGenerationSchema = z.object({
   status: AIGenerationStatusSchema.default('PENDING'),
   creditsUsed: z.number().int().min(1).default(1),
   cost: z.number().min(0), // USD
-  replicateId: z.string().max(255).nullable(),
+  replicateId: z.string().max(255).nullable(), // deprecated
+  providerJobId: z.string().max(255).nullable(),
+  providerType: z.enum(['replicate', 'openai', 'gemini']).nullable(),
 
   createdAt: z.date(),
   completedAt: z.date().nullable(),
@@ -84,6 +86,8 @@ export const AIGenerationResponseSchema = AIGenerationSchema.omit({
   userId: true,
   cost: true,
   replicateId: true,
+  providerJobId: true,
+  providerType: true,
 });
 
 export type AIGenerationResponse = z.infer<typeof AIGenerationResponseSchema>;

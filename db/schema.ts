@@ -235,7 +235,9 @@ export const aiGenerations = pgTable(
     status: aiGenerationStatusEnum('status').default('PENDING').notNull(),
     creditsUsed: integer('credits_used').default(1).notNull(),
     cost: real('cost').notNull(), // USD
-    replicateId: varchar('replicate_id', { length: 255 }),
+    replicateId: varchar('replicate_id', { length: 255 }), // deprecated: providerJobId 사용
+    providerJobId: varchar('provider_job_id', { length: 255 }),
+    providerType: varchar('provider_type', { length: 32 }), // 'replicate' | 'openai' | 'gemini'
 
     createdAt: timestamp('created_at').defaultNow().notNull(),
     completedAt: timestamp('completed_at'),
