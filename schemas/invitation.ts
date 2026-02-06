@@ -170,6 +170,7 @@ const ExtendedPersonSchema = z.object({
 }).partial();
 
 export const ExtendedDataSchema = z.object({
+  templateId: z.string().optional(),
   groom: ExtendedPersonSchema.optional(),
   bride: ExtendedPersonSchema.optional(),
   venue: z.object({

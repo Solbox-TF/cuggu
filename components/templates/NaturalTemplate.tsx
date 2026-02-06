@@ -472,17 +472,17 @@ export function NaturalTemplate({ data, isPreview = false }: NaturalTemplateProp
           </div>
         )}
 
-        {/* 잎사귀 장식 (상단) */}
-        <div className="absolute top-8 left-1/2 -translate-x-1/2 text-4xl opacity-40">
-          &#x1F343;
-        </div>
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.2 }}
           className="relative z-10 text-center px-6"
         >
+          {/* 잎사귀 장식 (상단) */}
+          <div className="text-4xl opacity-40 mb-4">
+            &#x1F343;
+          </div>
+
           <p className="text-xs tracking-[0.4em] text-emerald-600/80 uppercase mb-8">
             Wedding Invitation
           </p>
@@ -509,12 +509,12 @@ export function NaturalTemplate({ data, isPreview = false }: NaturalTemplateProp
               {data.wedding.venue.hall && ` ${data.wedding.venue.hall}`}
             </p>
           </div>
-        </motion.div>
 
-        {/* 잎사귀 장식 (하단) */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-4xl opacity-40">
-          &#x1F33F;
-        </div>
+          {/* 잎사귀 장식 (하단) */}
+          <div className="text-4xl opacity-40 mt-8">
+            &#x1F33F;
+          </div>
+        </motion.div>
       </section>
 
       {/* 동적 섹션 */}

@@ -481,17 +481,17 @@ export function FloralTemplate({ data, isPreview = false }: FloralTemplateProps)
           </div>
         )}
 
-        {/* 상단 꽃 장식 */}
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 text-3xl opacity-60">
-          &#x1F33A;
-        </div>
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.2 }}
           className="relative z-10 text-center px-6"
         >
+          {/* 상단 꽃 장식 */}
+          <div className="text-3xl opacity-60 mb-4">
+            &#x1F33A;
+          </div>
+
           <p className="font-serif text-xs tracking-[0.3em] text-rose-400 mb-8">
             Wedding Invitation
           </p>
@@ -516,12 +516,12 @@ export function FloralTemplate({ data, isPreview = false }: FloralTemplateProps)
               {data.wedding.venue.hall && ` ${data.wedding.venue.hall}`}
             </p>
           </div>
-        </motion.div>
 
-        {/* 하단 꽃 장식 */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-3xl opacity-60">
-          &#x1F338;
-        </div>
+          {/* 하단 꽃 장식 */}
+          <div className="text-3xl opacity-60 mt-8">
+            &#x1F338;
+          </div>
+        </motion.div>
       </section>
 
       {/* 동적 섹션 */}

@@ -135,7 +135,9 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
     }
   };
 
+  console.log('[PreviewPanel] invitation.templateId:', invitation.templateId);
   const TemplateComponent = getTemplateComponent(invitation.templateId || 'classic');
+  console.log('[PreviewPanel] TemplateComponent:', TemplateComponent.name);
 
   return (
     <aside className="w-[420px] bg-stone-50 border-l border-stone-200 flex flex-col flex-shrink-0">

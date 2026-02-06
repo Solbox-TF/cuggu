@@ -46,6 +46,7 @@ export async function GET(
 
     console.log('[GET] raw extendedData:', invitation.extendedData);
     const converted = dbRecordToInvitation(invitation as any);
+    console.log('[GET] converted templateId:', converted.templateId);
     console.log('[GET] converted venue:', converted.wedding.venue);
     return NextResponse.json({
       success: true,

@@ -45,6 +45,7 @@ export default function InvitationEditorPage() {
 
         if (result.success && result.data) {
           console.log('[Editor] loaded invitation:', result.data);
+          console.log('[Editor] templateId:', result.data.templateId);
           console.log('[Editor] venue:', result.data.wedding?.venue);
           setInvitation(result.data);
         }
