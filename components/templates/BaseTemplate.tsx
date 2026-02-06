@@ -3,7 +3,7 @@
 import { Fragment, useState, type ReactNode } from "react";
 import type { Invitation, SectionId } from "@/schemas/invitation";
 import { sanitizeSectionOrder } from "@/schemas/invitation";
-import type { TemplateTheme } from "@/lib/templates/themes";
+import type { SerializableTheme } from "@/lib/templates/types";
 import { GreetingSection } from "./sections/GreetingSection";
 import { ParentsSection } from "./sections/ParentsSection";
 import { CeremonySection } from "./sections/CeremonySection";
@@ -11,16 +11,17 @@ import { MapInfoSection } from "./sections/MapInfoSection";
 import { GallerySection } from "./sections/GallerySection";
 import { AccountsSection } from "./sections/AccountsSection";
 import { RsvpSectionWrapper } from "./sections/RsvpSectionWrapper";
+import { CoverSection } from "./CoverSection";
+import { FooterSection } from "./FooterSection";
+import { DividerRenderer } from "./renderers/DividerRenderer";
 
 interface BaseTemplateProps {
   data: Invitation;
-  theme: TemplateTheme;
+  theme: SerializableTheme;
   isPreview?: boolean;
-  coverSection: ReactNode;
-  footerSection: ReactNode;
 }
 
-export function BaseTemplate({ data, theme, coverSection, footerSection }: BaseTemplateProps) {
+export function BaseTemplate({ data, theme, isPreview }: BaseTemplateProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const sectionOrder = sanitizeSectionOrder(data.settings.sectionOrder as SectionId[] | undefined);
 
@@ -48,17 +49,17 @@ export function BaseTemplate({ data, theme, coverSection, footerSection }: BaseT
 
   return (
     <div className={theme.containerBg}>
-      {coverSection}
-      {theme.postCoverDivider}
+      <CoverSection data={data} config={theme.cover} />
+      <DividerRenderer config={theme.postCoverDivider} />
 
       {renderedSections.map(({ id, node }, idx) => (
         <Fragment key={id}>
-          {idx > 0 && theme.sectionDivider}
+          {idx > 0 && <DividerRenderer config={theme.sectionDivider} />}
           {node}
         </Fragment>
       ))}
 
-      {footerSection}
+      <FooterSection data={data} config={theme.footer} isPreview={isPreview} />
     </div>
   );
 }

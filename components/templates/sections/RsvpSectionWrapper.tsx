@@ -1,12 +1,12 @@
 "use client";
 
 import type { Invitation } from "@/schemas/invitation";
-import type { TemplateTheme } from "@/lib/templates/themes";
+import type { SerializableTheme } from "@/lib/templates/types";
 import { RSVPSection } from "@/components/rsvp/RSVPSection";
 
 interface RsvpSectionWrapperProps {
   data: Invitation;
-  theme: TemplateTheme;
+  theme: SerializableTheme;
 }
 
 export function RsvpSectionWrapper({ data, theme }: RsvpSectionWrapperProps) {

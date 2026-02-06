@@ -1,161 +1,8 @@
-import type { ReactNode } from 'react';
+import type { SerializableTheme } from './types';
 
-// ── TemplateTheme 타입 정의 ──
+// ── 6개 테마 정의 (100% JSON-serializable) ──
 
-export interface TemplateTheme {
-  id: string;
-
-  // ── 컨테이너 ──
-  containerBg: string;
-
-  // ── 섹션 공통 ──
-  sectionPadding: string;
-  contentMaxWidth: string;
-  galleryMaxWidth: string;
-
-  // ── 타이포그래피 ──
-  headingClass: string;
-  bodyText: string;
-  nameClass: string;
-  labelClass: string;
-
-  // ── 카드 ──
-  cardClass: string;
-  accountCardClass: string;
-
-  // ── 색상 ──
-  iconColor: string;
-  accentColor: string;
-  sideLabel: string;
-  phoneLinkClass: string;
-  accountTypeLabel: string;
-  accountName: string;
-  accountDetail: string;
-  accountHolder: string;
-
-  // ── 배경 ──
-  noticeBg: string;
-  mapInfoBg: string;
-  transportCard: string;
-
-  // ── 섹션별 배경 (선택적) ──
-  sectionBg: Partial<Record<string, string>>;
-
-  // ── 인사말 ──
-  greetingDecorTop?: ReactNode;
-  greetingDecorBottom?: ReactNode;
-  greetingMaxWidth: string;
-  greetingAlign: string; // 'text-center' or '' (Modern: left-aligned)
-
-  // ── 갤러리 ──
-  galleryGap: string;
-  galleryItemClass: string;
-  galleryHover: string;
-  galleryItemMotion: (index: number) => object;
-
-  // ── 부모 섹션 ──
-  parentsGrid: string;
-  parentsCardWrapper?: string;
-  parentsHeading?: ReactNode;
-  parentsRoleLabel?: boolean;   // "Groom"/"Bride" 상단 라벨 표시 여부
-  parentsFamilyNameClass?: string; // parentsRoleLabel=true일 때 가족 관계 텍스트 스타일
-  groomMotion: object;
-  brideMotion: object;
-
-  // ── 계좌 ──
-  accountsSpacing: string;
-  accountCardsSpacing: string;
-  accountsDivider?: ReactNode;  // 신랑/신부 사이 구분선 (Minimal)
-
-  // ── 카드 내부 텍스트 ──
-  cardLabelClass: string;       // 카드 내 소제목 ("예식 일시" 등)
-  cardValueClass: string;       // 카드 내 값 (날짜 텍스트 등)
-  cardSubTextClass: string;     // 카드 내 보조 텍스트 (주소 등)
-  noticeTextClass: string;      // 안내사항 텍스트
-  transportLabelClass: string;  // 교통편 제목
-  transportTextClass: string;   // 교통편 본문
-
-  // ── 예식 정보 ──
-  ceremonyCentered?: boolean;
-  ceremonyHeading?: ReactNode;
-  ceremonyDateLabel?: string;
-  ceremonyVenueLabel?: string;
-
-  // ── 지도 내 텍스트 ──
-  mapVenueNameClass: string;
-  mapAddressClass: string;
-
-  // ── 디바이더 ──
-  sectionDivider?: ReactNode;
-  postCoverDivider?: ReactNode;
-
-  // ── 커스텀 헤딩 (ReactNode 주입) ──
-  mapHeading?: ReactNode;
-  galleryHeading?: ReactNode;
-  accountsHeading?: ReactNode;
-}
-
-// ── 헬퍼: 테마별 장식 컴포넌트 ──
-
-function FloralDecor() {
-  return (
-    <div className="flex items-center justify-center gap-3">
-      <div className="h-px w-12 bg-gradient-to-r from-transparent to-rose-200" />
-      <span className="text-rose-300 text-lg">&#x2740;</span>
-      <div className="h-px w-12 bg-gradient-to-l from-transparent to-rose-200" />
-    </div>
-  );
-}
-
-function ElegantDiamondDecor() {
-  return (
-    <div className="flex items-center justify-center gap-4">
-      <div className="h-px w-16 bg-gradient-to-r from-transparent to-amber-400/60" />
-      <div className="w-2 h-2 rotate-45 border border-amber-400/60" />
-      <div className="h-px w-16 bg-gradient-to-l from-transparent to-amber-400/60" />
-    </div>
-  );
-}
-
-function NaturalLeafDecor() {
-  return (
-    <div className="flex items-center justify-center gap-2">
-      <span className="text-xl opacity-60">&#x1F33F;</span>
-    </div>
-  );
-}
-
-function NaturalLeafHeading({ children }: { children: ReactNode }) {
-  return (
-    <div className="text-center mb-10">
-      <span className="text-2xl opacity-60">&#x1F33F;</span>
-      <h2 className="text-xl md:text-2xl font-light text-stone-800 mt-2">{children}</h2>
-    </div>
-  );
-}
-
-function ElegantSubLabelHeading({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="text-center mb-10">
-      <p className="text-xs tracking-[0.3em] text-amber-500 uppercase mb-2">{label}</p>
-      <h2 className="text-xl md:text-2xl font-serif text-slate-800">{children}</h2>
-    </div>
-  );
-}
-
-function FloralLineHeading({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex items-center justify-center gap-3 mb-8">
-      <div className="h-px w-12 bg-gradient-to-r from-transparent to-rose-200" />
-      <h2 className="font-serif text-xl text-rose-800">{children}</h2>
-      <div className="h-px w-12 bg-gradient-to-l from-transparent to-rose-200" />
-    </div>
-  );
-}
-
-// ── 6개 테마 정의 ──
-
-export const classicTheme: TemplateTheme = {
+export const classicTheme: SerializableTheme = {
   id: 'classic',
   containerBg: 'min-h-screen bg-gradient-to-b from-amber-50 via-white to-amber-50',
   sectionPadding: 'py-12 md:py-20 px-6',
@@ -179,17 +26,17 @@ export const classicTheme: TemplateTheme = {
   mapInfoBg: 'mt-4 p-4 bg-amber-50/60 rounded-lg',
   transportCard: 'mt-4 p-4 bg-white rounded-lg border border-amber-100',
   sectionBg: { parents: 'bg-amber-50/30', gallery: 'bg-amber-50/30', rsvp: 'bg-amber-50/30' },
-  greetingDecorTop: <div className="text-3xl md:text-4xl mb-6 md:mb-8">🌸</div>,
+  greetingDecorTop: { type: 'emoji', emoji: '🌸', symbolClass: 'text-3xl md:text-4xl' },
   greetingDecorBottom: undefined,
   greetingMaxWidth: 'max-w-2xl w-full',
   greetingAlign: 'text-center',
   galleryGap: 'gap-3 md:gap-4',
   galleryItemClass: 'aspect-square overflow-hidden rounded-lg shadow-md cursor-pointer',
   galleryHover: 'hover:scale-110 transition-transform duration-300',
-  galleryItemMotion: (i) => ({ initial: { opacity: 0, scale: 0.9 }, whileInView: { opacity: 1, scale: 1 }, transition: { delay: i * 0.1 } }),
+  galleryItemAnimation: { preset: 'fade-scale', staggerDelay: 0.1 },
   parentsGrid: 'grid md:grid-cols-2 gap-8 md:gap-12',
-  groomMotion: { initial: { opacity: 0, x: -20 }, whileInView: { opacity: 1, x: 0 } },
-  brideMotion: { initial: { opacity: 0, x: 20 }, whileInView: { opacity: 1, x: 0 } },
+  groomAnimation: { preset: 'slide-x-left' },
+  brideAnimation: { preset: 'slide-x-right' },
   accountsSpacing: 'space-y-6 md:space-y-8',
   accountCardsSpacing: 'space-y-3',
   cardLabelClass: 'font-medium text-sm md:text-base text-gray-800 mb-1 md:mb-2',
@@ -202,11 +49,33 @@ export const classicTheme: TemplateTheme = {
   ceremonyVenueLabel: '예식 장소',
   mapVenueNameClass: 'text-sm font-medium text-gray-800',
   mapAddressClass: 'text-xs text-gray-600 mt-1',
+  mapShowTel: true,
   sectionDivider: undefined,
   postCoverDivider: undefined,
+
+  cover: {
+    layout: 'center',
+    imageOverlay: 'bg-gradient-to-b from-transparent via-white/50 to-white',
+    imageClass: 'opacity-40',
+    topDecoration: { type: 'emoji', emoji: '✨', symbolClass: 'text-5xl md:text-6xl', className: 'mb-6' },
+    labelText: 'Wedding Invitation',
+    labelClass: 'font-serif text-xs md:text-sm tracking-[0.3em] text-amber-800 mb-6 md:mb-8 uppercase',
+    nameClass: 'font-serif text-3xl md:text-4xl text-gray-800',
+    nameDivider: 'ampersand',
+    ampersandClass: 'text-xl md:text-2xl text-amber-600',
+    dateClass: 'text-base md:text-lg text-gray-600',
+    animation: { preset: 'slide-y', duration: 1, delay: 0.2 },
+    motionClass: 'relative z-10 text-center px-6',
+  },
+
+  footer: {
+    layout: 'centered',
+    containerClass: 'py-8 md:py-12 px-6 text-center text-xs md:text-sm text-gray-500 border-t border-amber-100',
+    linkClass: 'text-amber-600 hover:text-amber-700',
+  },
 };
 
-export const modernTheme: TemplateTheme = {
+export const modernTheme: SerializableTheme = {
   id: 'modern',
   containerBg: 'min-h-screen bg-zinc-50',
   sectionPadding: 'py-16 md:py-24 px-8 md:px-12',
@@ -230,18 +99,18 @@ export const modernTheme: TemplateTheme = {
   mapInfoBg: 'mt-6 space-y-2',
   transportCard: 'mt-6 p-4 bg-zinc-100 rounded-lg',
   sectionBg: { gallery: 'bg-zinc-100' },
-  greetingDecorTop: <p className="text-xs tracking-[0.3em] text-emerald-600 uppercase mb-6">Greeting</p>,
+  greetingDecorTop: { type: 'text-label', text: 'Greeting', className: 'text-xs tracking-[0.3em] text-emerald-600 uppercase mb-6' },
   greetingDecorBottom: undefined,
   greetingMaxWidth: 'max-w-2xl w-full',
   greetingAlign: '',
   galleryGap: 'gap-2',
   galleryItemClass: 'aspect-square overflow-hidden cursor-pointer',
   galleryHover: 'hover:scale-105 transition-transform duration-500',
-  galleryItemMotion: (i) => ({ initial: { opacity: 0, scale: 0.95 }, whileInView: { opacity: 1, scale: 1 }, transition: { delay: i * 0.08 } }),
+  galleryItemAnimation: { preset: 'scale', staggerDelay: 0.08 },
   parentsGrid: 'grid md:grid-cols-2 gap-12',
-  parentsHeading: <p className="text-xs tracking-[0.3em] text-emerald-600 uppercase mb-10">Bride &amp; Groom</p>,
-  groomMotion: { initial: { opacity: 0, x: -20 }, whileInView: { opacity: 1, x: 0 }, transition: { duration: 0.5 } },
-  brideMotion: { initial: { opacity: 0, x: 20 }, whileInView: { opacity: 1, x: 0 }, transition: { duration: 0.5 } },
+  parentsHeading: { type: 'text-label', headingClass: 'text-xs tracking-[0.3em] text-emerald-600 uppercase mb-10' },
+  groomAnimation: { preset: 'slide-x-left', duration: 0.5 },
+  brideAnimation: { preset: 'slide-x-right', duration: 0.5 },
   accountsSpacing: 'space-y-8',
   accountCardsSpacing: 'space-y-3',
   cardLabelClass: 'text-xs text-zinc-400 uppercase tracking-wide mb-1',
@@ -250,19 +119,41 @@ export const modernTheme: TemplateTheme = {
   noticeTextClass: 'text-sm text-zinc-500 whitespace-pre-line leading-relaxed',
   transportLabelClass: 'text-xs font-semibold text-zinc-700 mb-2',
   transportTextClass: 'text-sm text-zinc-600 whitespace-pre-line leading-relaxed',
-  ceremonyHeading: <p className="text-xs tracking-[0.3em] text-emerald-600 uppercase mb-6">Ceremony</p>,
+  ceremonyHeading: { type: 'text-label', headingClass: 'text-xs tracking-[0.3em] text-emerald-600 uppercase mb-6' },
   ceremonyDateLabel: 'Date & Time',
   ceremonyVenueLabel: 'Location',
   mapVenueNameClass: 'text-base font-medium text-zinc-800',
   mapAddressClass: 'text-sm text-zinc-500',
-  sectionDivider: <div className="h-px bg-zinc-200 mx-8 md:mx-12" />,
-  postCoverDivider: <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />,
-  galleryHeading: <p className="text-xs tracking-[0.3em] text-emerald-600 uppercase mb-10">Gallery</p>,
-  accountsHeading: <p className="text-xs tracking-[0.3em] text-emerald-600 uppercase mb-10">Account</p>,
-  mapHeading: <p className="text-xs tracking-[0.3em] text-emerald-600 uppercase mb-6">Location</p>,
+  sectionDivider: { type: 'horizontal-line', color: 'bg-zinc-200', className: 'mx-8 md:mx-12' },
+  postCoverDivider: { type: 'gradient-line', color: 'from-transparent via-emerald-500/40 to-transparent' },
+  galleryHeading: { type: 'text-label', headingClass: 'text-xs tracking-[0.3em] text-emerald-600 uppercase mb-10' },
+  accountsHeading: { type: 'text-label', headingClass: 'text-xs tracking-[0.3em] text-emerald-600 uppercase mb-10' },
+  mapHeading: { type: 'text-label', headingClass: 'text-xs tracking-[0.3em] text-emerald-600 uppercase mb-6' },
+
+  cover: {
+    layout: 'bottom-left',
+    imageOverlay: 'bg-gradient-to-t from-zinc-900/80 via-zinc-900/30 to-transparent',
+    fallbackBg: 'bg-gradient-to-br from-zinc-800 to-zinc-900',
+    labelText: 'Wedding Invitation',
+    labelClass: 'text-xs tracking-[0.4em] text-emerald-400 uppercase mb-4',
+    nameClass: 'text-5xl md:text-7xl font-bold text-white leading-tight mb-2',
+    nameDivider: 'lines-with-ampersand',
+    ampersandClass: 'text-emerald-400 text-lg',
+    nameDividerLineClass: 'w-12 bg-emerald-400',
+    dateClass: 'text-sm text-zinc-300 space-y-1',
+    venueClass: 'text-zinc-400',
+    animation: { preset: 'slide-x-left', duration: 0.8, delay: 0.2 },
+    motionClass: 'relative z-10 px-8 md:px-12 w-full',
+  },
+
+  footer: {
+    layout: 'flex-between',
+    containerClass: 'py-10 md:py-14 px-8 md:px-12 border-t border-zinc-200',
+    linkClass: 'hover:text-emerald-600 transition-colors',
+  },
 };
 
-export const minimalTheme: TemplateTheme = {
+export const minimalTheme: SerializableTheme = {
   id: 'minimal',
   containerBg: 'min-h-screen bg-white',
   sectionPadding: 'py-16 md:py-24 px-6',
@@ -293,15 +184,15 @@ export const minimalTheme: TemplateTheme = {
   galleryGap: 'gap-1',
   galleryItemClass: 'aspect-square overflow-hidden cursor-pointer',
   galleryHover: 'hover:opacity-80 transition-opacity duration-300',
-  galleryItemMotion: (i) => ({ initial: { opacity: 0 }, whileInView: { opacity: 1 }, transition: { delay: i * 0.05 } }),
+  galleryItemAnimation: { preset: 'fade', staggerDelay: 0.05 },
   parentsGrid: 'grid grid-cols-2 gap-12',
   parentsRoleLabel: true,
   parentsFamilyNameClass: 'text-xs text-stone-400 mb-2',
-  groomMotion: { initial: { opacity: 0 }, whileInView: { opacity: 1 }, transition: { duration: 0.6 } },
-  brideMotion: { initial: { opacity: 0 }, whileInView: { opacity: 1 }, transition: { duration: 0.6, delay: 0.1 } },
+  groomAnimation: { preset: 'fade', duration: 0.6 },
+  brideAnimation: { preset: 'fade', duration: 0.6, delay: 0.1 },
   accountsSpacing: 'space-y-10',
   accountCardsSpacing: 'space-y-4',
-  accountsDivider: <div className="h-px w-8 bg-stone-200 mx-auto" />,
+  accountsDivider: { type: 'horizontal-line', color: 'bg-stone-200', size: 'w-8', className: 'flex justify-center' },
   cardLabelClass: '',
   cardValueClass: 'text-sm text-stone-700 tracking-wide',
   cardSubTextClass: 'text-xs text-stone-400 tracking-wide',
@@ -311,16 +202,41 @@ export const minimalTheme: TemplateTheme = {
   ceremonyCentered: true,
   ceremonyDateLabel: 'Date & Time',
   ceremonyVenueLabel: 'Location',
+  ceremonyNoticeDivider: { type: 'horizontal-line', color: 'bg-stone-200', size: 'w-8', className: 'flex justify-center mb-6' },
   mapVenueNameClass: 'text-sm text-stone-800 font-medium tracking-wide',
   mapAddressClass: 'text-xs text-stone-400 tracking-wide',
-  sectionDivider: <div className="flex justify-center py-4"><div className="h-12 w-px bg-stone-200" /></div>,
-  postCoverDivider: <div className="flex justify-center py-4"><div className="h-12 w-px bg-stone-200" /></div>,
-  galleryHeading: <p className="text-[10px] tracking-[0.3em] text-stone-400 uppercase text-center mb-12">Gallery</p>,
-  accountsHeading: <p className="text-[10px] tracking-[0.3em] text-stone-400 uppercase mb-12">Account</p>,
-  mapHeading: <p className="text-[10px] tracking-[0.3em] text-stone-400 uppercase mb-8">오시는 길</p>,
+  transportTopDivider: { type: 'horizontal-line', color: 'bg-stone-200', size: 'w-8', className: 'flex justify-center mb-6' },
+  sectionDivider: { type: 'vertical-line', color: 'bg-stone-200', size: 'h-12', className: 'py-4' },
+  postCoverDivider: { type: 'vertical-line', color: 'bg-stone-200', size: 'h-12', className: 'py-4' },
+  galleryHeading: { type: 'text-label', headingClass: 'text-[10px] tracking-[0.3em] text-stone-400 uppercase text-center mb-12' },
+  accountsHeading: { type: 'text-label', headingClass: 'text-[10px] tracking-[0.3em] text-stone-400 uppercase mb-12' },
+  mapHeading: { type: 'text-label', headingClass: 'text-[10px] tracking-[0.3em] text-stone-400 uppercase mb-8' },
+
+  cover: {
+    layout: 'center',
+    imageClass: 'opacity-20 grayscale',
+    labelText: 'Wedding Invitation',
+    labelClass: 'text-[10px] tracking-[0.5em] text-stone-400 uppercase mb-16',
+    nameClass: 'text-3xl md:text-4xl font-light tracking-[0.15em] text-stone-900',
+    nameDivider: 'lines-only',
+    nameDividerLineClass: 'w-16 bg-stone-300',
+    dateClass: 'text-xs tracking-[0.2em] text-stone-400',
+    venueClass: 'text-xs tracking-[0.2em] text-stone-400 mt-4',
+    nameWrapperClass: 'space-y-6 mb-16',
+    animation: { preset: 'fade', duration: 1.2, delay: 0.3 },
+    motionClass: 'relative z-10 text-center px-6',
+  },
+
+  footer: {
+    layout: 'centered',
+    topDivider: { type: 'horizontal-line', color: 'bg-stone-200', size: 'w-8', className: 'flex justify-center mb-8' },
+    containerClass: 'py-12 md:py-16 px-6 text-center',
+    nameClass: 'text-[10px] tracking-[0.3em] text-stone-300',
+    linkClass: 'text-[10px] tracking-[0.2em] text-stone-300 hover:text-stone-500 transition-colors',
+  },
 };
 
-export const floralTheme: TemplateTheme = {
+export const floralTheme: SerializableTheme = {
   id: 'floral',
   containerBg: 'min-h-screen bg-gradient-to-b from-rose-50 via-pink-50/30 to-rose-50',
   sectionPadding: 'py-14 md:py-20 px-6',
@@ -344,18 +260,18 @@ export const floralTheme: TemplateTheme = {
   mapInfoBg: 'mt-6 p-4 bg-white/60 rounded-2xl border border-rose-100 text-center',
   transportCard: 'mt-4 p-5 bg-pink-50/60 rounded-2xl border border-rose-100',
   sectionBg: { rsvp: 'bg-rose-50/30' },
-  greetingDecorTop: <FloralDecor />,
-  greetingDecorBottom: <FloralDecor />,
+  greetingDecorTop: { type: 'symbol-with-lines', symbol: '\u2740', lineColor: 'to-rose-200', lineSize: 'w-12', symbolClass: 'text-rose-300 text-lg mx-3' },
+  greetingDecorBottom: { type: 'symbol-with-lines', symbol: '\u2740', lineColor: 'to-rose-200', lineSize: 'w-12', symbolClass: 'text-rose-300 text-lg mx-3' },
   greetingMaxWidth: 'max-w-lg w-full',
   greetingAlign: 'text-center',
   galleryGap: 'gap-3',
   galleryItemClass: 'aspect-square overflow-hidden rounded-2xl shadow-sm cursor-pointer border border-rose-100',
   galleryHover: 'hover:scale-110 transition-transform duration-300',
-  galleryItemMotion: (i) => ({ initial: { opacity: 0, scale: 0.9 }, whileInView: { opacity: 1, scale: 1 }, transition: { delay: i * 0.08 } }),
+  galleryItemAnimation: { preset: 'fade-scale', staggerDelay: 0.08 },
   parentsGrid: 'grid md:grid-cols-2 gap-8',
   parentsCardWrapper: 'text-center bg-white/50 rounded-2xl p-6 border border-rose-100',
-  groomMotion: { initial: { opacity: 0, scale: 0.95 }, whileInView: { opacity: 1, scale: 1 }, transition: { duration: 0.5 } },
-  brideMotion: { initial: { opacity: 0, scale: 0.95 }, whileInView: { opacity: 1, scale: 1 }, transition: { duration: 0.5, delay: 0.1 } },
+  groomAnimation: { preset: 'scale', duration: 0.5 },
+  brideAnimation: { preset: 'scale', duration: 0.5, delay: 0.1 },
   accountsSpacing: 'space-y-6',
   accountCardsSpacing: 'space-y-3',
   cardLabelClass: 'font-serif text-sm text-rose-800 mb-1',
@@ -370,10 +286,36 @@ export const floralTheme: TemplateTheme = {
   mapAddressClass: 'text-xs text-rose-500/70 mt-1',
   sectionDivider: undefined,
   postCoverDivider: undefined,
-  mapHeading: <FloralLineHeading>오시는 길</FloralLineHeading>,
+  mapHeading: { type: 'text-label', lineColor: 'to-rose-200', lineSize: 'w-12', headingClass: 'font-serif text-xl text-rose-800', className: 'flex items-center justify-center gap-3 mb-8' },
+
+  cover: {
+    layout: 'center',
+    imageOverlay: 'bg-gradient-to-b from-rose-50/60 via-transparent to-rose-50',
+    imageClass: 'opacity-30',
+    topDecoration: { type: 'emoji', emoji: '\u{1F33A}', symbolClass: 'text-3xl opacity-60', className: 'mb-4' },
+    bottomDecoration: { type: 'emoji', emoji: '\u{1F338}', symbolClass: 'text-3xl opacity-60', className: 'mt-8' },
+    labelText: 'Wedding Invitation',
+    labelClass: 'font-serif text-xs tracking-[0.3em] text-rose-400 mb-8',
+    nameWrapperClass: 'inline-block bg-white/60 backdrop-blur-sm rounded-3xl px-10 py-8 shadow-sm border border-rose-100',
+    nameClass: 'font-serif text-3xl md:text-4xl text-rose-900',
+    nameDivider: 'ampersand',
+    ampersandClass: 'text-rose-300 text-lg',
+    dateClass: 'text-sm text-rose-500',
+    venueClass: 'text-sm text-rose-400 mt-3',
+    animation: { preset: 'slide-y', duration: 1, delay: 0.2 },
+    motionClass: 'relative z-10 text-center px-6',
+  },
+
+  footer: {
+    layout: 'centered',
+    topDecoration: { type: 'symbol-with-lines', symbol: '\u2740', lineColor: 'to-rose-200', lineSize: 'w-8', symbolClass: 'text-rose-300 text-sm mx-3', className: 'flex items-center justify-center mb-6' },
+    containerClass: 'py-10 md:py-14 px-6 text-center',
+    nameClass: 'text-xs text-rose-400',
+    linkClass: 'text-xs text-rose-300 hover:text-rose-500 transition-colors',
+  },
 };
 
-export const elegantTheme: TemplateTheme = {
+export const elegantTheme: SerializableTheme = {
   id: 'elegant',
   containerBg: 'min-h-screen bg-gradient-to-b from-amber-50/30 via-white to-slate-50',
   sectionPadding: 'py-16 md:py-24 px-6',
@@ -397,19 +339,19 @@ export const elegantTheme: TemplateTheme = {
   mapInfoBg: 'mt-6 p-4 bg-white rounded-lg border border-slate-200 text-center',
   transportCard: 'mt-4 p-4 bg-white rounded-lg border border-slate-200',
   sectionBg: { parents: 'bg-slate-800', gallery: 'bg-slate-800', map: 'bg-slate-50', rsvp: 'bg-slate-50' },
-  greetingDecorTop: <ElegantDiamondDecor />,
-  greetingDecorBottom: <ElegantDiamondDecor />,
+  greetingDecorTop: { type: 'diamond-with-lines', lineColor: 'to-amber-400/60', lineSize: 'w-16', symbolClass: 'w-2 h-2 rotate-45 border border-amber-400/60 mx-4' },
+  greetingDecorBottom: { type: 'diamond-with-lines', lineColor: 'to-amber-400/60', lineSize: 'w-16', symbolClass: 'w-2 h-2 rotate-45 border border-amber-400/60 mx-4' },
   greetingMaxWidth: 'max-w-2xl w-full',
   greetingAlign: 'text-center',
   galleryGap: 'gap-3',
   galleryItemClass: 'aspect-square overflow-hidden rounded-lg cursor-pointer',
   galleryHover: 'hover:scale-110 transition-transform duration-500',
-  galleryItemMotion: (i) => ({ initial: { opacity: 0, scale: 0.95 }, whileInView: { opacity: 1, scale: 1 }, transition: { delay: i * 0.08 } }),
+  galleryItemAnimation: { preset: 'scale', staggerDelay: 0.08 },
   parentsGrid: 'grid md:grid-cols-2 gap-10',
   parentsRoleLabel: true,
   parentsFamilyNameClass: 'text-xs text-slate-400 mb-2',
-  groomMotion: { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 } },
-  brideMotion: { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, transition: { delay: 0.1 } },
+  groomAnimation: { preset: 'slide-y' },
+  brideAnimation: { preset: 'slide-y', delay: 0.1 },
   accountsSpacing: 'space-y-8',
   accountCardsSpacing: 'space-y-3',
   cardLabelClass: 'text-xs tracking-[0.2em] text-slate-400 uppercase mb-2',
@@ -424,12 +366,38 @@ export const elegantTheme: TemplateTheme = {
   mapAddressClass: 'text-sm text-slate-500 mt-1',
   sectionDivider: undefined,
   postCoverDivider: undefined,
-  galleryHeading: <ElegantSubLabelHeading label="Moments">Gallery</ElegantSubLabelHeading>,
-  accountsHeading: <ElegantSubLabelHeading label="Gift">마음 전하실 곳</ElegantSubLabelHeading>,
-  mapHeading: <ElegantSubLabelHeading label="Location">오시는 길</ElegantSubLabelHeading>,
+  galleryHeading: { type: 'with-sub-label', subLabel: 'Moments', subLabelClass: 'text-xs tracking-[0.3em] text-amber-500 uppercase mb-2', headingClass: 'text-xl md:text-2xl font-serif text-slate-800', className: 'text-center mb-10' },
+  accountsHeading: { type: 'with-sub-label', subLabel: 'Gift', subLabelClass: 'text-xs tracking-[0.3em] text-amber-500 uppercase mb-2', headingClass: 'text-xl md:text-2xl font-serif text-slate-800', className: 'text-center mb-10' },
+  mapHeading: { type: 'with-sub-label', subLabel: 'Location', subLabelClass: 'text-xs tracking-[0.3em] text-amber-500 uppercase mb-2', headingClass: 'text-xl md:text-2xl font-serif text-slate-800', className: 'text-center mb-10' },
+
+  cover: {
+    layout: 'center',
+    imageOverlay: 'bg-gradient-to-b from-slate-900/20 via-transparent to-white',
+    imageClass: 'opacity-30',
+    topDecoration: { type: 'diamond-with-lines', lineColor: 'to-amber-400', lineSize: 'w-12', symbolClass: 'w-3 h-3 rotate-45 border-2 border-amber-400 mx-3', className: 'flex items-center justify-center mb-8' },
+    bottomDecoration: { type: 'diamond-with-lines', lineColor: 'to-amber-400', lineSize: 'w-12', symbolClass: 'w-3 h-3 rotate-45 border-2 border-amber-400 mx-3', className: 'flex items-center justify-center mb-8' },
+    labelText: 'Wedding Invitation',
+    labelClass: 'text-xs tracking-[0.4em] text-amber-600 uppercase mb-8',
+    nameClass: 'font-serif text-4xl md:text-5xl text-slate-800',
+    nameWrapperClass: 'space-y-4 mb-10',
+    nameDivider: 'ampersand',
+    ampersandClass: 'text-2xl text-amber-500 font-light',
+    dateClass: 'text-sm tracking-wide text-slate-600',
+    venueClass: 'text-sm tracking-wide text-slate-600 mt-4',
+    animation: { preset: 'slide-y', duration: 1, delay: 0.2 },
+    motionClass: 'relative z-10 text-center px-6',
+  },
+
+  footer: {
+    layout: 'centered',
+    topDecoration: { type: 'diamond-with-lines', lineColor: 'to-amber-400/40', lineSize: 'w-8', symbolClass: 'w-2 h-2 rotate-45 border border-amber-400/40 mx-3', className: 'flex items-center justify-center mb-4' },
+    containerClass: 'py-10 md:py-14 px-6 text-center bg-slate-800',
+    nameClass: 'text-sm text-slate-400',
+    linkClass: 'text-xs text-slate-500 hover:text-amber-400 transition-colors',
+  },
 };
 
-export const naturalTheme: TemplateTheme = {
+export const naturalTheme: SerializableTheme = {
   id: 'natural',
   containerBg: 'min-h-screen bg-gradient-to-b from-stone-50 via-emerald-50/20 to-stone-50',
   sectionPadding: 'py-16 md:py-24 px-6',
@@ -453,20 +421,20 @@ export const naturalTheme: TemplateTheme = {
   mapInfoBg: 'mt-6 p-4 bg-white/80 rounded-2xl border border-emerald-100 text-center',
   transportCard: 'mt-4 p-4 bg-white/80 rounded-2xl border border-emerald-100',
   sectionBg: { parents: 'bg-emerald-50/30', accounts: 'bg-emerald-50/30', map: 'bg-emerald-50/30' },
-  greetingDecorTop: <NaturalLeafDecor />,
-  greetingDecorBottom: <NaturalLeafDecor />,
+  greetingDecorTop: { type: 'emoji', emoji: '\u{1F33F}', symbolClass: 'text-xl opacity-60' },
+  greetingDecorBottom: { type: 'emoji', emoji: '\u{1F33F}', symbolClass: 'text-xl opacity-60' },
   greetingMaxWidth: 'max-w-2xl w-full',
   greetingAlign: 'text-center',
   galleryGap: 'gap-4',
   galleryItemClass: 'aspect-square overflow-hidden rounded-2xl cursor-pointer shadow-sm',
   galleryHover: 'hover:scale-105 transition-transform duration-500',
-  galleryItemMotion: (i) => ({ initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, transition: { delay: i * 0.08 } }),
+  galleryItemAnimation: { preset: 'slide-y', staggerDelay: 0.08 },
   parentsGrid: 'grid md:grid-cols-2 gap-10',
   parentsCardWrapper: 'text-center p-6 bg-white/60 rounded-2xl',
   parentsRoleLabel: true,
   parentsFamilyNameClass: 'text-xs text-stone-400 mb-2',
-  groomMotion: { initial: { opacity: 0, x: -20 }, whileInView: { opacity: 1, x: 0 } },
-  brideMotion: { initial: { opacity: 0, x: 20 }, whileInView: { opacity: 1, x: 0 } },
+  groomAnimation: { preset: 'slide-x-left' },
+  brideAnimation: { preset: 'slide-x-right' },
   accountsSpacing: 'space-y-8',
   accountCardsSpacing: 'space-y-3',
   cardLabelClass: 'text-xs tracking-[0.15em] text-emerald-600/70 uppercase mb-2',
@@ -481,14 +449,41 @@ export const naturalTheme: TemplateTheme = {
   mapAddressClass: 'text-sm text-stone-500 mt-1',
   sectionDivider: undefined,
   postCoverDivider: undefined,
-  galleryHeading: <NaturalLeafHeading>Gallery</NaturalLeafHeading>,
-  accountsHeading: <NaturalLeafHeading>마음 전하실 곳</NaturalLeafHeading>,
-  mapHeading: <NaturalLeafHeading>오시는 길</NaturalLeafHeading>,
+  galleryHeading: { type: 'with-decoration', decoration: '\u{1F33F}', decorationClass: 'text-2xl opacity-60', headingClass: 'text-xl md:text-2xl font-light text-stone-800 mt-2', className: 'text-center mb-10' },
+  accountsHeading: { type: 'with-decoration', decoration: '\u{1F33F}', decorationClass: 'text-2xl opacity-60', headingClass: 'text-xl md:text-2xl font-light text-stone-800 mt-2', className: 'text-center mb-10' },
+  mapHeading: { type: 'with-decoration', decoration: '\u{1F33F}', decorationClass: 'text-2xl opacity-60', headingClass: 'text-xl md:text-2xl font-light text-stone-800 mt-2', className: 'text-center mb-10' },
+
+  cover: {
+    layout: 'center',
+    imageOverlay: 'bg-gradient-to-b from-stone-50/50 via-transparent to-stone-50',
+    imageClass: 'opacity-40',
+    topDecoration: { type: 'emoji', emoji: '\u{1F343}', symbolClass: 'text-4xl opacity-40', className: 'mb-4' },
+    bottomDecoration: { type: 'emoji', emoji: '\u{1F33F}', symbolClass: 'text-4xl opacity-40', className: 'mt-8' },
+    labelText: 'Wedding Invitation',
+    labelClass: 'text-xs tracking-[0.4em] text-emerald-600/80 uppercase mb-8',
+    nameClass: 'font-light text-4xl md:text-5xl text-stone-800 tracking-wide',
+    nameWrapperClass: 'space-y-4 mb-8',
+    nameDivider: 'lines-with-ampersand',
+    ampersandClass: 'text-emerald-500/70 text-lg',
+    nameDividerLineClass: 'w-8 bg-emerald-400/50',
+    dateClass: 'text-sm text-stone-500',
+    venueClass: 'text-sm text-stone-500 mt-4',
+    animation: { preset: 'slide-y', duration: 1, delay: 0.2 },
+    motionClass: 'relative z-10 text-center px-6',
+  },
+
+  footer: {
+    layout: 'centered',
+    topDecoration: { type: 'emoji', emoji: '\u{1F33F}', symbolClass: 'text-lg opacity-40', className: 'flex items-center justify-center gap-2 mb-4' },
+    containerClass: 'py-10 md:py-14 px-6 text-center',
+    nameClass: 'text-sm text-stone-500',
+    linkClass: 'text-xs text-stone-400 hover:text-emerald-600 transition-colors',
+  },
 };
 
 // ── 테마 레지스트리 ──
 
-export const themes: Record<string, TemplateTheme> = {
+export const themes: Record<string, SerializableTheme> = {
   classic: classicTheme,
   modern: modernTheme,
   minimal: minimalTheme,
@@ -497,6 +492,6 @@ export const themes: Record<string, TemplateTheme> = {
   natural: naturalTheme,
 };
 
-export function getTheme(templateId: string): TemplateTheme {
+export function getTheme(templateId: string): SerializableTheme {
   return themes[templateId] ?? classicTheme;
 }

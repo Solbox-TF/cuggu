@@ -3,13 +3,15 @@
 import { motion } from "framer-motion";
 import { Phone } from "lucide-react";
 import type { Invitation } from "@/schemas/invitation";
-import type { TemplateTheme } from "@/lib/templates/themes";
+import type { SerializableTheme } from "@/lib/templates/types";
 import { MapSection } from "../MapSection";
 import { NavigationButtons } from "../NavigationButtons";
+import { HeadingRenderer } from "../renderers/HeadingRenderer";
+import { DividerRenderer } from "../renderers/DividerRenderer";
 
 interface MapInfoSectionProps {
   data: Invitation;
-  theme: TemplateTheme;
+  theme: SerializableTheme;
 }
 
 export function MapInfoSection({ data, theme }: MapInfoSectionProps) {
@@ -27,7 +29,11 @@ export function MapInfoSection({ data, theme }: MapInfoSectionProps) {
           transition={{ duration: 0.8 }}
           className={theme.ceremonyCentered ? 'text-center' : ''}
         >
-          {theme.mapHeading || (
+          {theme.mapHeading ? (
+            <HeadingRenderer config={theme.mapHeading} fallbackClass={theme.headingClass}>
+              오시는 길
+            </HeadingRenderer>
+          ) : (
             <h2 className={theme.headingClass}>오시는 길</h2>
           )}
 
@@ -46,8 +52,7 @@ export function MapInfoSection({ data, theme }: MapInfoSectionProps) {
             <p className={theme.mapAddressClass}>
               {data.wedding.venue.address}
             </p>
-            {/* Classic만 tel 표시 */}
-            {theme.id === 'classic' && data.wedding.venue.tel && (
+            {theme.mapShowTel && data.wedding.venue.tel && (
               <a
                 href={`tel:${data.wedding.venue.tel}`}
                 className={`inline-flex items-center gap-1 text-xs ${theme.accentColor} mt-2 min-h-[44px]`}
@@ -71,7 +76,7 @@ export function MapInfoSection({ data, theme }: MapInfoSectionProps) {
               {theme.transportLabelClass && (
                 <p className={theme.transportLabelClass}>교통편 안내</p>
               )}
-              {theme.id === 'minimal' && <div className="h-px w-8 bg-stone-200 mx-auto mb-6" />}
+              <DividerRenderer config={theme.transportTopDivider} />
               <p className={theme.transportTextClass}>
                 {data.wedding.venue.transportation}
               </p>

@@ -3,12 +3,14 @@
 import { motion } from "framer-motion";
 import { Phone } from "lucide-react";
 import type { Invitation } from "@/schemas/invitation";
-import type { TemplateTheme } from "@/lib/templates/themes";
+import type { SerializableTheme } from "@/lib/templates/types";
+import { resolveAnimation } from "@/lib/templates/resolvers";
 import { formatFamilyName } from "@/lib/utils/family-display";
+import { HeadingRenderer } from "../renderers/HeadingRenderer";
 
 interface ParentsSectionProps {
   data: Invitation;
-  theme: TemplateTheme;
+  theme: SerializableTheme;
 }
 
 function PersonCard({
@@ -19,7 +21,7 @@ function PersonCard({
 }: {
   person: Invitation['groom'] | Invitation['bride'];
   side: 'groom' | 'bride';
-  theme: TemplateTheme;
+  theme: SerializableTheme;
   motionProps: object;
 }) {
   const roleLabel = side === 'groom' ? 'Groom' : 'Bride';
@@ -59,25 +61,32 @@ function PersonCard({
 export function ParentsSection({ data, theme }: ParentsSectionProps) {
   if (!data.settings.showParents) return null;
 
+  const groomMotion = resolveAnimation(theme.groomAnimation);
+  const brideMotion = resolveAnimation(theme.brideAnimation);
+
   return (
     <section
       className={`flex items-center justify-center ${theme.sectionPadding} ${theme.sectionBg.parents ?? ''}`}
       style={{ minHeight: 'var(--screen-height, 100vh)' }}
     >
       <div className={`${theme.contentMaxWidth} w-full`}>
-        {theme.parentsHeading}
+        {theme.parentsHeading && (
+          <HeadingRenderer config={theme.parentsHeading} fallbackClass={theme.headingClass}>
+            Bride &amp; Groom
+          </HeadingRenderer>
+        )}
         <div className={theme.parentsGrid}>
           <PersonCard
             person={data.groom}
             side="groom"
             theme={theme}
-            motionProps={theme.groomMotion}
+            motionProps={groomMotion}
           />
           <PersonCard
             person={data.bride}
             side="bride"
             theme={theme}
-            motionProps={theme.brideMotion}
+            motionProps={brideMotion}
           />
         </div>
       </div>

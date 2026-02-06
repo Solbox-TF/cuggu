@@ -2,11 +2,13 @@
 
 import { motion } from "framer-motion";
 import type { Invitation } from "@/schemas/invitation";
-import type { TemplateTheme } from "@/lib/templates/themes";
+import type { SerializableTheme } from "@/lib/templates/types";
+import { HeadingRenderer } from "../renderers/HeadingRenderer";
+import { DividerRenderer } from "../renderers/DividerRenderer";
 
 interface AccountsSectionProps {
   data: Invitation;
-  theme: TemplateTheme;
+  theme: SerializableTheme;
 }
 
 function AccountCard({
@@ -22,7 +24,7 @@ function AccountCard({
   bank: string;
   accountNumber: string;
   accountHolder: string;
-  theme: TemplateTheme;
+  theme: SerializableTheme;
 }) {
   return (
     <div className={theme.accountCardClass}>
@@ -45,7 +47,7 @@ function SideAccounts({
 }: {
   side: 'groom' | 'bride';
   person: Invitation['groom'] | Invitation['bride'];
-  theme: TemplateTheme;
+  theme: SerializableTheme;
 }) {
   const hasAccounts =
     person.account ||
@@ -129,16 +131,19 @@ export function AccountsSection({ data, theme }: AccountsSectionProps) {
           viewport={{ once: true }}
           className={theme.ceremonyCentered ? 'text-center' : ''}
         >
-          {theme.accountsHeading || (
+          {theme.accountsHeading ? (
+            <HeadingRenderer config={theme.accountsHeading} fallbackClass={theme.headingClass}>
+              마음 전하실 곳
+            </HeadingRenderer>
+          ) : (
             <h2 className={theme.headingClass}>마음 전하실 곳</h2>
           )}
 
           <div className={theme.accountsSpacing}>
             <SideAccounts side="groom" person={data.groom} theme={theme} />
 
-            {/* Minimal: 신랑/신부 사이 구분선 */}
             {theme.accountsDivider && hasGroomAccounts && hasBrideAccounts && (
-              theme.accountsDivider
+              <DividerRenderer config={theme.accountsDivider} />
             )}
 
             <SideAccounts side="bride" person={data.bride} theme={theme} />

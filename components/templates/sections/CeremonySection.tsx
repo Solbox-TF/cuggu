@@ -3,12 +3,14 @@
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Phone } from "lucide-react";
 import type { Invitation } from "@/schemas/invitation";
-import type { TemplateTheme } from "@/lib/templates/themes";
+import type { SerializableTheme } from "@/lib/templates/types";
 import { formatWeddingDateTime } from "@/lib/utils/date";
+import { HeadingRenderer } from "../renderers/HeadingRenderer";
+import { DividerRenderer } from "../renderers/DividerRenderer";
 
 interface CeremonySectionProps {
   data: Invitation;
-  theme: TemplateTheme;
+  theme: SerializableTheme;
 }
 
 /** Minimal 전용: 가운데 정렬 레이아웃 */
@@ -59,7 +61,7 @@ function CeremonyCentered({ data, theme, fullDateStr }: CeremonySectionProps & {
           {/* 안내사항 */}
           {data.content.notice && (
             <div className={theme.noticeBg}>
-              {theme.id === 'minimal' && <div className="h-px w-8 bg-stone-200 mx-auto mb-6" />}
+              <DividerRenderer config={theme.ceremonyNoticeDivider} />
               <p className={theme.noticeTextClass}>
                 {data.content.notice}
               </p>
@@ -82,7 +84,11 @@ function CeremonyCards({ data, theme, fullDateStr }: CeremonySectionProps & { fu
           viewport={{ once: true }}
           className="space-y-4 md:space-y-6"
         >
-          {theme.ceremonyHeading}
+          {theme.ceremonyHeading && (
+            <HeadingRenderer config={theme.ceremonyHeading} fallbackClass={theme.headingClass}>
+              Ceremony
+            </HeadingRenderer>
+          )}
 
           {/* 날짜/시간 */}
           <div className={theme.cardClass}>

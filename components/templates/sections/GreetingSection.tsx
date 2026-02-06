@@ -2,11 +2,12 @@
 
 import { motion } from "framer-motion";
 import type { Invitation } from "@/schemas/invitation";
-import type { TemplateTheme } from "@/lib/templates/themes";
+import type { SerializableTheme } from "@/lib/templates/types";
+import { DecorationRenderer } from "../renderers/DecorationRenderer";
 
 interface GreetingSectionProps {
   data: Invitation;
-  theme: TemplateTheme;
+  theme: SerializableTheme;
 }
 
 export function GreetingSection({ data, theme }: GreetingSectionProps) {
@@ -24,7 +25,7 @@ export function GreetingSection({ data, theme }: GreetingSectionProps) {
           className={theme.greetingAlign}
         >
           {theme.greetingDecorTop && (
-            <div className="mb-8">{theme.greetingDecorTop}</div>
+            <div className="mb-8"><DecorationRenderer config={theme.greetingDecorTop} /></div>
           )}
 
           <div className="space-y-4 md:space-y-6">
@@ -34,7 +35,7 @@ export function GreetingSection({ data, theme }: GreetingSectionProps) {
           </div>
 
           {theme.greetingDecorBottom && (
-            <div className="mt-8">{theme.greetingDecorBottom}</div>
+            <div className="mt-8"><DecorationRenderer config={theme.greetingDecorBottom} /></div>
           )}
         </motion.div>
       </div>
