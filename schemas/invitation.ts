@@ -8,6 +8,7 @@ export const FamilyDisplayModeSchema = z.enum([
   'full_names',           // 양부모 실명 (기본)
   'single_parent_father', // 아버지만
   'single_parent_mother', // 어머니만
+  'self_only',            // 본인 이름만 (부모님 표기 안 함)
 ]);
 
 export const TemplateCategorySchema = z.enum([

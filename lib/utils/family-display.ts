@@ -29,9 +29,12 @@ export interface FamilyNameInput {
 export function formatFamilyName(person: FamilyNameInput): string {
   const { relation, displayMode = 'full_names', isDeceased } = person;
 
-  if (!relation) return '';
-
   const mode = displayMode || 'full_names';
+
+  // 본인 이름만 모드: 부모님 정보 없이 빈 문자열 (템플릿에서 "신랑"/"신부" 폴백)
+  if (mode === 'self_only') return '';
+
+  if (!relation) return '';
 
   if (mode === 'single_parent_father') {
     const fatherName = person.fatherName?.trim();

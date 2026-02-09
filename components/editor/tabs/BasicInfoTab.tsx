@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useInvitationEditor } from '@/stores/invitation-editor';
 import { getBothDeceasedGuidance } from '@/lib/utils/family-display';
 import type { FamilyDisplayMode } from '@/schemas/invitation';
@@ -8,22 +9,22 @@ const DISPLAY_MODE_OPTIONS: { value: FamilyDisplayMode; label: string }[] = [
   { value: 'full_names', label: '부모님 모두 표기' },
   { value: 'single_parent_father', label: '한 분만 표기 - 아버지' },
   { value: 'single_parent_mother', label: '한 분만 표기 - 어머니' },
+  { value: 'self_only', label: '부모님 표기 안 함' },
 ];
+
+const GROOM_RELATION_PRESETS = ['장남', '차남', '삼남', '막내'];
+const BRIDE_RELATION_PRESETS = ['장녀', '차녀', '삼녀', '막내'];
 
 const GROOM_RELATIONS = [
   { value: '', label: '선택' },
-  { value: '장남', label: '장남' },
-  { value: '차남', label: '차남' },
-  { value: '삼남', label: '삼남' },
-  { value: '막내', label: '막내' },
+  ...GROOM_RELATION_PRESETS.map((v) => ({ value: v, label: v })),
+  { value: '__custom__', label: '직접 입력' },
 ];
 
 const BRIDE_RELATIONS = [
   { value: '', label: '선택' },
-  { value: '장녀', label: '장녀' },
-  { value: '차녀', label: '차녀' },
-  { value: '삼녀', label: '삼녀' },
-  { value: '막내', label: '막내' },
+  ...BRIDE_RELATION_PRESETS.map((v) => ({ value: v, label: v })),
+  { value: '__custom__', label: '직접 입력' },
 ];
 
 const INPUT_CLASS =
@@ -116,8 +117,8 @@ export function BasicInfoTab() {
           </div>
         </div>
 
-        {/* 부모님 이름 - 조건부 */}
-        {(groomMode === 'full_names' || groomMode === 'single_parent_father') && (
+        {/* 부모님 이름 - 조건부 (self_only면 전체 숨김) */}
+        {groomMode !== 'self_only' && (groomMode === 'full_names' || groomMode === 'single_parent_father') && (
           <div>
             <div className="flex items-center gap-3 mb-2">
               <label className="text-sm font-medium text-stone-600">아버지</label>
@@ -141,7 +142,7 @@ export function BasicInfoTab() {
           </div>
         )}
 
-        {(groomMode === 'full_names' || groomMode === 'single_parent_mother') && (
+        {groomMode !== 'self_only' && (groomMode === 'full_names' || groomMode === 'single_parent_mother') && (
           <div>
             <div className="flex items-center gap-3 mb-2">
               <label className="text-sm font-medium text-stone-600">어머니</label>
@@ -166,40 +167,32 @@ export function BasicInfoTab() {
         )}
 
         {/* 양부모 모두 故일 때 안내 */}
-        {getBothDeceasedGuidance(invitation.groom?.isDeceased) && (
+        {groomMode !== 'self_only' && getBothDeceasedGuidance(invitation.groom?.isDeceased) && (
           <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
             {getBothDeceasedGuidance(invitation.groom?.isDeceased)}
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-stone-600 mb-2">
-              관계
-            </label>
-            <select
-              value={invitation.groom?.relation || ''}
-              onChange={(e) => handleGroomChange('relation', e.target.value)}
-              className={INPUT_CLASS}
-            >
-              {GROOM_RELATIONS.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-          </div>
+        {groomMode !== 'self_only' && (
+          <RelationField
+            value={invitation.groom?.relation || ''}
+            onChange={(v) => handleGroomChange('relation', v)}
+            presets={GROOM_RELATION_PRESETS}
+            options={GROOM_RELATIONS}
+          />
+        )}
 
-          <div>
-            <label className="block text-sm font-medium text-stone-600 mb-2">
-              연락처
-            </label>
-            <input
-              type="tel"
-              value={invitation.groom?.phone || ''}
-              onChange={(e) => handleGroomChange('phone', e.target.value)}
-              placeholder="010-1234-5678"
-              className={INPUT_CLASS}
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-stone-600 mb-2">
+            연락처
+          </label>
+          <input
+            type="tel"
+            value={invitation.groom?.phone || ''}
+            onChange={(e) => handleGroomChange('phone', e.target.value)}
+            placeholder="010-1234-5678"
+            className={INPUT_CLASS}
+          />
         </div>
       </div>
 
@@ -242,8 +235,8 @@ export function BasicInfoTab() {
           </div>
         </div>
 
-        {/* 부모님 이름 - 조건부 */}
-        {(brideMode === 'full_names' || brideMode === 'single_parent_father') && (
+        {/* 부모님 이름 - 조건부 (self_only면 전체 숨김) */}
+        {brideMode !== 'self_only' && (brideMode === 'full_names' || brideMode === 'single_parent_father') && (
           <div>
             <div className="flex items-center gap-3 mb-2">
               <label className="text-sm font-medium text-stone-600">아버지</label>
@@ -267,7 +260,7 @@ export function BasicInfoTab() {
           </div>
         )}
 
-        {(brideMode === 'full_names' || brideMode === 'single_parent_mother') && (
+        {brideMode !== 'self_only' && (brideMode === 'full_names' || brideMode === 'single_parent_mother') && (
           <div>
             <div className="flex items-center gap-3 mb-2">
               <label className="text-sm font-medium text-stone-600">어머니</label>
@@ -292,42 +285,97 @@ export function BasicInfoTab() {
         )}
 
         {/* 양부모 모두 故일 때 안내 */}
-        {getBothDeceasedGuidance(invitation.bride?.isDeceased) && (
+        {brideMode !== 'self_only' && getBothDeceasedGuidance(invitation.bride?.isDeceased) && (
           <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
             {getBothDeceasedGuidance(invitation.bride?.isDeceased)}
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-stone-600 mb-2">
-              관계
-            </label>
-            <select
-              value={invitation.bride?.relation || ''}
-              onChange={(e) => handleBrideChange('relation', e.target.value)}
-              className={INPUT_CLASS}
-            >
-              {BRIDE_RELATIONS.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-          </div>
+        {brideMode !== 'self_only' && (
+          <RelationField
+            value={invitation.bride?.relation || ''}
+            onChange={(v) => handleBrideChange('relation', v)}
+            presets={BRIDE_RELATION_PRESETS}
+            options={BRIDE_RELATIONS}
+          />
+        )}
 
-          <div>
-            <label className="block text-sm font-medium text-stone-600 mb-2">
-              연락처
-            </label>
-            <input
-              type="tel"
-              value={invitation.bride?.phone || ''}
-              onChange={(e) => handleBrideChange('phone', e.target.value)}
-              placeholder="010-1234-5678"
-              className={INPUT_CLASS}
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-stone-600 mb-2">
+            연락처
+          </label>
+          <input
+            type="tel"
+            value={invitation.bride?.phone || ''}
+            onChange={(e) => handleBrideChange('phone', e.target.value)}
+            placeholder="010-1234-5678"
+            className={INPUT_CLASS}
+          />
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * 관계 필드 (select + 직접 입력)
+ * 프리셋에 없는 값이면 자동으로 직접 입력 모드로 전환
+ */
+function RelationField({
+  value,
+  onChange,
+  presets,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  presets: string[];
+  options: { value: string; label: string }[];
+}) {
+  const isCustom = value !== '' && !presets.includes(value);
+  const [customMode, setCustomMode] = useState(isCustom);
+
+  // 값이 바뀌었을 때 custom 모드 동기화
+  useEffect(() => {
+    if (value !== '' && !presets.includes(value)) {
+      setCustomMode(true);
+    }
+  }, [value, presets]);
+
+  const selectValue = customMode ? '__custom__' : value;
+
+  const handleSelectChange = (v: string) => {
+    if (v === '__custom__') {
+      setCustomMode(true);
+      onChange('');
+    } else {
+      setCustomMode(false);
+      onChange(v);
+    }
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-stone-600 mb-2">관계</label>
+      <select
+        value={selectValue}
+        onChange={(e) => handleSelectChange(e.target.value)}
+        className={INPUT_CLASS}
+      >
+        {options.map((r) => (
+          <option key={r.value} value={r.value}>{r.label}</option>
+        ))}
+      </select>
+      {customMode && (
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="예: 아들, 손자, 조카"
+          className={`${INPUT_CLASS} mt-2`}
+          autoFocus
+        />
+      )}
     </div>
   );
 }
