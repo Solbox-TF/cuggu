@@ -1,10 +1,22 @@
 import { signIn } from "@/auth";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-blue-50">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <h1 className="text-2xl font-bold text-center mb-6">Cuggu 로그인</h1>
+
+        {error === "RegistrationClosed" && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 text-center">
+            현재 신규 가입이 중단되었습니다.
+          </div>
+        )}
 
         <div className="space-y-4">
           {/* 카카오 로그인 */}

@@ -6,7 +6,8 @@ import Credentials from "next-auth/providers/credentials";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/db";
 import { users, accounts, sessions } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { isRegistrationEnabled } from "@/lib/settings";
 // import bcrypt from "bcryptjs"; // 향후 비밀번호 검증 시 사용
 
 export const authConfig = {
@@ -109,6 +110,26 @@ export const authConfig = {
   },
   useSecureCookies: process.env.NODE_ENV === "production",
   callbacks: {
+    async signIn({ account }) {
+      // OAuth 로그인만 체크 (credentials는 통과)
+      if (!account?.provider || account.provider === "credentials") return true;
+
+      // 기존 계정이면 항상 통과
+      const existing = await db.query.accounts.findFirst({
+        where: and(
+          eq(accounts.provider, account.provider),
+          eq(accounts.providerAccountId, account.providerAccountId),
+        ),
+      });
+      if (existing) return true;
+
+      // 신규 유저 → 가입 허용 여부 확인
+      const allowed = await isRegistrationEnabled();
+      if (!allowed) {
+        return "/login?error=RegistrationClosed";
+      }
+      return true;
+    },
     async jwt({ token, user, trigger }) {
       // 최초 로그인 시 또는 업데이트 시 role 조회
       if (user || trigger === "update") {
