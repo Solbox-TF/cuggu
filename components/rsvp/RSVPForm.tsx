@@ -3,6 +3,14 @@
 import { useState } from "react";
 import { Loader2, Check } from "lucide-react";
 import { AttendanceStatus, MealOption } from "@/schemas/rsvp";
+import type { SerializableTheme } from "@/lib/templates/types";
+
+const DEFAULT_INPUT = "border-stone-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent";
+const DEFAULT_ACTIVE = "bg-rose-600 text-white";
+const DEFAULT_INACTIVE = "bg-stone-100 text-stone-600 hover:bg-stone-200";
+const DEFAULT_SUBMIT = "bg-rose-600 hover:bg-rose-700 text-white";
+const DEFAULT_LABEL = "text-sm font-medium text-stone-700";
+const DEFAULT_REQUIRED = "text-rose-500";
 
 export interface RSVPFormFields {
   phone?: boolean;
@@ -14,11 +22,19 @@ export interface RSVPFormFields {
 interface RSVPFormProps {
   invitationId: string;
   fields?: RSVPFormFields;
+  theme?: SerializableTheme;
   onSuccess?: () => void;
   className?: string;
 }
 
-export function RSVPForm({ invitationId, fields, onSuccess, className = "" }: RSVPFormProps) {
+export function RSVPForm({ invitationId, fields, theme, onSuccess, className = "" }: RSVPFormProps) {
+  const inputCls = theme?.rsvpInputClass ?? DEFAULT_INPUT;
+  const activeCls = theme?.rsvpActiveClass ?? DEFAULT_ACTIVE;
+  const inactiveCls = theme?.rsvpInactiveClass ?? DEFAULT_INACTIVE;
+  const submitCls = theme?.rsvpSubmitClass ?? DEFAULT_SUBMIT;
+  const labelCls = theme?.labelClass ?? DEFAULT_LABEL;
+  const requiredCls = theme?.iconColor ?? DEFAULT_REQUIRED;
+
   // 기본값: 모든 필드 표시
   const showPhone = fields?.phone !== false;
   const showGuestCount = fields?.guestCount !== false;
@@ -95,22 +111,22 @@ export function RSVPForm({ invitationId, fields, onSuccess, className = "" }: RS
     <form onSubmit={handleSubmit} className={`space-y-5 ${className}`}>
       {/* 이름 */}
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-1.5">
-          이름 <span className="text-rose-500">*</span>
+        <label className={`block ${labelCls} mb-1.5`}>
+          이름 <span className={requiredCls}>*</span>
         </label>
         <input
           type="text"
           value={guestName}
           onChange={(e) => setGuestName(e.target.value)}
           placeholder="이름을 입력하세요"
-          className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+          className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none ${inputCls}`}
         />
       </div>
 
       {/* 연락처 */}
       {showPhone && (
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">
+          <label className={`block ${labelCls} mb-1.5`}>
             연락처 <span className="text-stone-400">(선택)</span>
           </label>
           <input
@@ -118,15 +134,15 @@ export function RSVPForm({ invitationId, fields, onSuccess, className = "" }: RS
             value={guestPhone}
             onChange={(e) => setGuestPhone(e.target.value)}
             placeholder="010-0000-0000"
-            className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+            className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none ${inputCls}`}
           />
         </div>
       )}
 
       {/* 참석 여부 */}
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-2">
-          참석 여부 <span className="text-rose-500">*</span>
+        <label className={`block ${labelCls} mb-2`}>
+          참석 여부 <span className={requiredCls}>*</span>
         </label>
         <div className="flex gap-2">
           {[
@@ -139,9 +155,7 @@ export function RSVPForm({ invitationId, fields, onSuccess, className = "" }: RS
               type="button"
               onClick={() => setAttendance(option.value as AttendanceStatus)}
               className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${
-                attendance === option.value
-                  ? "bg-rose-600 text-white"
-                  : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                attendance === option.value ? activeCls : inactiveCls
               }`}
             >
               {option.label}
@@ -156,13 +170,13 @@ export function RSVPForm({ invitationId, fields, onSuccess, className = "" }: RS
           {/* 동행 인원 */}
           {showGuestCount && (
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">
+              <label className={`block ${labelCls} mb-2`}>
                 동행 인원 (본인 포함)
               </label>
               <select
                 value={guestCount}
                 onChange={(e) => setGuestCount(Number(e.target.value))}
-                className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none ${inputCls}`}
               >
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                   <option key={n} value={n}>{n}명</option>
@@ -174,13 +188,13 @@ export function RSVPForm({ invitationId, fields, onSuccess, className = "" }: RS
           {/* 식사 */}
           {showMeal && (
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">
+              <label className={`block ${labelCls} mb-2`}>
                 식사
               </label>
               <select
                 value={mealOption}
                 onChange={(e) => setMealOption(e.target.value as MealOption)}
-                className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none ${inputCls}`}
               >
                 <option value="ADULT">성인</option>
                 <option value="CHILD">어린이</option>
@@ -195,7 +209,7 @@ export function RSVPForm({ invitationId, fields, onSuccess, className = "" }: RS
       {/* 축하 메시지 */}
       {showMessage && (
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">
+          <label className={`block ${labelCls} mb-1.5`}>
             축하 메시지 <span className="text-stone-400">(선택)</span>
           </label>
           <textarea
@@ -204,7 +218,7 @@ export function RSVPForm({ invitationId, fields, onSuccess, className = "" }: RS
             placeholder="축하 메시지를 남겨주세요"
             rows={3}
             maxLength={500}
-            className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none"
+            className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none ${inputCls} resize-none`}
           />
           <p className="text-xs text-stone-400 mt-1 text-right">{message.length}/500</p>
         </div>
@@ -219,7 +233,7 @@ export function RSVPForm({ invitationId, fields, onSuccess, className = "" }: RS
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className={`w-full py-3 ${submitCls} font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
       >
         {isSubmitting ? (
           <>

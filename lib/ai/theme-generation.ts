@@ -2,8 +2,64 @@ import Anthropic from '@anthropic-ai/sdk';
 import { SerializableThemeSchema } from '@/schemas/theme';
 import { toJSONSchema } from 'zod';
 import { THEME_SYSTEM_PROMPT } from './theme-prompt';
-import { validateThemeClasses } from '@/lib/templates/safelist';
 import type { SerializableTheme } from '@/lib/templates/types';
+
+// AI가 하이픈 포함 enum 값을 underscore/다른 형태로 생성하는 경우 정규화
+const ENUM_CORRECTIONS: Record<string, Record<string, string>> = {
+  type: {
+    symbol_with_lines: 'symbol-with-lines',
+    'symbol with lines': 'symbol-with-lines',
+    diamond_with_lines: 'diamond-with-lines',
+    'diamond with lines': 'diamond-with-lines',
+    horizontal_line: 'horizontal-line',
+    'horizontal line': 'horizontal-line',
+    vertical_line: 'vertical-line',
+    'vertical line': 'vertical-line',
+    gradient_line: 'gradient-line',
+    'gradient line': 'gradient-line',
+    text_label: 'text-label',
+    'text label': 'text-label',
+    with_decoration: 'with-decoration',
+    'with decoration': 'with-decoration',
+    with_sub_label: 'with-sub-label',
+    'with sub label': 'with-sub-label',
+  },
+  preset: {
+    slide_x_left: 'slide-x-left',
+    slide_x_right: 'slide-x-right',
+    slide_y: 'slide-y',
+    fade_scale: 'fade-scale',
+  },
+  layout: {
+    bottom_left: 'bottom-left',
+    'bottom left': 'bottom-left',
+    flex_between: 'flex-between',
+    'flex between': 'flex-between',
+  },
+  nameDivider: {
+    lines_only: 'lines-only',
+    'lines only': 'lines-only',
+    lines_with_ampersand: 'lines-with-ampersand',
+    'lines with ampersand': 'lines-with-ampersand',
+  },
+};
+
+function sanitizeEnums(obj: unknown): unknown {
+  if (obj === null || obj === undefined || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(sanitizeEnums);
+
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    if (typeof value === 'string' && ENUM_CORRECTIONS[key]) {
+      result[key] = ENUM_CORRECTIONS[key][value] ?? value;
+    } else if (typeof value === 'object' && value !== null) {
+      result[key] = sanitizeEnums(value);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
 
 let anthropic: Anthropic | null = null;
 
@@ -18,13 +74,18 @@ function getClient(): Anthropic {
   return anthropic;
 }
 
+export interface ThemeGenerationResult {
+  theme: SerializableTheme;
+  usage: { inputTokens: number; outputTokens: number };
+}
+
 /**
  * Claude API를 사용하여 사용자 프롬프트로부터 웨딩 테마를 생성
  *
- * tool_use 방식으로 JSON 구조를 강제하고,
- * Zod + safelist 이중 검증 후 반환
+ * tool_use 방식으로 JSON 구조를 강제하고, Zod 구조 검증 후 반환.
+ * safelist 검증은 caller(API route)에서 처리하여 저장 후 검증 가능하도록 함.
  */
-export async function generateTheme(userPrompt: string): Promise<SerializableTheme> {
+export async function generateTheme(userPrompt: string): Promise<ThemeGenerationResult> {
   const client = getClient();
 
   // Zod v4 → JSON Schema 변환 (tool input_schema용)
@@ -56,11 +117,15 @@ export async function generateTheme(userPrompt: string): Promise<SerializableThe
     throw new Error('AI가 테마를 생성하지 못했습니다');
   }
 
-  // 1. Zod 구조 검증
-  const parsed = SerializableThemeSchema.parse(toolUse.input);
+  // AI 출력 정규화 (하이픈 enum 값 교정) → Zod 구조 검증
+  const sanitized = sanitizeEnums(toolUse.input);
+  const parsed = SerializableThemeSchema.parse(sanitized);
 
-  // 2. Tailwind safelist 클래스 검증
-  validateThemeClasses(parsed as unknown as Record<string, unknown>);
-
-  return parsed as unknown as SerializableTheme;
+  return {
+    theme: parsed as unknown as SerializableTheme,
+    usage: {
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+    },
+  };
 }

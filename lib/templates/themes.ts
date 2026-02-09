@@ -62,6 +62,12 @@ export const classicTheme: SerializableTheme = {
   countdownLabelClass: 'text-xs text-gray-500',
   countdownUnitClass: 'text-[10px] text-gray-400',
 
+  // RSVP 폼
+  rsvpInputClass: 'border-amber-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent',
+  rsvpActiveClass: 'bg-amber-600 text-white',
+  rsvpInactiveClass: 'bg-amber-50 text-amber-800 hover:bg-amber-100',
+  rsvpSubmitClass: 'bg-amber-600 hover:bg-amber-700 text-white',
+
   cover: {
     layout: 'center',
     imageOverlay: 'bg-gradient-to-b from-transparent via-white/50 to-white',
@@ -144,6 +150,12 @@ export const modernTheme: SerializableTheme = {
   countdownNumberClass: 'text-5xl font-bold text-zinc-900',
   countdownLabelClass: 'text-xs text-zinc-400 uppercase tracking-wider',
   countdownUnitClass: 'text-[10px] text-zinc-400',
+
+  // RSVP 폼
+  rsvpInputClass: 'border-zinc-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent',
+  rsvpActiveClass: 'bg-emerald-600 text-white',
+  rsvpInactiveClass: 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',
+  rsvpSubmitClass: 'bg-emerald-600 hover:bg-emerald-700 text-white',
 
   galleryHeading: { type: 'text-label', headingClass: 'text-xs tracking-[0.3em] text-emerald-600 uppercase mb-10' },
   accountsHeading: { type: 'text-label', headingClass: 'text-xs tracking-[0.3em] text-emerald-600 uppercase mb-10' },
@@ -237,6 +249,12 @@ export const minimalTheme: SerializableTheme = {
   countdownLabelClass: 'text-[10px] tracking-[0.2em] text-stone-400 uppercase',
   countdownUnitClass: 'text-[10px] text-stone-300',
 
+  // RSVP 폼
+  rsvpInputClass: 'border-stone-300 focus:ring-1 focus:ring-stone-900 focus:border-transparent',
+  rsvpActiveClass: 'bg-zinc-900 text-white',
+  rsvpInactiveClass: 'bg-stone-100 text-stone-500 hover:bg-stone-200',
+  rsvpSubmitClass: 'bg-zinc-900 hover:bg-zinc-800 text-white',
+
   galleryHeading: { type: 'text-label', headingClass: 'text-[10px] tracking-[0.3em] text-stone-400 uppercase text-center mb-12' },
   accountsHeading: { type: 'text-label', headingClass: 'text-[10px] tracking-[0.3em] text-stone-400 uppercase mb-12' },
   mapHeading: { type: 'text-label', headingClass: 'text-[10px] tracking-[0.3em] text-stone-400 uppercase mb-8' },
@@ -324,6 +342,12 @@ export const floralTheme: SerializableTheme = {
   countdownNumberClass: 'text-4xl font-serif text-rose-700',
   countdownLabelClass: 'text-xs text-rose-400',
   countdownUnitClass: 'text-[10px] text-rose-300',
+
+  // RSVP 폼
+  rsvpInputClass: 'border-rose-200 focus:ring-2 focus:ring-rose-400 focus:border-transparent',
+  rsvpActiveClass: 'bg-rose-500 text-white',
+  rsvpInactiveClass: 'bg-rose-50 text-rose-700 hover:bg-rose-100',
+  rsvpSubmitClass: 'bg-rose-500 hover:bg-rose-600 text-white',
 
   mapHeading: { type: 'text-label', lineColor: 'to-rose-200', lineSize: 'w-12', headingClass: 'font-serif text-xl text-rose-800', className: 'flex items-center justify-center gap-3 mb-8' },
 
@@ -414,6 +438,12 @@ export const elegantTheme: SerializableTheme = {
   countdownNumberClass: 'text-5xl font-serif text-slate-800',
   countdownLabelClass: 'text-xs tracking-[0.2em] text-amber-500 uppercase',
   countdownUnitClass: 'text-[10px] text-slate-400',
+
+  // RSVP 폼
+  rsvpInputClass: 'border-slate-200 focus:ring-2 focus:ring-amber-500 focus:border-transparent',
+  rsvpActiveClass: 'bg-amber-500 text-white',
+  rsvpInactiveClass: 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+  rsvpSubmitClass: 'bg-amber-600 hover:bg-amber-700 text-white',
 
   galleryHeading: { type: 'with-sub-label', subLabel: 'Moments', subLabelClass: 'text-xs tracking-[0.3em] text-amber-500 uppercase mb-2', headingClass: 'text-xl md:text-2xl font-serif text-slate-800', className: 'text-center mb-10' },
   accountsHeading: { type: 'with-sub-label', subLabel: 'Gift', subLabelClass: 'text-xs tracking-[0.3em] text-amber-500 uppercase mb-2', headingClass: 'text-xl md:text-2xl font-serif text-slate-800', className: 'text-center mb-10' },
@@ -507,6 +537,12 @@ export const naturalTheme: SerializableTheme = {
   countdownNumberClass: 'text-4xl font-light text-stone-800',
   countdownLabelClass: 'text-xs tracking-[0.15em] text-emerald-600/70 uppercase',
   countdownUnitClass: 'text-[10px] text-stone-400',
+
+  // RSVP 폼
+  rsvpInputClass: 'border-emerald-200 focus:ring-2 focus:ring-emerald-400 focus:border-transparent',
+  rsvpActiveClass: 'bg-emerald-500 text-white',
+  rsvpInactiveClass: 'bg-stone-100 text-stone-600 hover:bg-stone-200',
+  rsvpSubmitClass: 'bg-emerald-500 hover:bg-emerald-600 text-white',
 
   galleryHeading: { type: 'with-decoration', decoration: '\u{1F33F}', decorationClass: 'text-2xl opacity-60', headingClass: 'text-xl md:text-2xl font-light text-stone-800 mt-2', className: 'text-center mb-10' },
   accountsHeading: { type: 'with-decoration', decoration: '\u{1F33F}', decorationClass: 'text-2xl opacity-60', headingClass: 'text-xl md:text-2xl font-light text-stone-800 mt-2', className: 'text-center mb-10' },

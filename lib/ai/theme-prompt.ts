@@ -24,6 +24,8 @@ Cover → Greeting → Parents → Ceremony → Map → Gallery → Accounts →
 7. Opacity variants use slash notation: text-rose-500/70, bg-white/60
 8. For serif/elegant feel: use font-serif. For modern/clean: use font-light or font-bold
 9. Korean wedding aesthetic: elegant, romantic, respectful. Not too playful
+10. ALWAYS provide D-Day calendar fields (calendarAccentColor, calendarTodayColor, countdownNumberClass, etc.) using your accent color
+11. ALWAYS provide RSVP form fields (rsvpInputClass, rsvpActiveClass, rsvpInactiveClass, rsvpSubmitClass) using your accent color
 
 ## ANIMATION PRESETS (use these exact strings)
 - "fade" — simple opacity
@@ -74,6 +76,10 @@ Cover → Greeting → Parents → Ceremony → Map → Gallery → Accounts →
 - greetingDecorTop/Bottom: decorative elements above/below the greeting text
 - galleryItemAnimation: stagger animation for gallery grid (use staggerDelay: 0.05-0.1)
 - groomAnimation/brideAnimation: parents section entry animations
+- rsvpInputClass: form input styling (border + focus ring). Example: "border-rose-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+- rsvpActiveClass: selected attendance button. Example: "bg-rose-600 text-white"
+- rsvpInactiveClass: unselected attendance button. Example: "bg-rose-50 text-rose-700 hover:bg-rose-100"
+- rsvpSubmitClass: submit button. Example: "bg-rose-600 hover:bg-rose-700 text-white"
 
 ## EXAMPLE: Classic Theme
 ${JSON.stringify(classicTheme, null, 2)}

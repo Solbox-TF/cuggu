@@ -174,6 +174,12 @@ export const SerializableThemeSchema = z.object({
   countdownLabelClass: z.string().optional(),
   countdownUnitClass: z.string().optional(),
 
+  // RSVP 폼
+  rsvpInputClass: z.string().optional(),
+  rsvpActiveClass: z.string().optional(),
+  rsvpInactiveClass: z.string().optional(),
+  rsvpSubmitClass: z.string().optional(),
+
   // 커버/푸터
   cover: CoverConfigSchema,
   footer: FooterConfigSchema,

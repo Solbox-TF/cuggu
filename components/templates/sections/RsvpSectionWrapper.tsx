@@ -14,7 +14,7 @@ export function RsvpSectionWrapper({ data, theme }: RsvpSectionWrapperProps) {
 
   return (
     <section className={`${theme.sectionPadding} ${theme.sectionBg.rsvp ?? ''}`}>
-      <RSVPSection invitationId={data.id} fields={data.settings.rsvpFields} />
+      <RSVPSection invitationId={data.id} fields={data.settings.rsvpFields} theme={theme} />
     </section>
   );
 }

@@ -236,6 +236,12 @@ export interface SerializableTheme {
   countdownLabelClass?: string;
   countdownUnitClass?: string;
 
+  // ── RSVP 폼 ──
+  rsvpInputClass?: string;
+  rsvpActiveClass?: string;
+  rsvpInactiveClass?: string;
+  rsvpSubmitClass?: string;
+
   // ── 커버/푸터 ──
   cover: CoverConfig;
   footer: FooterConfig;
