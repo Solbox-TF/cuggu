@@ -73,6 +73,13 @@ export interface AdminStatsResponse {
     thisMonthGenerations: number;
     thisMonthCost: number;
   };
+  aiThemes: {
+    totalThemes: number;
+    totalCost: number;
+    thisMonthThemes: number;
+    thisMonthCost: number;
+    safelistFailRate: number;
+  };
   revenue: {
     totalAmount: number;
     thisMonthAmount: number;

@@ -19,11 +19,14 @@ for (const c of WEDDING_COLORS) {
     safelist.push(
       `text-${c}-${s}`, `bg-${c}-${s}`, `border-${c}-${s}`,
       `from-${c}-${s}`, `via-${c}-${s}`, `to-${c}-${s}`, `ring-${c}-${s}`,
+      // hover (AI 생성 테마용)
+      `hover:text-${c}-${s}`, `hover:bg-${c}-${s}`,
     );
     for (const o of OPACITIES) {
       safelist.push(
         `text-${c}-${s}/${o}`, `bg-${c}-${s}/${o}`, `border-${c}-${s}/${o}`,
         `from-${c}-${s}/${o}`, `via-${c}-${s}/${o}`, `to-${c}-${s}/${o}`,
+        `ring-${c}-${s}/${o}`,
       );
     }
   }

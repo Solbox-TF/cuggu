@@ -75,6 +75,11 @@ export const aiGenerationStatusEnum = pgEnum('ai_generation_status', [
   'FAILED',
 ]);
 
+export const aiThemeStatusEnum = pgEnum('ai_theme_status', [
+  'completed',
+  'safelist_failed',
+]);
+
 export const paymentTypeEnum = pgEnum('payment_type', [
   'PREMIUM_UPGRADE',
   'AI_CREDITS',
@@ -300,7 +305,26 @@ export const appSettings = pgTable('app_settings', {
   categoryIdx: index('app_settings_category_idx').on(table.category),
 }));
 
-// 9-10. NextAuth.js tables
+// 9. AI Themes (AI 생성 테마 라이브러리)
+export const aiThemes = pgTable('ai_themes', {
+  id: varchar('id', { length: 128 }).primaryKey().$defaultFn(() => createId()),
+  userId: varchar('user_id', { length: 128 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  invitationId: varchar('invitation_id', { length: 128 }).references(() => invitations.id, { onDelete: 'cascade' }),
+  prompt: text('prompt').notNull(),
+  theme: jsonb('theme').notNull(),
+  status: aiThemeStatusEnum('status').default('completed').notNull(),
+  failReason: text('fail_reason'),
+  creditsUsed: integer('credits_used').default(1).notNull(),
+  inputTokens: integer('input_tokens'),
+  outputTokens: integer('output_tokens'),
+  cost: real('cost'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('ai_themes_user_id_idx').on(table.userId),
+  index('ai_themes_invitation_id_idx').on(table.invitationId),
+]);
+
+// 10-11. NextAuth.js tables
 export const accounts = pgTable(
   'accounts',
   {
@@ -354,6 +378,7 @@ export const sessions = pgTable(
 export const usersRelations = relations(users, ({ many }) => ({
   invitations: many(invitations),
   aiGenerations: many(aiGenerations),
+  aiThemes: many(aiThemes),
   payments: many(payments),
   accounts: many(accounts),
   sessions: many(sessions),
@@ -373,6 +398,7 @@ export const invitationsRelations = relations(invitations, ({ one, many }) => ({
     references: [templates.id],
   }),
   rsvps: many(rsvps),
+  aiThemes: many(aiThemes),
 }));
 
 export const rsvpsRelations = relations(rsvps, ({ one }) => ({
@@ -386,6 +412,17 @@ export const aiGenerationsRelations = relations(aiGenerations, ({ one }) => ({
   user: one(users, {
     fields: [aiGenerations.userId],
     references: [users.id],
+  }),
+}));
+
+export const aiThemesRelations = relations(aiThemes, ({ one }) => ({
+  user: one(users, {
+    fields: [aiThemes.userId],
+    references: [users.id],
+  }),
+  invitation: one(invitations, {
+    fields: [aiThemes.invitationId],
+    references: [invitations.id],
   }),
 }));
 

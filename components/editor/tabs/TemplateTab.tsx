@@ -1,12 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useInvitationEditor } from '@/stores/invitation-editor';
 import { useCredits } from '@/hooks/useCredits';
 import { useToast } from '@/components/ui/Toast';
-import { Check, Lock, Sparkles, Loader2, RefreshCw, Wand2 } from 'lucide-react';
+import { Check, Lock, Sparkles, Loader2, RefreshCw, Wand2, Trash2, AlertTriangle, BookOpen } from 'lucide-react';
 
-/** 각 템플릿의 색상/레이아웃 특성을 보여주는 미니 프리뷰 */
+// ── 타입 ──
+
+interface SavedTheme {
+  id: string;
+  prompt: string;
+  theme: Record<string, unknown>;
+  status: 'completed' | 'safelist_failed';
+  failReason: string | null;
+  createdAt: string;
+}
+
+// ── 미니 프리뷰 ──
+
 function TemplateMiniPreview({ templateId }: { templateId: string }) {
   switch (templateId) {
     case 'classic':
@@ -144,6 +156,22 @@ function TemplateMiniPreview({ templateId }: { templateId: string }) {
   }
 }
 
+// ── 상대 시간 포맷 ──
+
+function formatRelativeTime(dateStr: string): string {
+  const now = Date.now();
+  const diff = now - new Date(dateStr).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return '방금 전';
+  if (minutes < 60) return `${minutes}분 전`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  const days = Math.floor(hours / 24);
+  return `${days}일 전`;
+}
+
+// ── 메인 컴포넌트 ──
+
 export function TemplateTab() {
   const { invitation, updateInvitation } = useInvitationEditor();
   const { credits, refetch: refreshCredits } = useCredits();
@@ -151,6 +179,11 @@ export function TemplateTab() {
 
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // 테마 라이브러리 상태
+  const [savedThemes, setSavedThemes] = useState<SavedTheme[]>([]);
+  const [isLoadingThemes, setIsLoadingThemes] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const isCustomActive = invitation.templateId === 'custom' && invitation.customTheme;
 
@@ -163,8 +196,31 @@ export function TemplateTab() {
     { id: 'natural', name: 'Natural', description: '가든웨딩 자연 스타일', tier: 'FREE' },
   ];
 
+  // ── 테마 라이브러리 fetch ──
+
+  const fetchThemes = useCallback(async () => {
+    if (!invitation.id) return;
+    setIsLoadingThemes(true);
+    try {
+      const res = await fetch(`/api/ai/theme?invitationId=${invitation.id}`);
+      const data = await res.json();
+      if (data.themes) {
+        setSavedThemes(data.themes);
+      }
+    } catch {
+      // 조용히 실패
+    } finally {
+      setIsLoadingThemes(false);
+    }
+  }, [invitation.id]);
+
+  useEffect(() => {
+    fetchThemes();
+  }, [fetchThemes]);
+
+  // ── 핸들러 ──
+
   const handleSelectBuiltin = (templateId: string) => {
-    // 빌트인 선택하면 customTheme 해제
     updateInvitation({ templateId, customTheme: undefined });
   };
 
@@ -176,7 +232,10 @@ export function TemplateTab() {
       const res = await fetch('/api/ai/theme', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt.trim() }),
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          invitationId: invitation.id,
+        }),
       });
 
       const data = await res.json();
@@ -186,20 +245,54 @@ export function TemplateTab() {
         return;
       }
 
-      // 성공: 프리뷰에 반영
+      // 프리뷰에 반영
       updateInvitation({
         templateId: 'custom',
         customTheme: data.theme,
       });
 
       refreshCredits();
-      showToast('AI 테마가 생성되었습니다!');
+      fetchThemes(); // 라이브러리 갱신
+
+      if (data.status === 'safelist_failed') {
+        showToast('AI 테마가 생성되었지만 일부 스타일이 미적용될 수 있습니다', 'info');
+      } else {
+        showToast('AI 테마가 생성되었습니다!');
+      }
     } catch {
       showToast('AI 테마 생성 중 오류가 발생했습니다', 'error');
     } finally {
       setIsGenerating(false);
     }
   };
+
+  const handleApplyTheme = (theme: SavedTheme) => {
+    updateInvitation({
+      templateId: 'custom',
+      customTheme: theme.theme,
+    });
+    showToast('테마가 적용되었습니다');
+  };
+
+  const handleDeleteTheme = async (themeId: string) => {
+    setDeletingId(themeId);
+    try {
+      const res = await fetch(`/api/ai/theme?id=${themeId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setSavedThemes((prev) => prev.filter((t) => t.id !== themeId));
+        showToast('테마가 삭제되었습니다');
+      } else {
+        showToast('테마 삭제에 실패했습니다', 'error');
+      }
+    } catch {
+      showToast('테마 삭제 중 오류가 발생했습니다', 'error');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // 현재 적용 중인 테마 ID 판별 (customTheme JSON 비교는 비효율적이므로 prompt로 근사)
+  const currentCustomTheme = invitation.customTheme;
 
   return (
     <div className="space-y-8">
@@ -279,11 +372,100 @@ export function TemplateTab() {
         )}
       </div>
 
+      {/* 내 테마 라이브러리 */}
+      {invitation.id && (
+        <div className="bg-white rounded-xl p-6 space-y-4 border border-stone-200">
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-violet-500" />
+            <h3 className="text-sm font-medium text-stone-700">내 테마 라이브러리</h3>
+            <span className="text-xs text-stone-400">{savedThemes.length}개</span>
+          </div>
+
+          {isLoadingThemes ? (
+            <div className="flex items-center justify-center py-6 text-stone-400 text-sm">
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              불러오는 중...
+            </div>
+          ) : savedThemes.length === 0 ? (
+            <div className="text-center py-6 text-stone-400 text-sm">
+              아직 생성된 테마가 없습니다
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {savedThemes.map((theme) => {
+                // 현재 적용 중인 테마인지 (JSON 직렬화 비교)
+                const isApplied = isCustomActive &&
+                  JSON.stringify(currentCustomTheme) === JSON.stringify(theme.theme);
+
+                return (
+                  <div
+                    key={theme.id}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-colors ${
+                      isApplied
+                        ? 'border-violet-300 bg-violet-50/50'
+                        : 'border-stone-100 hover:border-stone-200 hover:bg-stone-50/50'
+                    }`}
+                  >
+                    {/* 적용 상태 표시 */}
+                    <div className="flex-shrink-0">
+                      {isApplied ? (
+                        <div className="w-5 h-5 bg-violet-500 rounded-full flex items-center justify-center">
+                          <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 rounded-full border-2 border-stone-200" />
+                      )}
+                    </div>
+
+                    {/* 내용 */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-stone-800 truncate">&ldquo;{theme.prompt}&rdquo;</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-stone-400">{formatRelativeTime(theme.createdAt)}</span>
+                        {theme.status === 'safelist_failed' && (
+                          <span className="inline-flex items-center gap-1 text-xs text-amber-600">
+                            <AlertTriangle className="w-3 h-3" />
+                            일부 스타일 미적용
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 액션 */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {!isApplied && (
+                        <button
+                          onClick={() => handleApplyTheme(theme)}
+                          className="px-3 py-1.5 text-xs font-medium text-violet-700 bg-violet-100 rounded-md hover:bg-violet-200 transition-colors"
+                        >
+                          적용
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteTheme(theme.id)}
+                        disabled={deletingId === theme.id}
+                        className="p-1.5 text-stone-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-colors disabled:opacity-40"
+                      >
+                        {deletingId === theme.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 무료 템플릿 */}
       <div className="bg-white rounded-xl p-6 space-y-4 border border-stone-200">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-medium text-stone-700">무료 템플릿</h3>
-          <span className="text-xs text-stone-500">• {templates.length}개</span>
+          <span className="text-xs text-stone-500">{templates.length}개</span>
         </div>
         <div className="grid grid-cols-3 gap-4">
           {templates.map((template) => {

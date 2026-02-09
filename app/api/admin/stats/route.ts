@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { users, aiGenerations, payments, invitations } from "@/db/schema";
+import { users, aiGenerations, aiThemes, payments, invitations } from "@/db/schema";
 import { sql } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth/admin";
 import { withErrorHandler, successResponse } from "@/lib/api-utils";
@@ -37,6 +37,17 @@ export const GET = withErrorHandler(async () => {
     })
     .from(payments);
 
+  // AI 테마 통계
+  const [themeStats] = await db
+    .select({
+      totalThemes: sql<number>`count(*)::int`,
+      totalThemeCost: sql<number>`coalesce(sum(${aiThemes.cost}), 0)::real`,
+      thisMonthThemes: sql<number>`count(*) filter (where ${aiThemes.createdAt} >= date_trunc('month', now()))::int`,
+      thisMonthThemeCost: sql<number>`coalesce(sum(${aiThemes.cost}) filter (where ${aiThemes.createdAt} >= date_trunc('month', now())), 0)::real`,
+      safelistFailRate: sql<number>`case when count(*) > 0 then round(count(*) filter (where ${aiThemes.status} = 'safelist_failed')::numeric / count(*)::numeric * 100) else 0 end::int`,
+    })
+    .from(aiThemes);
+
   // 청첩장 통계
   const [invitationStats] = await db
     .select({
@@ -57,6 +68,13 @@ export const GET = withErrorHandler(async () => {
       totalCost: aiStats.totalCost,
       thisMonthGenerations: aiStats.thisMonthGenerations,
       thisMonthCost: aiStats.thisMonthCost,
+    },
+    aiThemes: {
+      totalThemes: themeStats.totalThemes,
+      totalCost: themeStats.totalThemeCost,
+      thisMonthThemes: themeStats.thisMonthThemes,
+      thisMonthCost: themeStats.thisMonthThemeCost,
+      safelistFailRate: themeStats.safelistFailRate,
     },
     revenue: {
       totalAmount: revenueStats.totalAmount,
