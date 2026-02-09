@@ -148,6 +148,7 @@ export const SettingsSchema = z.object({
   backgroundColor: z.string().optional(),
   fontFamily: z.string().optional(),
   sectionOrder: z.array(z.string()).optional(), // 섹션 표시 순서
+  calendarStyle: z.enum(['none', 'calendar', 'countdown', 'minimal']).default('calendar'),
 });
 
 // ============================================================
@@ -387,6 +388,7 @@ export const SAMPLE_INVITATION: Invitation = {
     showAccounts: true,
     showMap: true,
     enableRsvp: true,
+    calendarStyle: 'calendar',
   },
 
   isPasswordProtected: false,

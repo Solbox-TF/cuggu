@@ -7,14 +7,17 @@ import type { SerializableTheme } from "@/lib/templates/types";
 import { formatWeddingDateTime } from "@/lib/utils/date";
 import { HeadingRenderer } from "../renderers/HeadingRenderer";
 import { DividerRenderer } from "../renderers/DividerRenderer";
+import { DDayWidget } from "./DDayWidget";
 
 interface CeremonySectionProps {
   data: Invitation;
   theme: SerializableTheme;
 }
 
+type CeremonyInnerProps = CeremonySectionProps & { fullDateStr: string; weddingDate: Date; calendarStyle: string };
+
 /** Minimal 전용: 가운데 정렬 레이아웃 */
-function CeremonyCentered({ data, theme, fullDateStr }: CeremonySectionProps & { fullDateStr: string }) {
+function CeremonyCentered({ data, theme, fullDateStr, weddingDate, calendarStyle }: CeremonyInnerProps) {
   return (
     <section className={theme.sectionPadding}>
       <div className={theme.contentMaxWidth}>
@@ -32,6 +35,11 @@ function CeremonyCentered({ data, theme, fullDateStr }: CeremonySectionProps & {
               {theme.ceremonyDateLabel}
             </p>
             <p className={theme.cardValueClass}>{fullDateStr}</p>
+
+            {/* D-Day 위젯 */}
+            {calendarStyle !== 'none' && (
+              <DDayWidget weddingDate={weddingDate} theme={theme} style={calendarStyle as 'calendar' | 'countdown' | 'minimal'} />
+            )}
           </div>
 
           {/* 장소 */}
@@ -74,7 +82,7 @@ function CeremonyCentered({ data, theme, fullDateStr }: CeremonySectionProps & {
 }
 
 /** 카드 기반 레이아웃 (Classic/Modern/Floral/Elegant/Natural) */
-function CeremonyCards({ data, theme, fullDateStr }: CeremonySectionProps & { fullDateStr: string }) {
+function CeremonyCards({ data, theme, fullDateStr, weddingDate, calendarStyle }: CeremonyInnerProps) {
   return (
     <section className={theme.sectionPadding}>
       <div className={theme.contentMaxWidth}>
@@ -98,6 +106,11 @@ function CeremonyCards({ data, theme, fullDateStr }: CeremonySectionProps & { fu
               <p className={theme.cardValueClass}>{fullDateStr}</p>
             </div>
           </div>
+
+          {/* D-Day 위젯 */}
+          {calendarStyle !== 'none' && (
+            <DDayWidget weddingDate={weddingDate} theme={theme} style={calendarStyle as 'calendar' | 'countdown' | 'minimal'} />
+          )}
 
           {/* 장소 */}
           <div className={theme.cardClass}>
@@ -140,9 +153,10 @@ function CeremonyCards({ data, theme, fullDateStr }: CeremonySectionProps & { fu
 export function CeremonySection({ data, theme }: CeremonySectionProps) {
   const weddingDate = new Date(data.wedding.date);
   const fullDateStr = formatWeddingDateTime(weddingDate);
+  const calendarStyle = (data.settings?.calendarStyle as string) ?? 'calendar';
 
   if (theme.ceremonyCentered) {
-    return <CeremonyCentered data={data} theme={theme} fullDateStr={fullDateStr} />;
+    return <CeremonyCentered data={data} theme={theme} fullDateStr={fullDateStr} weddingDate={weddingDate} calendarStyle={calendarStyle} />;
   }
-  return <CeremonyCards data={data} theme={theme} fullDateStr={fullDateStr} />;
+  return <CeremonyCards data={data} theme={theme} fullDateStr={fullDateStr} weddingDate={weddingDate} calendarStyle={calendarStyle} />;
 }

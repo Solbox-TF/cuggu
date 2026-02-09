@@ -227,6 +227,15 @@ export interface SerializableTheme {
   galleryHeading?: HeadingConfig;
   accountsHeading?: HeadingConfig;
 
+  // ── D-Day 달력 ──
+  calendarAccentColor?: string;
+  calendarTodayColor?: string;
+  calendarHeaderClass?: string;
+  calendarDayClass?: string;
+  countdownNumberClass?: string;
+  countdownLabelClass?: string;
+  countdownUnitClass?: string;
+
   // ── 커버/푸터 ──
   cover: CoverConfig;
   footer: FooterConfig;

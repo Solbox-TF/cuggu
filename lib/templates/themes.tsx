@@ -53,6 +53,15 @@ export const classicTheme: SerializableTheme = {
   sectionDivider: undefined,
   postCoverDivider: undefined,
 
+  // D-Day 달력
+  calendarAccentColor: 'bg-amber-600 text-white',
+  calendarTodayColor: 'ring-2 ring-amber-300',
+  calendarHeaderClass: 'text-sm font-serif text-gray-700',
+  calendarDayClass: 'text-xs text-gray-600',
+  countdownNumberClass: 'text-4xl font-serif text-amber-700',
+  countdownLabelClass: 'text-xs text-gray-500',
+  countdownUnitClass: 'text-[10px] text-gray-400',
+
   cover: {
     layout: 'center',
     imageOverlay: 'bg-gradient-to-b from-transparent via-white/50 to-white',
@@ -126,6 +135,16 @@ export const modernTheme: SerializableTheme = {
   mapAddressClass: 'text-sm text-zinc-500',
   sectionDivider: { type: 'horizontal-line', color: 'bg-zinc-200', className: 'mx-8 md:mx-12' },
   postCoverDivider: { type: 'gradient-line', color: 'from-transparent via-emerald-500/40 to-transparent' },
+
+  // D-Day 달력
+  calendarAccentColor: 'bg-emerald-600 text-white',
+  calendarTodayColor: 'ring-2 ring-emerald-300',
+  calendarHeaderClass: 'text-sm font-medium text-zinc-700',
+  calendarDayClass: 'text-xs text-zinc-500',
+  countdownNumberClass: 'text-5xl font-bold text-zinc-900',
+  countdownLabelClass: 'text-xs text-zinc-400 uppercase tracking-wider',
+  countdownUnitClass: 'text-[10px] text-zinc-400',
+
   galleryHeading: { type: 'text-label', headingClass: 'text-xs tracking-[0.3em] text-emerald-600 uppercase mb-10' },
   accountsHeading: { type: 'text-label', headingClass: 'text-xs tracking-[0.3em] text-emerald-600 uppercase mb-10' },
   mapHeading: { type: 'text-label', headingClass: 'text-xs tracking-[0.3em] text-emerald-600 uppercase mb-6' },
@@ -208,6 +227,16 @@ export const minimalTheme: SerializableTheme = {
   transportTopDivider: { type: 'horizontal-line', color: 'bg-stone-200', size: 'w-8', className: 'flex justify-center mb-6' },
   sectionDivider: { type: 'vertical-line', color: 'bg-stone-200', size: 'h-12', className: 'py-4' },
   postCoverDivider: { type: 'vertical-line', color: 'bg-stone-200', size: 'h-12', className: 'py-4' },
+
+  // D-Day 달력
+  calendarAccentColor: 'bg-stone-800 text-white',
+  calendarTodayColor: 'ring-1 ring-stone-300',
+  calendarHeaderClass: 'text-[10px] tracking-[0.2em] text-stone-400 uppercase',
+  calendarDayClass: 'text-[10px] text-stone-400',
+  countdownNumberClass: 'text-5xl font-light tracking-wide text-stone-800',
+  countdownLabelClass: 'text-[10px] tracking-[0.2em] text-stone-400 uppercase',
+  countdownUnitClass: 'text-[10px] text-stone-300',
+
   galleryHeading: { type: 'text-label', headingClass: 'text-[10px] tracking-[0.3em] text-stone-400 uppercase text-center mb-12' },
   accountsHeading: { type: 'text-label', headingClass: 'text-[10px] tracking-[0.3em] text-stone-400 uppercase mb-12' },
   mapHeading: { type: 'text-label', headingClass: 'text-[10px] tracking-[0.3em] text-stone-400 uppercase mb-8' },
@@ -286,6 +315,16 @@ export const floralTheme: SerializableTheme = {
   mapAddressClass: 'text-xs text-rose-500/70 mt-1',
   sectionDivider: undefined,
   postCoverDivider: undefined,
+
+  // D-Day 달력
+  calendarAccentColor: 'bg-rose-500 text-white',
+  calendarTodayColor: 'ring-2 ring-rose-200',
+  calendarHeaderClass: 'text-sm font-serif text-rose-700',
+  calendarDayClass: 'text-xs text-rose-400',
+  countdownNumberClass: 'text-4xl font-serif text-rose-700',
+  countdownLabelClass: 'text-xs text-rose-400',
+  countdownUnitClass: 'text-[10px] text-rose-300',
+
   mapHeading: { type: 'text-label', lineColor: 'to-rose-200', lineSize: 'w-12', headingClass: 'font-serif text-xl text-rose-800', className: 'flex items-center justify-center gap-3 mb-8' },
 
   cover: {
@@ -366,6 +405,16 @@ export const elegantTheme: SerializableTheme = {
   mapAddressClass: 'text-sm text-slate-500 mt-1',
   sectionDivider: undefined,
   postCoverDivider: undefined,
+
+  // D-Day 달력
+  calendarAccentColor: 'bg-amber-500 text-white',
+  calendarTodayColor: 'ring-2 ring-amber-300',
+  calendarHeaderClass: 'text-xs tracking-[0.2em] text-slate-500 uppercase',
+  calendarDayClass: 'text-xs text-slate-500',
+  countdownNumberClass: 'text-5xl font-serif text-slate-800',
+  countdownLabelClass: 'text-xs tracking-[0.2em] text-amber-500 uppercase',
+  countdownUnitClass: 'text-[10px] text-slate-400',
+
   galleryHeading: { type: 'with-sub-label', subLabel: 'Moments', subLabelClass: 'text-xs tracking-[0.3em] text-amber-500 uppercase mb-2', headingClass: 'text-xl md:text-2xl font-serif text-slate-800', className: 'text-center mb-10' },
   accountsHeading: { type: 'with-sub-label', subLabel: 'Gift', subLabelClass: 'text-xs tracking-[0.3em] text-amber-500 uppercase mb-2', headingClass: 'text-xl md:text-2xl font-serif text-slate-800', className: 'text-center mb-10' },
   mapHeading: { type: 'with-sub-label', subLabel: 'Location', subLabelClass: 'text-xs tracking-[0.3em] text-amber-500 uppercase mb-2', headingClass: 'text-xl md:text-2xl font-serif text-slate-800', className: 'text-center mb-10' },
@@ -449,6 +498,16 @@ export const naturalTheme: SerializableTheme = {
   mapAddressClass: 'text-sm text-stone-500 mt-1',
   sectionDivider: undefined,
   postCoverDivider: undefined,
+
+  // D-Day 달력
+  calendarAccentColor: 'bg-emerald-500 text-white',
+  calendarTodayColor: 'ring-2 ring-emerald-200',
+  calendarHeaderClass: 'text-sm font-light text-stone-600',
+  calendarDayClass: 'text-xs text-stone-500',
+  countdownNumberClass: 'text-4xl font-light text-stone-800',
+  countdownLabelClass: 'text-xs tracking-[0.15em] text-emerald-600/70 uppercase',
+  countdownUnitClass: 'text-[10px] text-stone-400',
+
   galleryHeading: { type: 'with-decoration', decoration: '\u{1F33F}', decorationClass: 'text-2xl opacity-60', headingClass: 'text-xl md:text-2xl font-light text-stone-800 mt-2', className: 'text-center mb-10' },
   accountsHeading: { type: 'with-decoration', decoration: '\u{1F33F}', decorationClass: 'text-2xl opacity-60', headingClass: 'text-xl md:text-2xl font-light text-stone-800 mt-2', className: 'text-center mb-10' },
   mapHeading: { type: 'with-decoration', decoration: '\u{1F33F}', decorationClass: 'text-2xl opacity-60', headingClass: 'text-xl md:text-2xl font-light text-stone-800 mt-2', className: 'text-center mb-10' },

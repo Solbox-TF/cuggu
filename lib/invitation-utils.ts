@@ -106,6 +106,7 @@ export function dbRecordToInvitation(row: DbInvitationRow): Invitation {
       backgroundColor: ext.settings?.backgroundColor,
       fontFamily: ext.settings?.fontFamily,
       sectionOrder: ext.settings?.sectionOrder,
+      calendarStyle: ext.settings?.calendarStyle ?? 'calendar',
     },
 
     aiPhotoUrl: row.aiPhotoUrl || undefined,
