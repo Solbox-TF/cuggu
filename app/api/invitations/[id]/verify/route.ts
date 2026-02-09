@@ -4,6 +4,7 @@ import { invitations } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 // POST /api/invitations/[id]/verify - 비밀번호 검증
 export async function POST(
@@ -12,6 +13,21 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+
+    // Rate limiting: IP+invitationId 조합 5회/15분
+    const ip = getClientIp(req);
+    const { allowed } = await rateLimit(
+      `ratelimit:verify:${ip}:${id}`,
+      5,
+      900 // 15분
+    );
+    if (!allowed) {
+      return NextResponse.json(
+        { error: '비밀번호 시도 횟수를 초과했습니다. 15분 후 다시 시도해주세요.' },
+        { status: 429 }
+      );
+    }
+
     const { password } = await req.json();
 
     if (!password) {

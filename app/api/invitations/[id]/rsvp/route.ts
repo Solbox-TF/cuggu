@@ -10,6 +10,8 @@ import {
   maskPhoneNumber,
   maskEmail,
 } from '@/schemas/rsvp';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { encrypt, decrypt, isEncrypted } from '@/lib/crypto';
 
 // POST /api/invitations/[id]/rsvp - 게스트 RSVP 제출 (인증 불필요)
 export async function POST(
@@ -18,6 +20,20 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+
+    // Rate limiting: IP+invitationId 조합 10회/시간
+    const ip = getClientIp(req);
+    const { allowed } = await rateLimit(
+      `ratelimit:rsvp:${ip}:${id}`,
+      10,
+      3600 // 1시간
+    );
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'RSVP 제출 횟수를 초과했습니다. 1시간 후 다시 시도해주세요.' },
+        { status: 429 }
+      );
+    }
 
     // 청첩장 확인
     const invitation = await db.query.invitations.findFirst({
@@ -64,14 +80,14 @@ export async function POST(
 
     const data = parsed.data;
 
-    // RSVP 저장
+    // 개인정보 암호화 후 저장
     const [created] = await db
       .insert(rsvps)
       .values({
         invitationId: id,
         guestName: data.guestName,
-        guestPhone: data.guestPhone || null,
-        guestEmail: data.guestEmail || null,
+        guestPhone: data.guestPhone ? encrypt(data.guestPhone) : null,
+        guestEmail: data.guestEmail ? encrypt(data.guestEmail) : null,
         attendance: data.attendance,
         guestCount: data.guestCount,
         mealOption: data.mealOption || null,
@@ -170,19 +186,32 @@ export async function GET(
       }
     }
 
-    // 민감 정보 마스킹
-    const maskedRsvps: RSVPResponse[] = rsvpList.map((rsvp) => ({
-      id: rsvp.id,
-      invitationId: rsvp.invitationId,
-      guestName: rsvp.guestName,
-      guestPhoneMasked: rsvp.guestPhone ? maskPhoneNumber(rsvp.guestPhone) : undefined,
-      guestEmailMasked: rsvp.guestEmail ? maskEmail(rsvp.guestEmail) : undefined,
-      attendance: rsvp.attendance,
-      guestCount: rsvp.guestCount,
-      mealOption: rsvp.mealOption,
-      message: rsvp.message,
-      submittedAt: rsvp.submittedAt,
-    }));
+    // 복호화 후 마스킹
+    const maskedRsvps: RSVPResponse[] = rsvpList.map((rsvp) => {
+      let phonePlain = rsvp.guestPhone;
+      let emailPlain = rsvp.guestEmail;
+
+      // 암호화된 값이면 복호화
+      if (phonePlain && isEncrypted(phonePlain)) {
+        try { phonePlain = decrypt(phonePlain); } catch { phonePlain = null; }
+      }
+      if (emailPlain && isEncrypted(emailPlain)) {
+        try { emailPlain = decrypt(emailPlain); } catch { emailPlain = null; }
+      }
+
+      return {
+        id: rsvp.id,
+        invitationId: rsvp.invitationId,
+        guestName: rsvp.guestName,
+        guestPhoneMasked: phonePlain ? maskPhoneNumber(phonePlain) : undefined,
+        guestEmailMasked: emailPlain ? maskEmail(emailPlain) : undefined,
+        attendance: rsvp.attendance,
+        guestCount: rsvp.guestCount,
+        mealOption: rsvp.mealOption,
+        message: rsvp.message,
+        submittedAt: rsvp.submittedAt,
+      };
+    });
 
     return NextResponse.json({
       success: true,

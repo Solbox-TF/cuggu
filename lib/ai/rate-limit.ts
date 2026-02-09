@@ -1,29 +1,15 @@
-import { Redis } from '@upstash/redis';
-import { env } from './env';
+import { rateLimit as genericRateLimit } from '@/lib/rate-limit';
 import { AI_CONFIG } from './constants';
 
-const redis = new Redis({
-  url: env.UPSTASH_REDIS_REST_URL,
-  token: env.UPSTASH_REDIS_REST_TOKEN,
-});
-
 /**
- * Rate limiting (Lua 스크립트로 원자성 보장)
+ * AI 생성 전용 rate limiter
+ * 범용 rate-limit 모듈을 AI 설정으로 래핑
  */
 export async function rateLimit(userId: string): Promise<boolean> {
-  const key = `ratelimit:ai:${userId}`;
-  const limit = AI_CONFIG.RATE_LIMIT_REQUESTS;
-  const window = AI_CONFIG.RATE_LIMIT_WINDOW;
-
-  // Lua 스크립트로 INCR + EXPIRE 원자적 실행
-  const script = `
-    local current = redis.call('INCR', KEYS[1])
-    if current == 1 then
-      redis.call('EXPIRE', KEYS[1], ARGV[1])
-    end
-    return current
-  `;
-
-  const count = (await redis.eval(script, [key], [window])) as number;
-  return count <= limit;
+  const result = await genericRateLimit(
+    `ratelimit:ai:${userId}`,
+    AI_CONFIG.RATE_LIMIT_REQUESTS,
+    AI_CONFIG.RATE_LIMIT_WINDOW
+  );
+  return result.allowed;
 }

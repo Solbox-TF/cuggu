@@ -1,5 +1,66 @@
 import type { Invitation, ExtendedData } from '@/schemas/invitation';
 import { ExtendedDataSchema } from '@/schemas/invitation';
+import { encrypt, decrypt, isEncrypted } from '@/lib/crypto';
+
+/**
+ * 계좌번호 암호화/복호화 헬퍼
+ * account.accountNumber와 parentAccounts 내 모든 accountNumber 대상
+ */
+function encryptAccountNumbers(personData: Record<string, any>): Record<string, any> {
+  const data = { ...personData };
+
+  if (data.account?.accountNumber) {
+    data.account = {
+      ...data.account,
+      accountNumber: encrypt(data.account.accountNumber),
+    };
+  }
+
+  if (data.parentAccounts) {
+    data.parentAccounts = { ...data.parentAccounts };
+    for (const role of ['father', 'mother'] as const) {
+      if (Array.isArray(data.parentAccounts[role])) {
+        data.parentAccounts[role] = data.parentAccounts[role].map(
+          (acc: any) =>
+            acc.accountNumber
+              ? { ...acc, accountNumber: encrypt(acc.accountNumber) }
+              : acc
+        );
+      }
+    }
+  }
+
+  return data;
+}
+
+function decryptAccountNumber(value: string | undefined): string | undefined {
+  if (!value) return value;
+  if (!isEncrypted(value)) return value; // 평문 (마이그레이션 전 데이터)
+  try {
+    return decrypt(value);
+  } catch {
+    return value; // 복호화 실패 시 원본 반환
+  }
+}
+
+function decryptAccountData(account: any): any {
+  if (!account) return account;
+  return {
+    ...account,
+    accountNumber: decryptAccountNumber(account.accountNumber),
+  };
+}
+
+function decryptParentAccounts(parentAccounts: any): any {
+  if (!parentAccounts) return parentAccounts;
+  const result = { ...parentAccounts };
+  for (const role of ['father', 'mother'] as const) {
+    if (Array.isArray(result[role])) {
+      result[role] = result[role].map(decryptAccountData);
+    }
+  }
+  return result;
+}
 
 /**
  * DB row 타입 (Drizzle query 결과)
@@ -58,8 +119,8 @@ export function dbRecordToInvitation(row: DbInvitationRow): Invitation {
       phone: ext.groom?.phone,
       relation: ext.groom?.relation,
       displayMode: ext.groom?.displayMode,
-      account: ext.groom?.account,
-      parentAccounts: ext.groom?.parentAccounts,
+      account: decryptAccountData(ext.groom?.account),
+      parentAccounts: decryptParentAccounts(ext.groom?.parentAccounts),
     },
 
     bride: {
@@ -70,8 +131,8 @@ export function dbRecordToInvitation(row: DbInvitationRow): Invitation {
       phone: ext.bride?.phone,
       relation: ext.bride?.relation,
       displayMode: ext.bride?.displayMode,
-      account: ext.bride?.account,
-      parentAccounts: ext.bride?.parentAccounts,
+      account: decryptAccountData(ext.bride?.account),
+      parentAccounts: decryptParentAccounts(ext.bride?.parentAccounts),
     },
 
     wedding: {
@@ -152,13 +213,18 @@ export function invitationToDbUpdate(data: Record<string, any>) {
   if (data.status !== undefined) updateData.status = data.status;
 
   // extendedData 매핑 (기존 컬럼에 없는 필드들)
+  // 계좌번호는 암호화 후 저장
   if (data.groom) {
     const { name, ...groomExtended } = data.groom;
-    if (Object.keys(groomExtended).length > 0) extendedData.groom = groomExtended;
+    if (Object.keys(groomExtended).length > 0) {
+      extendedData.groom = encryptAccountNumbers(groomExtended);
+    }
   }
   if (data.bride) {
     const { name, ...brideExtended } = data.bride;
-    if (Object.keys(brideExtended).length > 0) extendedData.bride = brideExtended;
+    if (Object.keys(brideExtended).length > 0) {
+      extendedData.bride = encryptAccountNumbers(brideExtended);
+    }
   }
   if (data.wedding?.venue) {
     const { name, address, ...venueExtended } = data.wedding.venue;
