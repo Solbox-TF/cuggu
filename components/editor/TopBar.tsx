@@ -147,7 +147,7 @@ export function TopBar({ invitation, isSaving, lastSaved, onUpdateInvitation }: 
 
         {/* 미리보기 */}
         <button
-          onClick={() => window.open(`/inv/${invitation.id}`, '_blank')}
+          onClick={() => window.open(`/preview/${invitation.id}`, '_blank')}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-stone-600 hover:bg-stone-100 rounded-lg transition-colors"
         >
           <Eye className="w-4 h-4" />

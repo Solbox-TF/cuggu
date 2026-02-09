@@ -1,12 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { ClassicTemplate } from '@/components/templates/ClassicTemplate';
-import { ModernTemplate } from '@/components/templates/ModernTemplate';
-import { MinimalTemplate } from '@/components/templates/MinimalTemplate';
-import { FloralTemplate } from '@/components/templates/FloralTemplate';
-import { ElegantTemplate } from '@/components/templates/ElegantTemplate';
-import { NaturalTemplate } from '@/components/templates/NaturalTemplate';
+import { getTemplateComponent } from '@/lib/templates/get-template';
+import { PreviewViewport } from '@/components/preview/PreviewViewport';
 import { ZoomIn, ZoomOut, Smartphone, Monitor } from 'lucide-react';
 
 interface PreviewPanelProps {
@@ -115,29 +111,7 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
     invitation.isPasswordProtected,
   ]);
 
-  // 템플릿 컴포넌트 선택
-  const getTemplateComponent = (templateId: string) => {
-    switch (templateId) {
-      case 'classic':
-        return ClassicTemplate;
-      case 'modern':
-        return ModernTemplate;
-      case 'minimal':
-        return MinimalTemplate;
-      case 'floral':
-        return FloralTemplate;
-      case 'elegant':
-        return ElegantTemplate;
-      case 'natural':
-        return NaturalTemplate;
-      default:
-        return ClassicTemplate;
-    }
-  };
-
-  console.log('[PreviewPanel] invitation.templateId:', invitation.templateId);
   const TemplateComponent = getTemplateComponent(invitation.templateId || 'classic');
-  console.log('[PreviewPanel] TemplateComponent:', TemplateComponent.name);
 
   return (
     <aside className="w-[420px] bg-stone-50 border-l border-stone-200 flex flex-col flex-shrink-0">
@@ -235,105 +209,15 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
         </div>
       </div>
 
-      {/* 미리보기 영역 - 폰 프레임 */}
+      {/* 미리보기 영역 */}
       <div className="flex-1 overflow-auto p-8 flex items-start justify-center">
-        <div
-          className="relative transition-transform origin-top"
-          style={{
-            transform: `scale(${zoom / 100})`,
-          }}
+        <PreviewViewport
+          mode={device === 'mobile' ? 'phone' : 'desktop'}
+          phoneModel={phoneModel}
+          zoom={zoom}
         >
-          {/* 폰 프레임 */}
-          {device === 'mobile' && (
-            <div className="absolute inset-0 -m-3">
-              {phoneModel === 'iphone' ? (
-                /* iPhone 프레임 */
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-900 to-black rounded-[3rem] shadow-2xl">
-                  {/* 내부 베젤 */}
-                  <div className="absolute inset-[3px] bg-black rounded-[2.8rem]" />
-
-                  {/* Dynamic Island */}
-                  <div className="absolute top-[25px] left-1/2 -translate-x-1/2 w-[100px] h-[30px] bg-black rounded-full z-10" />
-
-                  {/* 측면 버튼들 */}
-                  <div className="absolute left-[-3px] top-[100px] w-[3px] h-[28px] bg-slate-700 rounded-l-sm" />
-                  <div className="absolute left-[-3px] top-[150px] w-[3px] h-[50px] bg-slate-700 rounded-l-sm" />
-                  <div className="absolute left-[-3px] top-[210px] w-[3px] h-[50px] bg-slate-700 rounded-l-sm" />
-                  <div className="absolute right-[-3px] top-[180px] w-[3px] h-[70px] bg-slate-700 rounded-r-sm" />
-
-                  {/* 하단 스피커 & 충전 포트 */}
-                  <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex items-center gap-3">
-                    <div className="flex gap-[3px]">
-                      {[...Array(6)].map((_, i) => (
-                        <div key={`left-${i}`} className="w-[3px] h-[3px] bg-slate-700 rounded-full" />
-                      ))}
-                    </div>
-                    <div className="w-[30px] h-[4px] bg-slate-700 rounded-full" />
-                    <div className="flex gap-[3px]">
-                      {[...Array(6)].map((_, i) => (
-                        <div key={`right-${i}`} className="w-[3px] h-[3px] bg-slate-700 rounded-full" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* Galaxy 프레임 */
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 rounded-[2.5rem] shadow-2xl">
-                  {/* 내부 베젤 */}
-                  <div className="absolute inset-[3px] bg-black rounded-[2.3rem]" />
-
-                  {/* 펀치홀 카메라 (중앙 상단) */}
-                  <div className="absolute top-[18px] left-1/2 -translate-x-1/2 w-[12px] h-[12px] bg-black rounded-full z-10 ring-[1px] ring-slate-700" />
-
-                  {/* 측면 버튼들 */}
-                  {/* 왼쪽 - 볼륨 업/다운 */}
-                  <div className="absolute left-[-3px] top-[120px] w-[3px] h-[50px] bg-slate-600 rounded-l-sm" />
-                  <div className="absolute left-[-3px] top-[180px] w-[3px] h-[50px] bg-slate-600 rounded-l-sm" />
-                  {/* 오른쪽 - 전원 버튼 */}
-                  <div className="absolute right-[-3px] top-[150px] w-[3px] h-[60px] bg-slate-600 rounded-r-sm" />
-
-                  {/* 하단 스피커 & 충전 포트 */}
-                  <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex items-center gap-4">
-                    {/* 왼쪽 스피커 그릴 */}
-                    <div className="flex gap-[2px]">
-                      {[...Array(8)].map((_, i) => (
-                        <div key={`left-${i}`} className="w-[2px] h-[2px] bg-slate-600 rounded-full" />
-                      ))}
-                    </div>
-                    {/* USB-C 포트 */}
-                    <div className="w-[35px] h-[5px] bg-slate-600 rounded-sm" />
-                    {/* 오른쪽 스피커 그릴 */}
-                    <div className="flex gap-[2px]">
-                      {[...Array(8)].map((_, i) => (
-                        <div key={`right-${i}`} className="w-[2px] h-[2px] bg-slate-600 rounded-full" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 실제 콘텐츠 */}
-          <div
-            className={`relative bg-white overflow-hidden ${
-              device === 'mobile'
-                ? `w-[375px] h-[812px] ${
-                    phoneModel === 'iphone' ? 'rounded-[2.75rem]' : 'rounded-[2.25rem]'
-                  }`
-                : 'w-full rounded-lg shadow-xl'
-            }`}
-          >
-            {/* 스크롤 영역 */}
-            <div
-              className="h-full overflow-y-auto"
-              style={{ '--screen-height': '812px' } as React.CSSProperties}
-            >
-              <TemplateComponent data={previewData} isPreview />
-            </div>
-
-          </div>
-        </div>
+          <TemplateComponent data={previewData} isPreview />
+        </PreviewViewport>
       </div>
 
     </aside>
