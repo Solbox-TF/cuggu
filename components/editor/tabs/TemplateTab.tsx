@@ -23,7 +23,7 @@ interface SavedTheme {
 
 // ── 미니 프리뷰 ──
 
-function TemplateMiniPreview({ templateId }: { templateId: string }) {
+export function TemplateMiniPreview({ templateId }: { templateId: string }) {
   switch (templateId) {
     case 'classic':
       return (
@@ -174,6 +174,17 @@ function formatRelativeTime(dateStr: string): string {
   return `${days}일 전`;
 }
 
+// ── 빌트인 템플릿 목록 ──
+
+export const BUILTIN_TEMPLATES = [
+  { id: 'classic', name: 'Classic', description: '전통적인 웨딩 스타일', tier: 'FREE' },
+  { id: 'modern', name: 'Modern', description: '대담한 타이포그래피', tier: 'FREE' },
+  { id: 'minimal', name: 'Minimal', description: '여백의 미, 흑백 톤', tier: 'FREE' },
+  { id: 'floral', name: 'Floral', description: '꽃무늬 파스텔 디자인', tier: 'FREE' },
+  { id: 'elegant', name: 'Elegant', description: '호텔웨딩 고급 스타일', tier: 'FREE' },
+  { id: 'natural', name: 'Natural', description: '가든웨딩 자연 스타일', tier: 'FREE' },
+] as const;
+
 // ── 메인 컴포넌트 ──
 
 export function TemplateTab() {
@@ -196,14 +207,7 @@ export function TemplateTab() {
 
   const isCustomActive = invitation.templateId === 'custom' && invitation.customTheme;
 
-  const templates = [
-    { id: 'classic', name: 'Classic', description: '전통적인 웨딩 스타일', tier: 'FREE' },
-    { id: 'modern', name: 'Modern', description: '대담한 타이포그래피', tier: 'FREE' },
-    { id: 'minimal', name: 'Minimal', description: '여백의 미, 흑백 톤', tier: 'FREE' },
-    { id: 'floral', name: 'Floral', description: '꽃무늬 파스텔 디자인', tier: 'FREE' },
-    { id: 'elegant', name: 'Elegant', description: '호텔웨딩 고급 스타일', tier: 'FREE' },
-    { id: 'natural', name: 'Natural', description: '가든웨딩 자연 스타일', tier: 'FREE' },
-  ];
+  const templates = BUILTIN_TEMPLATES;
 
   // ── 테마 라이브러리 fetch ──
 
