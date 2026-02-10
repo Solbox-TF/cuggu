@@ -244,6 +244,14 @@ export function invitationToDbUpdate(data: Record<string, any>) {
     extendedData.customTheme = data.customTheme;
   }
 
+  // 클라이언트가 직접 보내는 extendedData (enabledSections 등)
+  if (data.extendedData && typeof data.extendedData === 'object') {
+    const clientExt = data.extendedData as Record<string, unknown>;
+    if (clientExt.enabledSections !== undefined) {
+      extendedData.enabledSections = clientExt.enabledSections;
+    }
+  }
+
   if (Object.keys(extendedData).length > 0) {
     updateData.extendedData = extendedData;
   }
