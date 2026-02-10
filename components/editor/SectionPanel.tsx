@@ -48,40 +48,11 @@ function ToggleSwitch({
 }
 
 export function SectionPanel({ activeTab, invitation }: SectionPanelProps) {
-  const { setActiveTab, toggleSection, getEnabledSections } = useInvitationEditor();
+  const { setActiveTab, toggleSection, getEnabledSections, validationResult } = useInvitationEditor();
   const enabledSections = getEnabledSections();
 
   const getTabStatus = (tabId: string) => {
-    if (tabId === 'template') {
-      return invitation.templateId ? 'completed' : 'incomplete';
-    }
-    if (tabId === 'basic') {
-      const hasGroom = invitation.groom?.name;
-      const hasBride = invitation.bride?.name;
-      return hasGroom && hasBride ? 'completed' : 'incomplete';
-    }
-    if (tabId === 'venue') {
-      const hasDate = invitation.wedding?.date;
-      const hasVenue = invitation.wedding?.venue?.name;
-      return hasDate && hasVenue ? 'completed' : 'incomplete';
-    }
-    if (tabId === 'greeting') {
-      return invitation.content?.greeting ? 'completed' : 'optional';
-    }
-    if (tabId === 'gallery') {
-      return invitation.gallery?.images?.length > 0 ? 'completed' : 'optional';
-    }
-    if (tabId === 'account') {
-      const hasGroomAccount =
-        invitation.groom?.account?.bank && invitation.groom?.account?.accountNumber;
-      const hasBrideAccount =
-        invitation.bride?.account?.bank && invitation.bride?.account?.accountNumber;
-      return hasGroomAccount || hasBrideAccount ? 'completed' : 'optional';
-    }
-    if (tabId === 'rsvp') {
-      return invitation.settings?.enableRsvp !== false ? 'completed' : 'optional';
-    }
-    return 'optional';
+    return validationResult.tabStatus[tabId] || 'optional';
   };
 
   const grouped = {

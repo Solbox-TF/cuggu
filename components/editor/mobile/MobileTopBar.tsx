@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2, Send, Share2 } from 'lucide-react';
 import { useInvitationEditor } from '@/stores/invitation-editor';
 import { useToast } from '@/components/ui/Toast';
+import { validateInvitation } from '@/lib/editor/validation';
 
 /**
  * 모바일 에디터 상단바
@@ -25,15 +26,11 @@ export function MobileTopBar() {
     return `${groomName} \u2665 ${brideName}`;
   };
 
-  const handlePublish = async () => {
-    const missing: string[] = [];
-    if (!invitation.groom?.name) missing.push('신랑 이름');
-    if (!invitation.bride?.name) missing.push('신부 이름');
-    if (!invitation.wedding?.date) missing.push('예식 날짜');
-    if (!invitation.wedding?.venue?.name) missing.push('예식장 이름');
+  const validation = validateInvitation(invitation);
 
-    if (missing.length > 0) {
-      showToast(`필수 정보를 입력해주세요: ${missing.join(', ')}`, 'error');
+  const handlePublish = async () => {
+    if (!validation.isReady) {
+      showToast(`필수 정보를 입력해주세요: ${validation.missing.join(', ')}`, 'error');
       return;
     }
 
@@ -106,7 +103,7 @@ export function MobileTopBar() {
           <button
             onClick={handlePublish}
             disabled={isPublishing}
-            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-pink-500 active:bg-pink-600 disabled:bg-pink-200 rounded-md transition-colors"
+            className="relative flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-pink-500 active:bg-pink-600 disabled:bg-pink-200 rounded-md transition-colors"
           >
             {isPublishing ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -114,6 +111,11 @@ export function MobileTopBar() {
               <Send className="w-3.5 h-3.5" />
             )}
             발행
+            {!isPublishing && validation.missing.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] flex items-center justify-center px-0.5 text-[9px] font-bold text-white bg-red-500 rounded-full leading-none">
+                {validation.missing.length}
+              </span>
+            )}
           </button>
         )}
       </div>

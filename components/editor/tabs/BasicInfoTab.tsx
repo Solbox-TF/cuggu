@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useInvitationEditor } from '@/stores/invitation-editor';
 import { getBothDeceasedGuidance } from '@/lib/utils/family-display';
 import type { FamilyDisplayMode } from '@/schemas/invitation';
@@ -30,6 +30,9 @@ const BRIDE_RELATIONS = [
 const INPUT_CLASS =
   'w-full px-4 py-3 text-sm bg-white border border-stone-200 rounded-lg focus:ring-1 focus:ring-pink-300 focus:border-pink-300 transition-colors placeholder:text-stone-400';
 
+const INPUT_ERROR_CLASS =
+  'w-full px-4 py-3 text-sm bg-white border border-red-300 rounded-lg focus:ring-1 focus:ring-red-300 focus:border-red-300 transition-colors placeholder:text-stone-400';
+
 /**
  * 기본 정보 탭
  *
@@ -42,6 +45,19 @@ const INPUT_CLASS =
  */
 export function BasicInfoTab() {
   const { invitation, updateInvitation } = useInvitationEditor();
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+
+  const markTouched = useCallback((field: string) => {
+    setTouched((prev) => {
+      if (prev.has(field)) return prev;
+      const next = new Set(prev);
+      next.add(field);
+      return next;
+    });
+  }, []);
+
+  const hasError = (field: string, value: unknown) =>
+    touched.has(field) && !value;
 
   const handleGroomChange = (field: string, value: any) => {
     updateInvitation({
@@ -90,9 +106,13 @@ export function BasicInfoTab() {
             type="text"
             value={invitation.groom?.name || ''}
             onChange={(e) => handleGroomChange('name', e.target.value)}
+            onBlur={() => markTouched('groomName')}
             placeholder="홍길동"
-            className={INPUT_CLASS}
+            className={hasError('groomName', invitation.groom?.name) ? INPUT_ERROR_CLASS : INPUT_CLASS}
           />
+          {hasError('groomName', invitation.groom?.name) && (
+            <p className="mt-1 text-xs text-red-500">이름을 입력해주세요</p>
+          )}
         </div>
 
         {/* 가족 표기 모드 */}
@@ -208,9 +228,13 @@ export function BasicInfoTab() {
             type="text"
             value={invitation.bride?.name || ''}
             onChange={(e) => handleBrideChange('name', e.target.value)}
+            onBlur={() => markTouched('brideName')}
             placeholder="김영희"
-            className={INPUT_CLASS}
+            className={hasError('brideName', invitation.bride?.name) ? INPUT_ERROR_CLASS : INPUT_CLASS}
           />
+          {hasError('brideName', invitation.bride?.name) && (
+            <p className="mt-1 text-xs text-red-500">이름을 입력해주세요</p>
+          )}
         </div>
 
         {/* 가족 표기 모드 */}

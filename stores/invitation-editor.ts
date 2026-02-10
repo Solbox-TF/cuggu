@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { EDITOR_TABS, TAB_IDS, DEFAULT_ENABLED_SECTIONS } from '@/lib/editor/tabs';
+import { validateInvitation, type ValidationResult } from '@/lib/editor/validation';
 
 // Invitation 타입 임포트 (추후 schemas에서 가져올 예정)
 type Invitation = any; // TODO: schemas/invitation.ts에서 타입 임포트
@@ -22,6 +23,7 @@ interface InvitationEditorStore {
   saveError: string | null;
   retryCount: number;
   validation: Record<string, ValidationStatus>;
+  validationResult: ValidationResult;
 
   // 액션
   setInvitation: (data: Partial<Invitation>) => void;
@@ -49,6 +51,7 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
   saveError: null,
   retryCount: 0,
   validation: {},
+  validationResult: { isReady: false, missing: [], tabStatus: {} },
 
   // 전체 교체 (초기 로드 시)
   setInvitation: (data) => {
@@ -58,6 +61,7 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
       lastSaved: null,
       saveError: null,
       retryCount: 0,
+      validationResult: validateInvitation(data),
     });
   },
 
@@ -67,6 +71,7 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
     set({
       invitation: updated,
       hasUnsavedChanges: true,
+      validationResult: validateInvitation(updated),
     });
 
     // 기존 타이머 취소
@@ -219,6 +224,7 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
       saveError: null,
       retryCount: 0,
       validation: {},
+      validationResult: { isReady: false, missing: [], tabStatus: {} },
     });
   },
 }));

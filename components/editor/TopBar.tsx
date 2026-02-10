@@ -6,6 +6,7 @@ import { Loader2, Eye, Share2, ArrowLeft, Send, Sparkles, AlertCircle } from 'lu
 import { useToast } from '@/components/ui/Toast';
 import { useCredits } from '@/hooks/useCredits';
 import { ShareModal } from './ShareModal';
+import { validateInvitation } from '@/lib/editor/validation';
 
 interface TopBarProps {
   invitation: any; // TODO: Invitation 타입
@@ -31,17 +32,12 @@ export function TopBar({ invitation, isSaving, lastSaved, saveError, onRetrySave
 
   const isPublished = invitation.status === 'PUBLISHED';
 
+  const validation = validateInvitation(invitation);
+
   // 발행하기
   const handlePublish = async () => {
-    // 필수 필드 검증
-    const missing: string[] = [];
-    if (!invitation.groom?.name) missing.push('신랑 이름');
-    if (!invitation.bride?.name) missing.push('신부 이름');
-    if (!invitation.wedding?.date) missing.push('예식 날짜');
-    if (!invitation.wedding?.venue?.name) missing.push('예식장 이름');
-
-    if (missing.length > 0) {
-      showToast(`필수 정보를 입력해주세요: ${missing.join(', ')}`, 'error');
+    if (!validation.isReady) {
+      showToast(`필수 정보를 입력해주세요: ${validation.missing.join(', ')}`, 'error');
       return;
     }
 
@@ -178,7 +174,7 @@ export function TopBar({ invitation, isSaving, lastSaved, saveError, onRetrySave
           <button
             onClick={handlePublish}
             disabled={isPublishing}
-            className="flex items-center gap-1.5 p-2 md:px-4 md:py-1.5 text-sm font-medium text-white bg-pink-500 hover:bg-pink-600 disabled:bg-pink-200 rounded-lg transition-colors"
+            className="relative flex items-center gap-1.5 p-2 md:px-4 md:py-1.5 text-sm font-medium text-white bg-pink-500 hover:bg-pink-600 disabled:bg-pink-200 rounded-lg transition-colors"
           >
             {isPublishing ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -186,6 +182,11 @@ export function TopBar({ invitation, isSaving, lastSaved, saveError, onRetrySave
               <Send className="w-4 h-4" />
             )}
             <span className="hidden md:inline">발행하기</span>
+            {!isPublishing && validation.missing.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[10px] font-bold text-white bg-red-500 rounded-full leading-none">
+                {validation.missing.length}
+              </span>
+            )}
           </button>
         )}
       </div>

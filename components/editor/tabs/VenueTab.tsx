@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useInvitationEditor } from '@/stores/invitation-editor';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -18,8 +18,27 @@ import { MapSection } from '@/components/templates/MapSection';
  * - 홀 이름
  * - 교통편
  */
+const INPUT_CLASS =
+  'w-full px-4 py-3 text-sm bg-white border border-stone-200 rounded-lg focus:ring-1 focus:ring-pink-300 focus:border-pink-300 transition-colors placeholder:text-stone-400';
+
+const INPUT_ERROR_CLASS =
+  'w-full px-4 py-3 text-sm bg-white border border-red-300 rounded-lg focus:ring-1 focus:ring-red-300 focus:border-red-300 transition-colors placeholder:text-stone-400';
+
 export function VenueTab() {
   const { invitation, updateInvitation } = useInvitationEditor();
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+
+  const markTouched = useCallback((field: string) => {
+    setTouched((prev) => {
+      if (prev.has(field)) return prev;
+      const next = new Set(prev);
+      next.add(field);
+      return next;
+    });
+  }, []);
+
+  const hasError = (field: string, value: unknown) =>
+    touched.has(field) && !value;
 
   // 주소 검색 상태
   const [searchQuery, setSearchQuery] = useState('');
@@ -274,9 +293,13 @@ export function VenueTab() {
             type="text"
             value={invitation.wedding?.venue?.name || ''}
             onChange={(e) => handleVenueChange('name', e.target.value)}
+            onBlur={() => markTouched('venueName')}
             placeholder="서울웨딩홀"
-            className="w-full px-4 py-3 text-sm bg-white border border-stone-200 rounded-lg focus:ring-1 focus:ring-pink-300 focus:border-pink-300 transition-colors placeholder:text-stone-400"
+            className={hasError('venueName', invitation.wedding?.venue?.name) ? INPUT_ERROR_CLASS : INPUT_CLASS}
           />
+          {hasError('venueName', invitation.wedding?.venue?.name) && (
+            <p className="mt-1 text-xs text-red-500">예식장 이름을 입력해주세요</p>
+          )}
         </div>
 
         <div>
