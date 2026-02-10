@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Loader2, Eye, Share2, ArrowLeft, Send, Sparkles, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { useCredits } from '@/hooks/useCredits';
+import { ShareModal } from './ShareModal';
 
 interface TopBarProps {
   invitation: any; // TODO: Invitation 타입
@@ -23,6 +24,8 @@ interface TopBarProps {
  */
 export function TopBar({ invitation, isSaving, lastSaved, saveError, onRetrySave, onUpdateInvitation }: TopBarProps) {
   const [isPublishing, setIsPublishing] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isJustPublished, setIsJustPublished] = useState(false);
   const { showToast } = useToast();
   const { credits, isLoading: creditsLoading } = useCredits();
 
@@ -55,11 +58,9 @@ export function TopBar({ invitation, isSaving, lastSaved, saveError, onRetrySave
       // 로컬 상태 업데이트
       onUpdateInvitation?.({ status: 'PUBLISHED' });
 
-      // URL 복사
-      const url = `${window.location.origin}/inv/${invitation.id}`;
-      await navigator.clipboard.writeText(url);
-
-      showToast('청첩장이 발행되었습니다! 링크가 복사되었습니다.');
+      // 공유 모달 열기
+      setIsJustPublished(true);
+      setShowShareModal(true);
     } catch {
       showToast('발행에 실패했습니다. 다시 시도해주세요.', 'error');
     } finally {
@@ -67,11 +68,10 @@ export function TopBar({ invitation, isSaving, lastSaved, saveError, onRetrySave
     }
   };
 
-  // 공유 (링크 복사)
-  const handleShare = async () => {
-    const url = `${window.location.origin}/inv/${invitation.id}`;
-    await navigator.clipboard.writeText(url);
-    showToast('링크가 복사되었습니다!');
+  // 공유 모달 열기
+  const handleShare = () => {
+    setIsJustPublished(false);
+    setShowShareModal(true);
   };
 
   const formatTimeAgo = (date: Date) => {
@@ -189,6 +189,13 @@ export function TopBar({ invitation, isSaving, lastSaved, saveError, onRetrySave
           </button>
         )}
       </div>
+
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        invitation={invitation}
+        isJustPublished={isJustPublished}
+      />
     </header>
   );
 }
