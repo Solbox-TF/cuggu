@@ -14,7 +14,6 @@ export function GreetingSection({ data, theme }: GreetingSectionProps) {
   return (
     <section
       className={`flex items-center justify-center ${theme.sectionPadding}`}
-      style={{ minHeight: 'var(--screen-height, 100vh)' }}
     >
       <div className={theme.greetingMaxWidth}>
         <motion.div

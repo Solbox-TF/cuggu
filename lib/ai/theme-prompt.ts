@@ -66,7 +66,7 @@ Cover → Greeting → Parents → Ceremony → Map → Gallery → Accounts →
 
 ## KEY FIELDS EXPLAINED
 - containerBg: page background (include "min-h-screen")
-- sectionPadding: vertical/horizontal padding for each section
+- sectionPadding: vertical/horizontal padding for each section. Use compact values like "py-8 md:py-12 px-6" or "py-10 md:py-16 px-6". Do NOT use py-16+ on mobile — it creates excessive gaps between sections on mobile devices
 - contentMaxWidth: max-width for text content (include "mx-auto" if centered)
 - headingClass: default section heading style
 - bodyText: paragraph text style (include "whitespace-pre-line" and "leading-relaxed")

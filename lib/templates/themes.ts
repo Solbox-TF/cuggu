@@ -5,7 +5,7 @@ import type { SerializableTheme } from './types';
 export const classicTheme: SerializableTheme = {
   id: 'classic',
   containerBg: 'min-h-screen bg-gradient-to-b from-amber-50 via-white to-amber-50',
-  sectionPadding: 'py-12 md:py-20 px-6',
+  sectionPadding: 'py-8 md:py-12 px-6',
   contentMaxWidth: 'max-w-2xl mx-auto',
   galleryMaxWidth: 'max-w-4xl mx-auto',
   headingClass: 'text-xl md:text-2xl font-serif text-center text-gray-800 mb-8 md:mb-12',
@@ -93,7 +93,7 @@ export const classicTheme: SerializableTheme = {
 export const modernTheme: SerializableTheme = {
   id: 'modern',
   containerBg: 'min-h-screen bg-zinc-50',
-  sectionPadding: 'py-16 md:py-24 px-8 md:px-12',
+  sectionPadding: 'py-10 md:py-16 px-8 md:px-12',
   contentMaxWidth: 'max-w-2xl',
   galleryMaxWidth: 'max-w-4xl',
   headingClass: 'text-xs tracking-[0.3em] text-emerald-600 uppercase mb-6',
@@ -187,7 +187,7 @@ export const modernTheme: SerializableTheme = {
 export const minimalTheme: SerializableTheme = {
   id: 'minimal',
   containerBg: 'min-h-screen bg-white',
-  sectionPadding: 'py-16 md:py-24 px-6',
+  sectionPadding: 'py-10 md:py-16 px-6',
   contentMaxWidth: 'max-w-md mx-auto',
   galleryMaxWidth: 'max-w-3xl mx-auto',
   headingClass: 'text-[10px] tracking-[0.3em] text-stone-400 uppercase text-center mb-8',
@@ -286,7 +286,7 @@ export const minimalTheme: SerializableTheme = {
 export const floralTheme: SerializableTheme = {
   id: 'floral',
   containerBg: 'min-h-screen bg-gradient-to-b from-rose-50 via-pink-50/30 to-rose-50',
-  sectionPadding: 'py-14 md:py-20 px-6',
+  sectionPadding: 'py-8 md:py-12 px-6',
   contentMaxWidth: 'max-w-lg mx-auto',
   galleryMaxWidth: 'max-w-4xl mx-auto',
   headingClass: 'font-serif text-xl text-center text-rose-800 mb-10',
@@ -381,7 +381,7 @@ export const floralTheme: SerializableTheme = {
 export const elegantTheme: SerializableTheme = {
   id: 'elegant',
   containerBg: 'min-h-screen bg-gradient-to-b from-amber-50/30 via-white to-slate-50',
-  sectionPadding: 'py-16 md:py-24 px-6',
+  sectionPadding: 'py-10 md:py-16 px-6',
   contentMaxWidth: 'max-w-2xl mx-auto',
   galleryMaxWidth: 'max-w-4xl mx-auto',
   headingClass: 'text-xl md:text-2xl font-serif text-center text-slate-800 mb-8 md:mb-12',
@@ -479,7 +479,7 @@ export const elegantTheme: SerializableTheme = {
 export const naturalTheme: SerializableTheme = {
   id: 'natural',
   containerBg: 'min-h-screen bg-gradient-to-b from-stone-50 via-emerald-50/20 to-stone-50',
-  sectionPadding: 'py-16 md:py-24 px-6',
+  sectionPadding: 'py-10 md:py-16 px-6',
   contentMaxWidth: 'max-w-2xl mx-auto',
   galleryMaxWidth: 'max-w-4xl mx-auto',
   headingClass: 'text-xl md:text-2xl font-light text-center text-stone-800 mb-8 md:mb-12',
