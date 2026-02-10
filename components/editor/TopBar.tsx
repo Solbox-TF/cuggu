@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Loader2, Eye, Share2, ArrowLeft, Send, Sparkles } from 'lucide-react';
+import { Loader2, Eye, Share2, ArrowLeft, Send, Sparkles, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { useCredits } from '@/hooks/useCredits';
 
@@ -10,6 +10,8 @@ interface TopBarProps {
   invitation: any; // TODO: Invitation 타입
   isSaving: boolean;
   lastSaved: Date | null;
+  saveError?: string | null;
+  onRetrySave?: () => void;
   onUpdateInvitation?: (data: Record<string, unknown>) => void;
 }
 
@@ -19,7 +21,7 @@ interface TopBarProps {
  * - 텍스트 로고 + 저장 상태
  * - 미리보기 / 발행하기 / 공유 버튼
  */
-export function TopBar({ invitation, isSaving, lastSaved, onUpdateInvitation }: TopBarProps) {
+export function TopBar({ invitation, isSaving, lastSaved, saveError, onRetrySave, onUpdateInvitation }: TopBarProps) {
   const [isPublishing, setIsPublishing] = useState(false);
   const { showToast } = useToast();
   const { credits, isLoading: creditsLoading } = useCredits();
@@ -122,14 +124,23 @@ export function TopBar({ invitation, isSaving, lastSaved, onUpdateInvitation }: 
         </div>
 
         {/* 저장 상태 */}
-        <div className="text-xs text-stone-500 mr-1 md:mr-2">
-          {isSaving ? (
-            <span className="flex items-center gap-1.5">
+        <div className="text-xs mr-1 md:mr-2">
+          {saveError ? (
+            <button
+              onClick={onRetrySave}
+              className="flex items-center gap-1.5 text-red-500 hover:text-red-600 transition-colors"
+              title="클릭하여 재시도"
+            >
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">저장 실패</span>
+            </button>
+          ) : isSaving ? (
+            <span className="flex items-center gap-1.5 text-stone-500">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
               <span className="hidden md:inline">저장 중</span>
             </span>
           ) : lastSaved ? (
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 text-stone-500">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
               <span className="hidden md:inline">{formatTimeAgo(lastSaved)}</span>
             </span>

@@ -28,6 +28,8 @@ export default function InvitationEditorPage() {
     activeTab,
     isSaving,
     lastSaved,
+    saveError,
+    retrySave,
     reset,
   } = useInvitationEditor();
 
@@ -100,6 +102,8 @@ export default function InvitationEditorPage() {
         invitation={invitation}
         isSaving={isSaving}
         lastSaved={lastSaved}
+        saveError={saveError}
+        onRetrySave={retrySave}
         onUpdateInvitation={updateInvitation}
       />
 

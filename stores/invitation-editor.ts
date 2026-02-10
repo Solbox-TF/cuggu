@@ -9,6 +9,9 @@ interface ValidationStatus {
   hasError: boolean;
 }
 
+const MAX_RETRY = 3;
+const RETRY_DELAY = 5000; // 5초
+
 interface InvitationEditorStore {
   // 상태
   invitation: Partial<Invitation>;
@@ -16,6 +19,8 @@ interface InvitationEditorStore {
   isSaving: boolean;
   lastSaved: Date | null;
   hasUnsavedChanges: boolean;
+  saveError: string | null;
+  retryCount: number;
   validation: Record<string, ValidationStatus>;
 
   // 액션
@@ -25,12 +30,14 @@ interface InvitationEditorStore {
   toggleSection: (sectionId: string, enabled: boolean) => void;
   getEnabledSections: () => Record<string, boolean>;
   save: () => Promise<void>;
+  retrySave: () => void;
   reset: () => void;
   setValidation: (tabId: string, status: ValidationStatus) => void;
 }
 
 // 자동 저장 타이머
 let autoSaveTimer: NodeJS.Timeout | null = null;
+let retryTimer: NodeJS.Timeout | null = null;
 
 export const useInvitationEditor = create<InvitationEditorStore>((set, get) => ({
   // 초기 상태
@@ -39,6 +46,8 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
   isSaving: false,
   lastSaved: null,
   hasUnsavedChanges: false,
+  saveError: null,
+  retryCount: 0,
   validation: {},
 
   // 전체 교체 (초기 로드 시)
@@ -47,6 +56,8 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
       invitation: data,
       hasUnsavedChanges: false,
       lastSaved: null,
+      saveError: null,
+      retryCount: 0,
     });
   },
 
@@ -139,17 +150,28 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
         throw new Error('저장 실패');
       }
 
-      const result = await response.json();
-
       set({
         lastSaved: new Date(),
         hasUnsavedChanges: false,
         isSaving: false,
+        saveError: null,
+        retryCount: 0,
       });
 
-      console.log('✅ 자동 저장 완료:', result);
+      // 재시도 타이머 취소
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+      }
     } catch (error) {
-      console.error('❌ 저장 실패:', error);
+      console.error('저장 실패:', error);
+      const currentRetry = get().retryCount;
+
+      set({
+        isSaving: false,
+        saveError: '저장에 실패했습니다',
+        retryCount: currentRetry + 1,
+      });
 
       // 로컬 스토리지에 백업
       try {
@@ -157,13 +179,23 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
           `invitation_${invitation.id}_backup`,
           JSON.stringify(invitation)
         );
-        console.log('💾 로컬 스토리지에 백업됨');
-      } catch (backupError) {
-        console.error('백업 실패:', backupError);
+      } catch {
+        // 백업 실패는 무시
       }
 
-      set({ isSaving: false });
+      // 재시도 가능하면 자동 재시도
+      if (currentRetry + 1 < MAX_RETRY) {
+        retryTimer = setTimeout(() => {
+          get().save();
+        }, RETRY_DELAY);
+      }
     }
+  },
+
+  // 수동 재시도
+  retrySave: () => {
+    set({ saveError: null, retryCount: 0 });
+    get().save();
   },
 
   // 초기화
@@ -173,6 +205,10 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
       clearTimeout(autoSaveTimer);
       autoSaveTimer = null;
     }
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
+    }
 
     set({
       invitation: {},
@@ -180,6 +216,8 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
       isSaving: false,
       lastSaved: null,
       hasUnsavedChanges: false,
+      saveError: null,
+      retryCount: 0,
       validation: {},
     });
   },
