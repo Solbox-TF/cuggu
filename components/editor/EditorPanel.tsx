@@ -49,8 +49,8 @@ export function EditorPanel({ activeTab, invitation }: EditorPanelProps) {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-stone-50/50">
-      <div className="max-w-3xl mx-auto px-8 py-6">
+    <div className="flex-1 overflow-y-auto bg-stone-50/50 pb-20 md:pb-0">
+      <div className="max-w-3xl mx-auto px-4 py-4 md:px-8 md:py-6">
         <StepNavigation position="top" />
         {renderTab()}
         <StepNavigation position="bottom" />

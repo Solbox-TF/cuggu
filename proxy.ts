@@ -2,6 +2,9 @@ import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
+const MOBILE_UA =
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+
 export default auth(async (req) => {
   const { nextUrl } = req;
 
@@ -24,12 +27,37 @@ export default auth(async (req) => {
     return NextResponse.next();
   }
 
+  // ── 에디터 UA 리다이렉트 ──
+  const ua = req.headers.get("user-agent") || "";
+  const isMobileUA = MOBILE_UA.test(ua);
+  const preferDesktop =
+    req.cookies.get("prefer-desktop-editor")?.value === "true";
+
+  // 데스크톱 에디터에 모바일 접속 → /m/editor로
+  if (
+    nextUrl.pathname.startsWith("/editor/") &&
+    isMobileUA &&
+    !preferDesktop
+  ) {
+    const mobileUrl = nextUrl.clone();
+    mobileUrl.pathname = nextUrl.pathname.replace("/editor/", "/m/editor/");
+    return NextResponse.redirect(mobileUrl);
+  }
+
+  // 모바일 에디터에 데스크톱 접속 → /editor로
+  if (nextUrl.pathname.startsWith("/m/editor/") && !isMobileUA) {
+    const desktopUrl = nextUrl.clone();
+    desktopUrl.pathname = nextUrl.pathname.replace("/m/editor/", "/editor/");
+    return NextResponse.redirect(desktopUrl);
+  }
+
   const isLoggedIn = !!req.auth;
 
   // 보호된 라우트
   const isProtectedRoute =
     nextUrl.pathname.startsWith("/dashboard") ||
     nextUrl.pathname.startsWith("/editor") ||
+    nextUrl.pathname.startsWith("/m/editor") ||
     nextUrl.pathname.startsWith("/settings");
 
   // 인증 관련 라우트

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR, Noto_Serif_KR, Gowun_Batang, Nanum_Myeongjo } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/SessionProvider";
@@ -30,6 +30,10 @@ const nanumMyeongjo = Nanum_Myeongjo({
   variable: "--font-myeongjo",
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   title: "Cuggu - AI 웨딩 청첩장",

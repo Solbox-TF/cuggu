@@ -87,34 +87,34 @@ export function TopBar({ invitation, isSaving, lastSaved, onUpdateInvitation }: 
   };
 
   return (
-    <header className="h-14 bg-white border-b border-stone-200 flex items-center justify-between px-6 flex-shrink-0">
+    <header className="h-14 bg-white border-b border-stone-200 flex items-center justify-between px-3 md:px-6 flex-shrink-0">
       {/* 좌측: 로고 + 제목 */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4 min-w-0">
         <Link
           href="/dashboard"
-          className="text-lg font-bold text-stone-900 hover:text-stone-600 transition-colors"
+          className="text-lg font-bold text-stone-900 hover:text-stone-600 transition-colors flex-shrink-0"
         >
           Cuggu
         </Link>
 
-        <div className="h-5 w-px bg-stone-200" />
+        <div className="h-5 w-px bg-stone-200 hidden md:block" />
 
-        <div className="text-sm text-stone-600">
+        <div className="text-sm text-stone-600 truncate">
           {getTitle()}
         </div>
 
         {/* 발행 상태 뱃지 */}
         {isPublished && (
-          <span className="px-2 py-0.5 text-xs font-medium text-emerald-700 bg-emerald-100 rounded-full">
+          <span className="px-2 py-0.5 text-xs font-medium text-emerald-700 bg-emerald-100 rounded-full flex-shrink-0">
             발행됨
           </span>
         )}
       </div>
 
       {/* 우측: 상태 + 액션 버튼 */}
-      <div className="flex items-center gap-2">
-        {/* AI 크레딧 */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-stone-100 rounded-md mr-1">
+      <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+        {/* AI 크레딧 - 모바일 숨김 */}
+        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-stone-100 rounded-md mr-1">
           <Sparkles className="w-3.5 h-3.5 text-stone-500" />
           <span className="text-xs font-medium text-stone-600">
             {creditsLoading ? '...' : credits ?? 0}
@@ -122,16 +122,16 @@ export function TopBar({ invitation, isSaving, lastSaved, onUpdateInvitation }: 
         </div>
 
         {/* 저장 상태 */}
-        <div className="text-xs text-stone-500 mr-2">
+        <div className="text-xs text-stone-500 mr-1 md:mr-2">
           {isSaving ? (
             <span className="flex items-center gap-1.5">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              저장 중
+              <span className="hidden md:inline">저장 중</span>
             </span>
           ) : lastSaved ? (
             <span className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-              {formatTimeAgo(lastSaved)}
+              <span className="hidden md:inline">{formatTimeAgo(lastSaved)}</span>
             </span>
           ) : null}
         </div>
@@ -139,16 +139,16 @@ export function TopBar({ invitation, isSaving, lastSaved, onUpdateInvitation }: 
         {/* 대시보드로 */}
         <Link
           href="/dashboard"
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-stone-600 hover:bg-stone-100 rounded-lg transition-colors"
+          className="flex items-center gap-1.5 p-2 md:px-3 md:py-1.5 text-sm font-medium text-stone-600 hover:bg-stone-100 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          대시보드
+          <span className="hidden md:inline">대시보드</span>
         </Link>
 
-        {/* 미리보기 */}
+        {/* 미리보기 - 데스크톱만 (모바일은 FAB로 대체) */}
         <button
           onClick={() => window.open(`/preview/${invitation.id}`, '_blank')}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-stone-600 hover:bg-stone-100 rounded-lg transition-colors"
+          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-stone-600 hover:bg-stone-100 rounded-lg transition-colors"
         >
           <Eye className="w-4 h-4" />
           미리보기
@@ -158,23 +158,23 @@ export function TopBar({ invitation, isSaving, lastSaved, onUpdateInvitation }: 
         {isPublished ? (
           <button
             onClick={handleShare}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-white bg-pink-500 hover:bg-pink-600 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 p-2 md:px-4 md:py-1.5 text-sm font-medium text-white bg-pink-500 hover:bg-pink-600 rounded-lg transition-colors"
           >
             <Share2 className="w-4 h-4" />
-            공유
+            <span className="hidden md:inline">공유</span>
           </button>
         ) : (
           <button
             onClick={handlePublish}
             disabled={isPublishing}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-white bg-pink-500 hover:bg-pink-600 disabled:bg-pink-200 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 p-2 md:px-4 md:py-1.5 text-sm font-medium text-white bg-pink-500 hover:bg-pink-600 disabled:bg-pink-200 rounded-lg transition-colors"
           >
             {isPublishing ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Send className="w-4 h-4" />
             )}
-            발행하기
+            <span className="hidden md:inline">발행하기</span>
           </button>
         )}
       </div>
