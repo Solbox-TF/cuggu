@@ -9,6 +9,28 @@ interface FooterSectionProps {
   isPreview?: boolean;
 }
 
+function getCtaUrl(invitationId: string) {
+  return `https://cuggu.io?ref=invitation&id=${invitationId}`;
+}
+
+function ViralCTA({ invitationId }: { invitationId: string }) {
+  return (
+    <div className="mt-6 pt-5 border-t border-stone-100">
+      <a
+        href={getCtaUrl(invitationId)}
+        data-event="viral_cta_click"
+        data-ref-id={invitationId}
+        className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-pink-600 bg-pink-50 hover:bg-pink-100 rounded-full transition-colors active:scale-[0.97]"
+      >
+        나도 이렇게 예쁜 청첩장 만들기 →
+      </a>
+      <p className="mt-2 text-[11px] text-stone-300">
+        Cuggu
+      </p>
+    </div>
+  );
+}
+
 function FooterCentered({ data, config, isPreview }: FooterSectionProps) {
   return (
     <footer className={config.containerClass ?? 'py-8 md:py-12 px-6 text-center text-xs md:text-sm text-gray-500 border-t border-amber-100'}>
@@ -17,13 +39,7 @@ function FooterCentered({ data, config, isPreview }: FooterSectionProps) {
       <p className={config.nameClass ?? ''}>
         {data.groom.name} & {data.bride.name}
       </p>
-      {!isPreview && (
-        <p className="mt-2">
-          <a href="https://cuggu.io" className={config.linkClass ?? 'text-amber-600 hover:text-amber-700'}>
-            Cuggu
-          </a>
-        </p>
-      )}
+      {!isPreview && <ViralCTA invitationId={data.id} />}
     </footer>
   );
 }
@@ -33,12 +49,12 @@ function FooterFlexBetween({ data, config, isPreview }: FooterSectionProps) {
     <footer className={config.containerClass ?? 'py-10 md:py-14 px-8 md:px-12 border-t border-zinc-200'}>
       <div className="flex items-center justify-between text-xs text-zinc-400">
         <p className={config.nameClass ?? ''}>{data.groom.name} & {data.bride.name}</p>
-        {!isPreview && (
-          <a href="https://cuggu.io" className={config.linkClass ?? 'hover:text-emerald-600 transition-colors'}>
-            Cuggu
-          </a>
-        )}
       </div>
+      {!isPreview && (
+        <div className="text-center mt-6">
+          <ViralCTA invitationId={data.id} />
+        </div>
+      )}
     </footer>
   );
 }
