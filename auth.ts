@@ -2,13 +2,11 @@ import NextAuth from "next-auth";
 import type { NextAuthConfig } from "next-auth";
 import Kakao from "next-auth/providers/kakao";
 import Naver from "next-auth/providers/naver";
-import Credentials from "next-auth/providers/credentials";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/db";
 import { users, accounts, sessions } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { isRegistrationEnabled } from "@/lib/settings";
-// import bcrypt from "bcryptjs"; // 향후 비밀번호 검증 시 사용
 
 export const authConfig = {
   trustHost: true,
@@ -45,40 +43,8 @@ export const authConfig = {
         };
       },
     }),
-    // 이메일/비밀번호 로그인
-    Credentials({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
-
-        const user = await db.query.users.findFirst({
-          where: eq(users.email, credentials.email as string),
-        });
-
-        if (!user) {
-          return null;
-        }
-
-        // 비밀번호 검증 (향후 구현)
-        // const isValid = await bcrypt.compare(
-        //   credentials.password as string,
-        //   user.passwordHash
-        // );
-        // if (!isValid) return null;
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        };
-      },
-    }),
+    // Credentials 프로바이더 제거됨 — 비밀번호 검증 미구현 상태로 보안 취약점.
+    // 이메일 로그인 필요 시 bcrypt 검증 구현 후 재활성화할 것.
   ],
   session: {
     strategy: "jwt",
@@ -111,8 +77,7 @@ export const authConfig = {
   useSecureCookies: process.env.NODE_ENV === "production",
   callbacks: {
     async signIn({ account }) {
-      // OAuth 로그인만 체크 (credentials는 통과)
-      if (!account?.provider || account.provider === "credentials") return true;
+      if (!account?.provider) return true;
 
       // 기존 계정이면 항상 통과
       const existing = await db.query.accounts.findFirst({
