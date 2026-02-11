@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { invitations } from '@/db/schema';
-import { UpdateInvitationSchema } from '@/schemas/invitation';
+import { UpdateInvitationSchema, ExtendedDataSchema } from '@/schemas/invitation';
 import { dbRecordToInvitation, invitationToDbUpdate } from '@/lib/invitation-utils';
 import { eq } from 'drizzle-orm';
 
@@ -119,13 +119,35 @@ export async function PUT(
 
     const data = parsed.data;
 
+    // [cuggu-2fr] 발행 시 필수 필드 서버사이드 검증
+    if (data.status === 'PUBLISHED' && existing.status !== 'PUBLISHED') {
+      const missing: string[] = [];
+      // 업데이트 데이터 또는 기존 DB 값에서 확인
+      const groomName = data.groom?.name ?? existing.groomName;
+      const brideName = data.bride?.name ?? existing.brideName;
+      const weddingDate = data.wedding?.date ?? existing.weddingDate;
+      const venueName = data.wedding?.venue?.name ?? existing.venueName;
+
+      if (!groomName) missing.push('신랑 이름');
+      if (!brideName) missing.push('신부 이름');
+      if (!weddingDate) missing.push('예식 날짜');
+      if (!venueName) missing.push('예식장 이름');
+
+      if (missing.length > 0) {
+        return NextResponse.json(
+          { error: '발행에 필요한 정보가 부족합니다', missing },
+          { status: 400 }
+        );
+      }
+    }
+
     // invitationToDbUpdate()로 flat 컬럼 + extendedData 분리
     const dbUpdate = invitationToDbUpdate(data);
 
     // extendedData deep merge (기존 데이터 보존)
     if (dbUpdate.extendedData) {
       const existingExt = (existing.extendedData as Record<string, any>) || {};
-      dbUpdate.extendedData = {
+      const merged = {
         ...existingExt,
         ...(dbUpdate.extendedData as Record<string, any>),
         groom: { ...(existingExt.groom || {}), ...((dbUpdate.extendedData as any).groom || {}) },
@@ -135,6 +157,19 @@ export async function PUT(
         gallery: { ...(existingExt.gallery || {}), ...((dbUpdate.extendedData as any).gallery || {}) },
         settings: { ...(existingExt.settings || {}), ...((dbUpdate.extendedData as any).settings || {}) },
       };
+
+      // [cuggu-jrk] merge 결과 검증 — 실패 시 기존 데이터 보존
+      const extValidation = ExtendedDataSchema.safeParse(merged);
+      if (!extValidation.success) {
+        return NextResponse.json(
+          {
+            error: '확장 데이터가 올바르지 않습니다',
+            details: extValidation.error.issues,
+          },
+          { status: 400 }
+        );
+      }
+      dbUpdate.extendedData = extValidation.data;
     }
 
     const updateData: any = { ...dbUpdate, updatedAt: new Date() };

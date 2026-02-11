@@ -15,7 +15,7 @@ export default async function PreviewPage({
 
   const invitation = await db.query.invitations.findFirst({
     where: eq(invitations.id, id),
-    with: { template: true },
+    with: { template: true, user: { columns: { premiumPlan: true } } },
   });
 
   if (!invitation || invitation.status === 'DELETED') {
@@ -33,6 +33,7 @@ export default async function PreviewPage({
 
   // DB row → Invitation 타입 변환 (조회수 증가 없음, 비밀번호 게이트 없음)
   const data = dbRecordToInvitation(invitation);
+  const isPremium = invitation.user?.premiumPlan === 'PREMIUM';
 
-  return <PreviewClient data={data} />;
+  return <PreviewClient data={data} isPremium={isPremium} />;
 }

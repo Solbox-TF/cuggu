@@ -65,7 +65,7 @@ export default async function InvitationPublicPage({
   // DB에서 청첩장 조회
   const invitation = await db.query.invitations.findFirst({
     where: eq(invitations.id, id),
-    with: { template: true },
+    with: { template: true, user: { columns: { premiumPlan: true } } },
   });
 
   // 존재하지 않거나 삭제됨
@@ -110,8 +110,9 @@ export default async function InvitationPublicPage({
 
   // DB row → Invitation 타입 변환
   const data = dbRecordToInvitation(invitation);
+  const isPremium = invitation.user?.premiumPlan === 'PREMIUM';
 
-  return <InvitationView data={data} />;
+  return <InvitationView data={data} isPremium={isPremium} />;
 }
 
 // ============================================================
