@@ -119,6 +119,7 @@ export interface AlbumGroup {
   id: string;
   name: string;
   sortOrder: number;
+  isDefault?: boolean;
 }
 
 export interface AlbumImage {

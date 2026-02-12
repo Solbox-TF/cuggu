@@ -22,6 +22,8 @@ import { AIStreamingGallery } from '@/components/ai/AIStreamingGallery';
 import { AIResultGallery } from '@/components/ai/AIResultGallery';
 import { AlbumCuration } from './AlbumCuration';
 import { GenerationCard } from './GenerationCard';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useConfirm } from '@/hooks/useConfirm';
 
 // ── Types ──
 
@@ -104,13 +106,16 @@ export function AlbumDashboard({
   const [showLegacy, setShowLegacy] = useState(false);
   const [legacyGenerations, setLegacyGenerations] = useState<Generation[]>([]);
   const [legacyLoading, setLegacyLoading] = useState(false);
-  const [savingCuration, setSavingCuration] = useState(false);
+  const [savingCuration, setSavingCuration] = useState<'idle' | 'saving' | 'done'>('idle');
+  const [saveAction, setSaveAction] = useState('');
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
   const [tagEditingUrl, setTagEditingUrl] = useState<string | null>(null);
 
   // 그룹 추가 UI
   const [showGroupInput, setShowGroupInput] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
+  const [activeGroupFilter, setActiveGroupFilter] = useState<string | null>(null);
+  const { confirm, isOpen: confirmOpen, options: confirmOptions, handleConfirm: onConfirm, handleCancel: onCancel } = useConfirm();
 
   const IS_DEV = process.env.NODE_ENV === 'development';
   const snapType = album.snapType as SnapType | null;
@@ -148,8 +153,9 @@ export function AlbumDashboard({
   };
 
   // ── 큐레이션 저장 (images + groups) ──
-  const saveCuration = useCallback(async (images: AlbumImage[], grps?: AlbumGroup[]) => {
-    setSavingCuration(true);
+  const saveCuration = useCallback(async (images: AlbumImage[], grps?: AlbumGroup[], action?: string) => {
+    setSaveAction(action ?? '저장');
+    setSavingCuration('saving');
     try {
       const body: Record<string, unknown> = { images };
       if (grps !== undefined) body.groups = grps;
@@ -158,16 +164,16 @@ export function AlbumDashboard({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
+      setSavingCuration('done');
+      setTimeout(() => setSavingCuration('idle'), 1500);
     } catch {
-      // 실패 시 무시
-    } finally {
-      setSavingCuration(false);
+      setSavingCuration('idle');
     }
   }, [album.id]);
 
-  const handleCurationChange = useCallback((images: AlbumImage[]) => {
+  const handleCurationChange = useCallback((images: AlbumImage[], action?: string) => {
     setCuratedImages(images);
-    saveCuration(images, groups);
+    saveCuration(images, groups, action ?? '수정');
   }, [saveCuration, groups]);
 
   // ── 그룹 관리 ──
@@ -182,27 +188,42 @@ export function AlbumDashboard({
     setGroups(updated);
     setNewGroupName('');
     setShowGroupInput(false);
-    saveCuration(curatedImages, updated);
+    saveCuration(curatedImages, updated, '그룹 추가');
   }, [newGroupName, groups, curatedImages, saveCuration]);
 
   const handleRenameGroup = useCallback((groupId: string, name: string) => {
     const updated = groups.map((g) => g.id === groupId ? { ...g, name } : g);
     setGroups(updated);
-    saveCuration(curatedImages, updated);
+    saveCuration(curatedImages, updated, '그룹 수정');
   }, [groups, curatedImages, saveCuration]);
 
-  const handleDeleteGroup = useCallback((groupId: string) => {
+  const handleDeleteGroup = useCallback(async (groupId: string) => {
+    const group = groups.find((g) => g.id === groupId);
+    if (!group || group.isDefault) return;
+
+    const imagesInGroup = curatedImages.filter((img) => img.groupId === groupId);
+    const confirmed = await confirm({
+      title: `"${group.name}" 그룹을 삭제하시겠습니까?`,
+      description: imagesInGroup.length > 0
+        ? `그룹 내 ${imagesInGroup.length}장의 사진은 미분류로 이동됩니다.`
+        : '빈 그룹이 삭제됩니다.',
+      confirmText: '삭제',
+      cancelText: '취소',
+      variant: 'warning',
+    });
+
+    if (!confirmed) return;
+
     const updated = groups
       .filter((g) => g.id !== groupId)
       .map((g, i) => ({ ...g, sortOrder: i }));
-    // 해당 그룹의 이미지를 미분류로
     const updatedImages = curatedImages.map((img) =>
       img.groupId === groupId ? { ...img, groupId: undefined } : img
     );
     setGroups(updated);
     setCuratedImages(updatedImages);
-    saveCuration(updatedImages, updated);
-  }, [groups, curatedImages, saveCuration]);
+    saveCuration(updatedImages, updated, '그룹 삭제');
+  }, [groups, curatedImages, saveCuration, confirm]);
 
   // ── 태그 관리 ──
   const handleToggleTag = useCallback((url: string, tag: string) => {
@@ -213,7 +234,7 @@ export function AlbumDashboard({
       return { ...img, tags: newTags };
     });
     setCuratedImages(updated);
-    saveCuration(updated, groups);
+    saveCuration(updated, groups, '태그 수정');
   }, [curatedImages, groups, saveCuration]);
 
   const handleAddCustomTag = useCallback((url: string, tag: string) => {
@@ -226,7 +247,7 @@ export function AlbumDashboard({
       return { ...img, tags: [...tags, trimmed] };
     });
     setCuratedImages(updated);
-    saveCuration(updated, groups);
+    saveCuration(updated, groups, '태그 추가');
   }, [curatedImages, groups, saveCuration]);
 
   // ── 이미지 큐레이션 토글 ──
@@ -250,7 +271,7 @@ export function AlbumDashboard({
     }
 
     setCuratedImages(updated);
-    saveCuration(updated, groups);
+    saveCuration(updated, groups, exists ? '사진 삭제' : '사진 추가');
   }, [curatedImages, groups, saveCuration]);
 
   // ── SSE 생성 ──
@@ -477,9 +498,14 @@ export function AlbumDashboard({
             <span>{totalGenerated}장 생성</span>
             <span>{curatedCount}장 선택</span>
             {groups.length > 0 && <span>{groups.length}개 그룹</span>}
-            {savingCuration && (
+            {savingCuration === 'saving' && (
               <span className="text-rose-500 flex items-center gap-1">
-                <Loader2 className="w-3 h-3 animate-spin" /> 저장 중...
+                <Loader2 className="w-3 h-3 animate-spin" /> {saveAction} 중...
+              </span>
+            )}
+            {savingCuration === 'done' && (
+              <span className="text-green-600 flex items-center gap-1">
+                <Check className="w-3 h-3" /> {saveAction} 완료!
               </span>
             )}
           </div>
@@ -537,10 +563,20 @@ export function AlbumDashboard({
 
         {groups.length > 0 && (
           <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setActiveGroupFilter(null)}
+              className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                activeGroupFilter === null ? 'bg-rose-100 text-rose-700' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+              }`}
+            >
+              전체
+            </button>
             {groups.map((g) => (
               <GroupChip
                 key={g.id}
                 group={g}
+                isActive={activeGroupFilter === g.id}
+                onSelect={(id) => setActiveGroupFilter(activeGroupFilter === id ? null : id)}
                 onRename={handleRenameGroup}
                 onDelete={handleDeleteGroup}
               />
@@ -584,6 +620,7 @@ export function AlbumDashboard({
       <AlbumCuration
         images={curatedImages}
         groups={groups}
+        activeGroupFilter={activeGroupFilter}
         activeTagFilter={activeTagFilter}
         tagEditingUrl={tagEditingUrl}
         onTagEditRequest={setTagEditingUrl}
@@ -782,6 +819,18 @@ export function AlbumDashboard({
           <p className="text-xs text-stone-400 pl-5">이전 생성 기록이 없습니다</p>
         )}
       </div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={onCancel}
+        onConfirm={onConfirm}
+        title={confirmOptions.title}
+        description={confirmOptions.description}
+        confirmText={confirmOptions.confirmText}
+        cancelText={confirmOptions.cancelText}
+        variant={confirmOptions.variant}
+      />
     </div>
   );
 }
@@ -790,10 +839,14 @@ export function AlbumDashboard({
 
 function GroupChip({
   group,
+  isActive,
+  onSelect,
   onRename,
   onDelete,
 }: {
   group: AlbumGroup;
+  isActive: boolean;
+  onSelect: (id: string) => void;
   onRename: (id: string, name: string) => void;
   onDelete: (id: string) => void;
 }) {
@@ -802,7 +855,7 @@ function GroupChip({
 
   if (editing) {
     return (
-      <div className="flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5">
+      <div className="flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1">
         <input
           type="text"
           value={name}
@@ -820,16 +873,30 @@ function GroupChip({
   }
 
   return (
-    <div className="group flex items-center gap-1 rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600">
-      <button onClick={() => setEditing(true)} className="hover:text-stone-900">
+    <div
+      className={`group/chip flex items-center rounded-full px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
+        isActive ? 'bg-rose-100 text-rose-700' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+      }`}
+    >
+      <button onClick={() => onSelect(group.id)} className="hover:text-stone-900">
         {group.name}
       </button>
-      <button
-        onClick={() => onDelete(group.id)}
-        className="text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
-      >
-        <X className="w-3 h-3" />
-      </button>
+      <div className="flex items-center gap-0.5 max-w-0 opacity-0 overflow-hidden transition-all duration-200 ease-out group-hover/chip:max-w-[3rem] group-hover/chip:opacity-100 group-hover/chip:ml-1">
+        <button
+          onClick={(e) => { e.stopPropagation(); setName(group.name); setEditing(true); }}
+          className="text-stone-400 hover:text-stone-700"
+        >
+          <Pencil className="w-2.5 h-2.5" />
+        </button>
+        {!group.isDefault && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(group.id); }}
+            className="text-stone-400 hover:text-red-500"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

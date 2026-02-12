@@ -220,6 +220,7 @@ export const AlbumGroupSchema = z.object({
   id: z.string(),
   name: z.string().min(1).max(100),
   sortOrder: z.number().int().min(0),
+  isDefault: z.boolean().optional(),
 });
 
 export const AlbumImageSchema = z.object({

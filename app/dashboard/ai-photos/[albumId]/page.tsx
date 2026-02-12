@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Sparkles, Gem, Check, ExternalLink, Loader2, ChevronLeft } from 'lucide-react';
+import { Sparkles, Gem, Check, ExternalLink, Loader2, ChevronLeft, Trash2 } from 'lucide-react';
 import { AlbumImage, AlbumGroup } from '@/types/ai';
 import { AlbumDashboard } from '../components/AlbumDashboard';
 import { ApplyToInvitationModal } from '../components/ApplyToInvitationModal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useConfirm } from '@/hooks/useConfirm';
 import { DEFAULT_MODEL } from '@/lib/ai/models';
 
 const IS_DEV = process.env.NODE_ENV === 'development';
@@ -56,6 +58,10 @@ export default function AlbumDetailPage() {
   // 적용 모달
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [applyToast, setApplyToast] = useState<string | null>(null);
+
+  // 삭제
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { confirm, isOpen, options, handleConfirm, handleCancel } = useConfirm();
 
   useEffect(() => {
     fetchAlbum();
@@ -122,6 +128,34 @@ export default function AlbumDetailPage() {
     }
   };
 
+  const handleDeleteAlbum = async () => {
+    if (!album) return;
+    const imageCount = (album.images ?? []).length;
+    const confirmed = await confirm({
+      title: '앨범을 삭제하시겠습니까?',
+      description: imageCount > 0
+        ? `이 앨범에 포함된 ${imageCount}장의 사진이 모두 삭제되며, 복구할 수 없습니다.`
+        : '빈 앨범이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
+      confirmText: '삭제',
+      cancelText: '취소',
+      variant: 'danger',
+    });
+
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/ai/albums/${album.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        router.push('/dashboard/ai-photos');
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const applyImageUrls = (album?.images ?? []).map((img) => img.url);
 
   return (
@@ -145,6 +179,20 @@ export default function AlbumDetailPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          {album && (
+            <button
+              onClick={handleDeleteAlbum}
+              disabled={isDeleting}
+              className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs text-stone-500 transition-colors hover:border-red-200 hover:text-red-600 disabled:opacity-50"
+            >
+              {isDeleting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5" />
+              )}
+              삭제
+            </button>
+          )}
           {availableModels.length > 1 && album && (
             <select
               value={selectedModel}
@@ -222,6 +270,19 @@ export default function AlbumDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={isOpen}
+        onClose={handleCancel}
+        onConfirm={handleConfirm}
+        title={options.title}
+        description={options.description}
+        confirmText={options.confirmText}
+        cancelText={options.cancelText}
+        variant={options.variant}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

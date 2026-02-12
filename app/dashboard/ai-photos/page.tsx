@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Gem, Loader2, Plus, Trash2, ChevronLeft, ImageIcon } from 'lucide-react';
+import { Sparkles, Gem, Loader2, Plus, ChevronLeft, ImageIcon } from 'lucide-react';
 import { AlbumImage, AlbumGroup } from '@/types/ai';
 import { AlbumOnboarding } from './components/AlbumOnboarding';
 
@@ -20,7 +20,6 @@ export default function AIPhotosPage() {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [deletingAlbumId, setDeletingAlbumId] = useState<string | null>(null);
   const [credits, setCredits] = useState<number>(0);
   const [isLoadingCredits, setIsLoadingCredits] = useState(true);
 
@@ -62,19 +61,6 @@ export default function AIPhotosPage() {
 
   const handleAlbumCreated = (albumId: string) => {
     router.push(`/dashboard/ai-photos/${albumId}`);
-  };
-
-  const handleDeleteAlbum = async (albumId: string) => {
-    if (!confirm('이 앨범을 삭제하시겠습니까?')) return;
-    setDeletingAlbumId(albumId);
-    try {
-      const res = await fetch(`/api/ai/albums/${albumId}`, { method: 'DELETE' });
-      if (res.ok) await fetchAlbums();
-    } catch {
-      // ignore
-    } finally {
-      setDeletingAlbumId(null);
-    }
   };
 
   return (
@@ -137,22 +123,6 @@ export default function AIPhotosPage() {
                 <span className="text-xs text-stone-500 mt-0.5">
                   {imageCount > 0 ? `사진 ${imageCount}장` : '사진 없음'}
                 </span>
-                {albums.length > 1 && (
-                  <span
-                    role="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteAlbum(a.id);
-                    }}
-                    className="absolute top-3 right-3 rounded-md p-1 text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-stone-100 hover:text-red-500"
-                  >
-                    {deletingAlbumId === a.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                  </span>
-                )}
               </button>
             );
           })}

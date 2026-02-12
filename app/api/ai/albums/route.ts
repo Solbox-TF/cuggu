@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { users, aiAlbums, aiGenerations } from '@/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { CreateAlbumSchema } from '@/schemas/ai';
+import { createId } from '@paralleldrive/cuid2';
 
 /**
  * POST /api/ai/albums — 앨범 생성 (유저당 1개 제한)
@@ -33,12 +34,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const defaultGroups = [
+      { id: createId(), name: '기본 그룹', sortOrder: 0, isDefault: true },
+    ];
+
     const [album] = await db
       .insert(aiAlbums)
       .values({
         userId: user.id,
         name: parsed.data.name,
         snapType: parsed.data.snapType,
+        groups: defaultGroups,
       })
       .returning();
 

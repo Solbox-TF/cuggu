@@ -30,17 +30,19 @@ const UNGROUPED_ID = '__ungrouped__';
 interface AlbumCurationProps {
   images: AlbumImage[];
   groups: AlbumGroup[];
+  activeGroupFilter: string | null;
   activeTagFilter: string | null;
   tagEditingUrl: string | null;
   onTagEditRequest: (url: string | null) => void;
   onToggleTag: (url: string, tag: string) => void;
   onAddCustomTag: (url: string, tag: string) => void;
-  onImagesChange: (images: AlbumImage[]) => void;
+  onImagesChange: (images: AlbumImage[], action?: string) => void;
 }
 
 export function AlbumCuration({
   images,
   groups,
+  activeGroupFilter,
   activeTagFilter,
   tagEditingUrl,
   onTagEditRequest,
@@ -117,7 +119,7 @@ export function AlbumCuration({
       const updated = images.map((img) =>
         img.url === activeUrl ? { ...img, groupId: newGroupId } : img
       );
-      onImagesChange(updated);
+      onImagesChange(updated, '그룹 이동');
     }
   }, [images, onImagesChange]);
 
@@ -151,14 +153,14 @@ export function AlbumCuration({
     const otherImages = images.filter((img) => !groupUrls.has(img.url));
     const updated = [...otherImages, ...reorderedGroup];
 
-    onImagesChange(updated);
+    onImagesChange(updated, '순서 변경');
   }, [images, imagesByGroup, onImagesChange]);
 
   const handleRemove = useCallback((url: string) => {
     const filtered = images
       .filter((img) => img.url !== url)
       .map((img, i) => ({ ...img, sortOrder: i }));
-    onImagesChange(filtered);
+    onImagesChange(filtered, '사진 삭제');
   }, [images, onImagesChange]);
 
   // 이미지를 특정 그룹으로 이동
@@ -167,7 +169,7 @@ export function AlbumCuration({
     const updated = images.map((img) =>
       img.url === url ? { ...img, groupId: newGroupId } : img
     );
-    onImagesChange(updated);
+    onImagesChange(updated, '그룹 이동');
   }, [images, onImagesChange]);
 
   const activeImage = activeId ? images.find((img) => img.url === activeId) : null;
@@ -181,9 +183,13 @@ export function AlbumCuration({
     );
   }
 
-  // 그룹 없으면 기존 flat 렌더링
+  // 그룹 필터 적용
   const hasGroups = groups.length > 0;
-  const sectionKeys = hasGroups ? [...sortedGroups.map((g) => g.id), UNGROUPED_ID] : [UNGROUPED_ID];
+  const sectionKeys = activeGroupFilter
+    ? [activeGroupFilter]
+    : hasGroups
+      ? [...sortedGroups.map((g) => g.id), UNGROUPED_ID]
+      : [UNGROUPED_ID];
 
   return (
     <div className="space-y-3">
