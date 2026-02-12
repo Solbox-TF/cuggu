@@ -116,8 +116,14 @@ export function AlbumOnboarding({ onAlbumCreated }: AlbumOnboardingProps) {
     return null;
   };
 
-  // ── Upload a reference photo ──
-  const handleUpload = async (file: File, role: PersonRole) => {
+  // ── 파일 선택 (프리뷰만, 서버 업로드 안 함) ──
+  const handleFileSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    role: PersonRole
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     const setter = role === 'GROOM' ? setGroom : setBride;
     const validationError = validateFile(file);
     if (validationError) {
@@ -126,17 +132,23 @@ export function AlbumOnboarding({ onAlbumCreated }: AlbumOnboardingProps) {
     }
 
     const preview = URL.createObjectURL(file);
-    setter((prev) => ({
-      ...prev,
-      file,
-      preview,
-      uploading: true,
-      error: null,
-    }));
+    setter((prev) => {
+      if (prev.preview) URL.revokeObjectURL(prev.preview);
+      return { ...prev, file, preview, error: null };
+    });
+  };
+
+  // ── 확인 후 실제 업로드 ──
+  const handleConfirmUpload = async (role: PersonRole) => {
+    const state = role === 'GROOM' ? groom : bride;
+    const setter = role === 'GROOM' ? setGroom : setBride;
+    if (!state.file) return;
+
+    setter((prev) => ({ ...prev, uploading: true, error: null }));
 
     try {
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('image', state.file);
       formData.append('role', role);
 
       const res = await fetch('/api/ai/reference-photos', {
@@ -145,14 +157,12 @@ export function AlbumOnboarding({ onAlbumCreated }: AlbumOnboardingProps) {
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || '업로드 실패');
-      }
+      if (!res.ok) throw new Error(data.error || '업로드 실패');
 
       setter((prev) => ({
         ...prev,
         uploading: false,
+        file: null,
         existing: data.data,
       }));
     } catch (err) {
@@ -164,7 +174,7 @@ export function AlbumOnboarding({ onAlbumCreated }: AlbumOnboardingProps) {
     }
   };
 
-  // ── Remove uploaded photo ──
+  // ── 프리뷰/기존 사진 제거 ──
   const handleRemove = async (role: PersonRole) => {
     const state = role === 'GROOM' ? groom : bride;
     const setter = role === 'GROOM' ? setGroom : setBride;
@@ -187,17 +197,6 @@ export function AlbumOnboarding({ onAlbumCreated }: AlbumOnboardingProps) {
     setter({ ...initialUploadState });
     if (inputRef.current) {
       inputRef.current.value = '';
-    }
-  };
-
-  // ── File input handler ──
-  const handleFileSelect = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    role: PersonRole
-  ) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleUpload(file, role);
     }
   };
 
@@ -328,6 +327,7 @@ export function AlbumOnboarding({ onAlbumCreated }: AlbumOnboardingProps) {
                     inputRef={groomInputRef}
                     onFileSelect={(e) => handleFileSelect(e, 'GROOM')}
                     onRemove={() => handleRemove('GROOM')}
+                    onConfirmUpload={() => handleConfirmUpload('GROOM')}
                   />
                   <PhotoUploadCard
                     role="BRIDE"
@@ -336,6 +336,7 @@ export function AlbumOnboarding({ onAlbumCreated }: AlbumOnboardingProps) {
                     inputRef={brideInputRef}
                     onFileSelect={(e) => handleFileSelect(e, 'BRIDE')}
                     onRemove={() => handleRemove('BRIDE')}
+                    onConfirmUpload={() => handleConfirmUpload('BRIDE')}
                   />
                 </div>
               )}
@@ -421,6 +422,7 @@ interface PhotoUploadCardProps {
   inputRef: React.RefObject<HTMLInputElement | null>;
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: () => void;
+  onConfirmUpload: () => void;
 }
 
 function PhotoUploadCard({
@@ -430,10 +432,12 @@ function PhotoUploadCard({
   inputRef,
   onFileSelect,
   onRemove,
+  onConfirmUpload,
 }: PhotoUploadCardProps) {
   const hasPhoto = !!(state.existing || state.preview);
   const imageUrl = state.existing?.originalUrl ?? state.preview;
   const isUploaded = !!state.existing;
+  const hasPendingPreview = !!state.preview && !state.existing;
 
   return (
     <div className="space-y-2">
@@ -479,17 +483,19 @@ function PhotoUploadCard({
               alt={`${label} 참조 사진`}
               className="h-full w-full object-cover rounded-xl"
             />
-            {/* Remove button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove();
-              }}
-              className="absolute top-2 right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-            {/* Replace button */}
+            {/* Remove / X button */}
+            {!isUploaded && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove();
+                }}
+                className="absolute top-2 right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {/* 다른 사진 / 변경 */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -497,7 +503,7 @@ function PhotoUploadCard({
               }}
               className="absolute bottom-2 inset-x-2 z-10 rounded-lg bg-black/50 py-1.5 text-xs font-medium text-white hover:bg-black/70 transition-colors"
             >
-              변경
+              {isUploaded ? '변경' : '다른 사진'}
             </button>
           </>
         ) : (
@@ -506,11 +512,23 @@ function PhotoUploadCard({
               <Camera className="w-5 h-5 text-stone-400" />
             </div>
             <p className="text-xs text-stone-500">
-              탭하여 {label} 사진 등록
+              탭하여 {label} 사진 선택
             </p>
           </div>
         )}
       </div>
+
+      {/* 업로드 버튼 (프리뷰만 있고 서버에 안 올린 상태) */}
+      {hasPendingPreview && (
+        <button
+          onClick={onConfirmUpload}
+          disabled={state.uploading}
+          className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-rose-600 py-2 text-xs font-medium text-white transition-colors hover:bg-rose-700 disabled:bg-stone-300"
+        >
+          <Upload className="w-3.5 h-3.5" />
+          업로드하기
+        </button>
+      )}
 
       {/* Error */}
       {state.error && (

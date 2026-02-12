@@ -92,6 +92,7 @@ export function AlbumDashboard({
   const [refPhotosLoading, setRefPhotosLoading] = useState(true);
   const [refUploading, setRefUploading] = useState<PersonRole | null>(null);
   const [refUploadError, setRefUploadError] = useState<string | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<Record<string, { file: File; preview: string }>>({});
   const groomInputRef = useRef<HTMLInputElement>(null);
   const brideInputRef = useRef<HTMLInputElement>(null);
 
@@ -128,8 +129,8 @@ export function AlbumDashboard({
     fetchRefPhotos();
   }, []);
 
-  // ── 참조 사진 인라인 업로드 ──
-  const handleRefPhotoUpload = useCallback(async (file: File, role: PersonRole) => {
+  // ── 참조 사진: 파일 선택 (프리뷰만) ──
+  const handleRefFileSelect = useCallback((file: File, role: PersonRole) => {
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
       setRefUploadError('JPG, PNG, WebP 파일만 업로드 가능합니다');
       return;
@@ -138,13 +139,46 @@ export function AlbumDashboard({
       setRefUploadError('파일 크기는 10MB 이하여야 합니다');
       return;
     }
+    setRefUploadError(null);
+    setPendingFiles((prev) => {
+      // 이전 preview URL revoke
+      if (prev[role]?.preview) URL.revokeObjectURL(prev[role].preview);
+      return { ...prev, [role]: { file, preview: URL.createObjectURL(file) } };
+    });
+  }, []);
+
+  // ── 참조 사진: 프리뷰 제거 ──
+  const handleRefFileRemove = useCallback((role: PersonRole) => {
+    setPendingFiles((prev) => {
+      if (prev[role]?.preview) URL.revokeObjectURL(prev[role].preview);
+      const next = { ...prev };
+      delete next[role];
+      return next;
+    });
+    const inputRef = role === 'GROOM' ? groomInputRef : brideInputRef;
+    if (inputRef.current) inputRef.current.value = '';
+  }, []);
+
+  // ── 참조 사진: 확인 후 실제 업로드 ──
+  const handleRefPhotoConfirmUpload = useCallback(async (role: PersonRole) => {
+    const pending = pendingFiles[role];
+    if (!pending) return;
+
+    const label = role === 'GROOM' ? '신랑' : '신부';
+    const confirmed = await confirm({
+      title: `${label} 참조 사진 업로드`,
+      description: '이 사진을 참조 사진으로 등록하시겠습니까?',
+      confirmText: '업로드',
+      cancelText: '취소',
+    });
+    if (!confirmed) return;
 
     setRefUploading(role);
     setRefUploadError(null);
 
     try {
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('image', pending.file);
       formData.append('role', role);
 
       const res = await fetch('/api/ai/reference-photos', {
@@ -159,12 +193,14 @@ export function AlbumDashboard({
         const filtered = prev.filter((p) => p.role !== role);
         return [...filtered, data.data];
       });
+      // pending 제거
+      handleRefFileRemove(role);
     } catch (err) {
       setRefUploadError(err instanceof Error ? err.message : '업로드 중 오류');
     } finally {
       setRefUploading(null);
     }
-  }, []);
+  }, [pendingFiles, confirm, handleRefFileRemove]);
 
   // Sync album data when album prop changes
   useEffect(() => {
@@ -664,9 +700,11 @@ export function AlbumDashboard({
                 <div className="grid grid-cols-2 gap-4">
                   {(['GROOM', 'BRIDE'] as PersonRole[]).map((role) => {
                     const existing = referencePhotos.find((p) => p.role === role);
+                    const pending = pendingFiles[role];
                     const isUploading = refUploading === role;
                     const label = role === 'GROOM' ? '신랑' : '신부';
                     const inputRef = role === 'GROOM' ? groomInputRef : brideInputRef;
+                    const imageUrl = existing?.originalUrl ?? pending?.preview;
 
                     return (
                       <div key={role} className="space-y-2">
@@ -682,11 +720,11 @@ export function AlbumDashboard({
                         </div>
 
                         <div
-                          onClick={() => !isUploading && !existing && inputRef.current?.click()}
+                          onClick={() => !isUploading && !imageUrl && inputRef.current?.click()}
                           className={`
                             relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed
                             aspect-[3/4] overflow-hidden transition-colors
-                            ${existing ? 'border-transparent' : 'border-stone-200 hover:border-rose-300 cursor-pointer bg-white'}
+                            ${imageUrl ? 'border-transparent' : 'border-stone-200 hover:border-rose-300 cursor-pointer bg-white'}
                             ${isUploading ? 'pointer-events-none' : ''}
                           `}
                         >
@@ -696,7 +734,7 @@ export function AlbumDashboard({
                             accept={ALLOWED_FILE_TYPES.join(',')}
                             onChange={(e) => {
                               const file = e.target.files?.[0];
-                              if (file) handleRefPhotoUpload(file, role);
+                              if (file) handleRefFileSelect(file, role);
                             }}
                             className="hidden"
                           />
@@ -708,14 +746,22 @@ export function AlbumDashboard({
                             </div>
                           )}
 
-                          {existing ? (
+                          {imageUrl ? (
                             <>
-                              <img src={existing.originalUrl} alt={`${label} 참조`} className="h-full w-full object-cover rounded-xl" />
+                              <img src={imageUrl} alt={`${label} 참조`} className="h-full w-full object-cover rounded-xl" />
+                              {!existing && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleRefFileRemove(role); }}
+                                  className="absolute top-2 right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                               <button
                                 onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
                                 className="absolute bottom-2 inset-x-2 z-10 rounded-lg bg-black/50 py-1.5 text-xs font-medium text-white hover:bg-black/70 transition-colors"
                               >
-                                변경
+                                {existing ? '변경' : '다른 사진'}
                               </button>
                             </>
                           ) : (
@@ -723,10 +769,22 @@ export function AlbumDashboard({
                               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-100">
                                 <Camera className="w-5 h-5 text-stone-400" />
                               </div>
-                              <p className="text-xs text-stone-500">탭하여 {label} 사진 등록</p>
+                              <p className="text-xs text-stone-500">탭하여 {label} 사진 선택</p>
                             </div>
                           )}
                         </div>
+
+                        {/* 업로드 버튼 (프리뷰만 있고 아직 서버에 안 올린 상태) */}
+                        {pending && !existing && (
+                          <button
+                            onClick={() => handleRefPhotoConfirmUpload(role)}
+                            disabled={isUploading}
+                            className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-rose-600 py-2 text-xs font-medium text-white transition-colors hover:bg-rose-700 disabled:bg-stone-300"
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            업로드하기
+                          </button>
+                        )}
                       </div>
                     );
                   })}
