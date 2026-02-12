@@ -187,5 +187,31 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
         result: { newPlan: "FREE" as const },
       });
     }
+
+    case "set_admin": {
+      await db
+        .update(users)
+        .set({ role: "ADMIN", updatedAt: new Date() })
+        .where(eq(users.id, body.userId));
+
+      return successResponse({
+        userId: body.userId,
+        action: body.action,
+        result: { newRole: "ADMIN" as const },
+      });
+    }
+
+    case "set_user": {
+      await db
+        .update(users)
+        .set({ role: "USER", updatedAt: new Date() })
+        .where(eq(users.id, body.userId));
+
+      return successResponse({
+        userId: body.userId,
+        action: body.action,
+        result: { newRole: "USER" as const },
+      });
+    }
   }
 });

@@ -6,7 +6,7 @@ import type { AdminUserItem } from "@/schemas/admin";
 
 interface UserTableProps {
   users: AdminUserItem[];
-  onAction: (userId: string, action: "grant_credits" | "set_premium" | "set_free") => void;
+  onAction: (userId: string, action: "grant_credits" | "set_premium" | "set_free" | "set_admin" | "set_user") => void;
 }
 
 export function UserTable({ users, onAction }: UserTableProps) {
@@ -109,6 +109,27 @@ export function UserTable({ users, onAction }: UserTableProps) {
                           className="w-full px-3 py-2 text-left text-sm hover:bg-stone-50"
                         >
                           무료 플랜으로 변경
+                        </button>
+                      )}
+                      {user.role === "ADMIN" ? (
+                        <button
+                          onClick={() => {
+                            onAction(user.id, "set_user");
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                        >
+                          관리자 해제
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            onAction(user.id, "set_admin");
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-stone-50"
+                        >
+                          관리자 권한 부여
                         </button>
                       )}
                     </div>

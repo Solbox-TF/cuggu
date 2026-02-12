@@ -45,7 +45,7 @@ export default function AdminUsersPage() {
 
   const handleAction = async (
     userId: string,
-    action: "grant_credits" | "set_premium" | "set_free"
+    action: "grant_credits" | "set_premium" | "set_free" | "set_admin" | "set_user"
   ) => {
     if (action === "grant_credits") {
       setModalUserId(userId);

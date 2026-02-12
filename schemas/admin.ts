@@ -20,10 +20,22 @@ export const SetFreeActionSchema = z.object({
   userId: z.string().cuid2(),
 });
 
+export const SetAdminActionSchema = z.object({
+  action: z.literal("set_admin"),
+  userId: z.string().cuid2(),
+});
+
+export const SetUserActionSchema = z.object({
+  action: z.literal("set_user"),
+  userId: z.string().cuid2(),
+});
+
 export const AdminUserActionSchema = z.discriminatedUnion("action", [
   GrantCreditsActionSchema,
   SetPremiumActionSchema,
   SetFreeActionSchema,
+  SetAdminActionSchema,
+  SetUserActionSchema,
 ]);
 
 export type AdminUserAction = z.infer<typeof AdminUserActionSchema>;
