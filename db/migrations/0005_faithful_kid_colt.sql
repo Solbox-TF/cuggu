@@ -40,7 +40,6 @@ CREATE TABLE "ai_reference_photos" (
 );
 --> statement-breakpoint
 ALTER TABLE "users" ALTER COLUMN "ai_credits" SET DEFAULT 5;--> statement-breakpoint
-ALTER TABLE "ai_albums" ADD COLUMN "groups" jsonb DEFAULT '[]'::jsonb;--> statement-breakpoint
 ALTER TABLE "ai_generations" ADD COLUMN "job_id" varchar(128);--> statement-breakpoint
 ALTER TABLE "ai_credit_transactions" ADD CONSTRAINT "ai_credit_transactions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "ai_generation_jobs" ADD CONSTRAINT "ai_generation_jobs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

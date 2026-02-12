@@ -13,7 +13,7 @@ export function UserTable({ users, onAction }: UserTableProps) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto overflow-y-visible">
       <table className="w-full">
         <thead>
           <tr className="border-b border-stone-200 text-left text-sm text-stone-500">
@@ -80,7 +80,7 @@ export function UserTable({ users, onAction }: UserTableProps) {
                     <MoreHorizontal className="w-4 h-4 text-stone-400" />
                   </button>
                   {openMenuId === user.id && (
-                    <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-stone-200 rounded-lg shadow-lg z-10">
+                    <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-stone-200 rounded-lg shadow-lg z-50">
                       <button
                         onClick={() => {
                           onAction(user.id, "grant_credits");

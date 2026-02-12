@@ -3,8 +3,6 @@ import { users, aiCreditTransactions } from '@/db/schema';
 import { eq, sql, and, desc } from 'drizzle-orm';
 import type { CreditTransaction } from '@/types/ai';
 
-const IS_DEV = process.env.NODE_ENV === 'development';
-
 /**
  * 크레딧 잔액 확인
  */
@@ -12,14 +10,6 @@ export async function checkCredits(userId: string): Promise<{
   hasCredits: boolean;
   balance: number;
 }> {
-  // 개발 모드: 무제한 크레딧
-  if (IS_DEV) {
-    return {
-      hasCredits: true,
-      balance: 999,
-    };
-  }
-
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
     columns: { aiCredits: true },
@@ -40,14 +30,6 @@ export function checkCreditsFromUser(user: { aiCredits: number }): {
   hasCredits: boolean;
   balance: number;
 } {
-  // 개발 모드: 무제한 크레딧
-  if (IS_DEV) {
-    return {
-      hasCredits: true,
-      balance: 999,
-    };
-  }
-
   return {
     hasCredits: user.aiCredits > 0,
     balance: user.aiCredits,
@@ -63,12 +45,6 @@ export async function deductCredits(
   userId: string,
   amount: number = 1
 ): Promise<void> {
-  // 개발 모드: 크레딧 차감 스킵
-  if (IS_DEV) {
-    console.log(`[DEV] Skipping credit deduction: ${amount} credits`);
-    return;
-  }
-
   const result = await db
     .update(users)
     .set({
@@ -96,12 +72,6 @@ export async function refundCredits(
   userId: string,
   amount: number = 1
 ): Promise<void> {
-  // 개발 모드: 환불 스킵
-  if (IS_DEV) {
-    console.log(`[DEV] Skipping credit refund: ${amount} credits`);
-    return;
-  }
-
   await db
     .update(users)
     .set({
@@ -120,12 +90,6 @@ export async function reserveCredits(
   amount: number,
   jobId: string
 ): Promise<number> {
-  // 개발 모드: 예약 스킵
-  if (IS_DEV) {
-    console.log(`[DEV] Skipping credit reservation: ${amount} credits for job ${jobId}`);
-    return 999;
-  }
-
   return await db.transaction(async (tx) => {
     // 1. 원자적 차감 (잔액 부족 시 빈 배열 반환)
     const result = await tx
@@ -172,12 +136,6 @@ export async function releaseCredits(
   amount: number,
   jobId: string
 ): Promise<number> {
-  // 개발 모드: 환불 스킵
-  if (IS_DEV) {
-    console.log(`[DEV] Skipping credit release: ${amount} credits for job ${jobId}`);
-    return 999;
-  }
-
   return await db.transaction(async (tx) => {
     // 1. 크레딧 복구
     const result = await tx

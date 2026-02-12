@@ -1,6 +1,6 @@
 # Cuggu AWS 마이그레이션 실행 계획 (SST + Lambda)
 
-> 최종 업데이트: 2026-02-09
+> 최종 업데이트: 2026-02-12
 > 대상: Vercel + Supabase → SST/Lambda + RDS PostgreSQL
 
 ---
@@ -10,17 +10,28 @@
 ```
 현재 (AS-IS)                          목표 (TO-BE)
 ──────────────────                    ──────────────────
-Vercel Functions          →          Lambda (via OpenNext)
-Vercel CDN                →          CloudFront
-Supabase PostgreSQL       →          RDS PostgreSQL + RDS Proxy
-Upstash Redis             →          Upstash Redis (유지)
-AWS S3 + CloudFront       →          AWS S3 + CloudFront (유지)
-Vercel Cron               →          EventBridge + Lambda
-vercel.json               →          sst.config.ts (IaC)
+Vercel Functions (36 API)  →          Lambda (via OpenNext)
+Vercel CDN                 →          CloudFront
+Supabase PostgreSQL (15T)  →          RDS PostgreSQL + RDS Proxy
+Upstash Redis              →          Upstash Redis (유지)
+AWS S3 + CloudFront        →          AWS S3 + CloudFront (유지)
+Vercel Cron                →          EventBridge + Lambda
+vercel.json                →          sst.config.ts (IaC)
+SSE Streaming (/api/ai/)   →          Lambda Response Streaming
 ```
 
 **예상 총 소요**: 5~7일 (여유 포함)
 **예상 다운타임**: 0 (DNS 전환 방식)
+
+### 2026-02-09 이후 변경사항
+
+```
+DB:  7 테이블 → 15 테이블 (AI Job/크레딧/참조사진/테마/설정 추가)
+API: ~22 라우트 → 36 라우트 (Job/참조사진/크레딧/스트림 엔드포인트)
+AI:  Replicate 단일 → Replicate + OpenAI + Gemini (7개 모델)
+새 기능: 배치 생성 (SSE), 크레딧 예약/환불, 참조 사진 재사용
+외부 API: Azure Face API (참조 사진 얼굴 감지) 추가
+```
 
 ---
 
@@ -140,10 +151,32 @@ pg_restore --no-owner --no-acl \
   -d cuggu \
   cuggu_backup_YYYYMMDD.dump
 
-# 3. 데이터 검증
+# 3. 데이터 검증 (전체 15개 테이블)
 psql -h cuggu-db-proxy.xxx.rds.amazonaws.com \
-  -U postgres -d cuggu \
-  -c "SELECT count(*) FROM users; SELECT count(*) FROM invitations;"
+  -U postgres -d cuggu -c "
+  SELECT 'users' as tbl, count(*) FROM users
+  UNION ALL SELECT 'invitations', count(*) FROM invitations
+  UNION ALL SELECT 'rsvps', count(*) FROM rsvps
+  UNION ALL SELECT 'ai_generations', count(*) FROM ai_generations
+  UNION ALL SELECT 'ai_albums', count(*) FROM ai_albums
+  UNION ALL SELECT 'ai_reference_photos', count(*) FROM ai_reference_photos
+  UNION ALL SELECT 'ai_generation_jobs', count(*) FROM ai_generation_jobs
+  UNION ALL SELECT 'ai_credit_transactions', count(*) FROM ai_credit_transactions
+  UNION ALL SELECT 'ai_themes', count(*) FROM ai_themes
+  UNION ALL SELECT 'payments', count(*) FROM payments
+  UNION ALL SELECT 'ai_model_settings', count(*) FROM ai_model_settings
+  UNION ALL SELECT 'app_settings', count(*) FROM app_settings
+  ORDER BY 1;
+"
+
+# 4. 크레딧 정합성 검증
+psql -h cuggu-db-proxy.xxx.rds.amazonaws.com \
+  -U postgres -d cuggu -c "
+  SELECT u.id, u.ai_credits,
+    (SELECT balance_after FROM ai_credit_transactions
+     WHERE user_id = u.id ORDER BY created_at DESC LIMIT 1) as last_tx_balance
+  FROM users u WHERE u.ai_credits > 0;
+"
 ```
 
 ### 1-5. 체크리스트
@@ -151,11 +184,14 @@ psql -h cuggu-db-proxy.xxx.rds.amazonaws.com \
 ```
 [ ] VPC & 서브넷 생성
 [ ] 보안 그룹 설정 (Lambda → RDS 5432)
-[ ] RDS PostgreSQL 인스턴스 생성
+[ ] RDS PostgreSQL 16 인스턴스 생성
 [ ] RDS Proxy 설정
 [ ] 데이터 마이그레이션 완료
-[ ] 데이터 검증 (테이블 카운트, 샘플 데이터)
-[ ] Drizzle 마이그레이션 상태 확인
+[ ] 15개 테이블 카운트 검증
+[ ] 16개 enum 타입 생성 확인
+[ ] JSONB 컬럼 데이터 무결성 확인 (aiAlbums.images, aiGenerationJobs.config 등)
+[ ] 크레딧 잔액 정합성 확인
+[ ] Drizzle 마이그레이션 상태 확인 (5개 마이그레이션)
 ```
 
 ---
@@ -199,7 +235,7 @@ export default $config({
         dns: sst.aws.dns(),  // Route 53
       },
 
-      // 환경변수
+      // 환경변수 (2026-02-12 기준 전체 목록)
       environment: {
         // DB
         DATABASE_URL: "postgresql://...",  // RDS Proxy 엔드포인트
@@ -209,26 +245,33 @@ export default $config({
         NEXTAUTH_SECRET: "...",
         KAKAO_CLIENT_ID: "...",
         KAKAO_CLIENT_SECRET: "...",
+        NAVER_CLIENT_ID: "...",
+        NAVER_CLIENT_SECRET: "...",
 
-        // AWS (Lambda 내부이므로 IAM Role 사용 가능)
+        // AWS (Lambda 내부이므로 IAM Role 사용 → 키 불필요)
         AWS_REGION: "ap-northeast-2",
         S3_BUCKET_NAME: "cuggu-images",
         CLOUDFRONT_DOMAIN: "xxx.cloudfront.net",
+        // AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY → IAM Role로 대체
 
         // Redis (Upstash 유지)
         UPSTASH_REDIS_REST_URL: "...",
         UPSTASH_REDIS_REST_TOKEN: "...",
 
-        // AI
-        REPLICATE_API_TOKEN: "...",
-        ANTHROPIC_API_KEY: "...",
-        OPENAI_API_KEY: "...",
+        // AI — 3개 프로바이더
+        REPLICATE_API_TOKEN: "...",       // Flux Pro/Dev, PhotoMaker
+        OPENAI_API_KEY: "...",            // GPT Image, DALL-E 3
+        GOOGLE_AI_API_KEY: "...",         // Gemini Flash Image
+        ANTHROPIC_API_KEY: "...",         // AI 테마 생성
 
-        // Azure
+        // Azure Face API (참조 사진 얼굴 감지)
         AZURE_FACE_API_KEY: "...",
         AZURE_FACE_ENDPOINT: "...",
 
-        // Encryption
+        // AI 설정
+        REPLICATE_COST_PER_IMAGE: "0.04",
+
+        // Encryption (RSVP 개인정보 암호화)
         ENCRYPTION_KEY: "...",
 
         // Kakao Map
@@ -237,8 +280,8 @@ export default $config({
 
       // Lambda 설정
       server: {
-        memory: "1024 MB",      // 기본 1GB
-        timeout: "30 seconds",  // API 타임아웃
+        memory: "1024 MB",      // 기본 1GB (이미지 처리 + 다중 AI API 호출)
+        timeout: "60 seconds",  // SSE 스트리밍 고려 (배치 생성 시 수 분)
       },
 
       // VPC 연결 (RDS 접근용)
@@ -279,9 +322,10 @@ functions/
 // functions/cleanup.ts
 // 기존 app/api/cron/cleanup/route.ts 에서 로직 추출
 export async function handler() {
-  // 1. 만료 청첩장 DELETED 처리
-  // 2. 30일 지난 DELETED 하드 삭제
-  // 3. S3 이미지 삭제
+  // 1. 만료 청첩장 EXPIRED + 30일 → DELETED 처리
+  // 2. DELETED + 30일 → 하드 삭제 (DB 레코드)
+  // 3. S3 이미지 배치 삭제 (DeleteObjectsCommand, 1000개/배치)
+  // 4. 관련 AI 생성 데이터 정리 (aiGenerations, aiAlbums)
 }
 ```
 
@@ -362,11 +406,21 @@ npx sst deploy --stage staging
 [ ] 조회수 증가
 [ ] 카카오톡 공유 (OG 태그)
 
-AI 기능:
-[ ] AI 사진 생성 (업로드 → 생성 → 결과)
-[ ] 크레딧 차감 확인
-[ ] AI 테마 생성
-[ ] 레이트 리밋 동작
+AI 사진 생성 (v2):
+[ ] 참조 사진 업로드 (/api/ai/reference-photos)
+[ ] Azure Face API 얼굴 감지 동작
+[ ] 단일 생성 (SINGLE 모드)
+[ ] 배치 생성 (BATCH 모드 + SSE 스트리밍)
+[ ] 크레딧 예약 → 차감 → 환불 흐름
+[ ] 크레딧 잔액 & 거래 이력 조회 (/api/ai/credits)
+[ ] Job 상태 추적 (/api/ai/jobs/[id])
+[ ] 3개 프로바이더 동작 (Replicate, OpenAI, Gemini)
+[ ] 앨범 생성/관리/적용
+[ ] 레이트 리밋 동작 (Upstash Redis)
+
+AI 테마:
+[ ] AI 테마 생성 (Anthropic)
+[ ] 테마 적용
 
 RSVP:
 [ ] RSVP 폼 제출
@@ -378,15 +432,22 @@ RSVP:
 [ ] 이미지 표시 (CloudFront)
 [ ] 이미지 삭제
 
+Admin:
+[ ] AI 모델 설정 관리
+[ ] 앱 설정 관리
+[ ] 사용자/통계 조회
+
 Cron:
 [ ] 수동 트리거 테스트 (Lambda 콘솔에서)
 [ ] 만료 청첩장 정리 동작
+[ ] S3 배치 삭제 동작
 
 성능:
 [ ] Cold start 시간 측정 (첫 요청)
 [ ] SSR 페이지 응답 시간
 [ ] API 응답 시간
-[ ] 이미지 로딩 속도
+[ ] SSE 스트리밍 안정성 (배치 생성 5장 이상)
+[ ] 이미지 로딩 속도 (CloudFront)
 ```
 
 ### 3-3. 성능 기준
@@ -403,10 +464,14 @@ Cron:
 | 문제 | 원인 | 해결 |
 |---|---|---|
 | DB 연결 실패 | VPC/보안그룹 | Lambda → RDS 5432 인바운드 확인 |
-| 타임아웃 | Lambda 30초 제한 | AI 생성은 외부 API 호출이라 대부분 OK |
-| 이미지 업로드 실패 | IAM 권한 | S3 PutObject 권한 확인 |
+| 타임아웃 | Lambda 제한 | SSE 스트리밍은 60초+ 필요, 일반 API는 30초 OK |
+| 이미지 업로드 실패 | IAM 권한 | S3 PutObject/DeleteObjects 권한 확인 |
 | 세션 유지 안 됨 | NEXTAUTH_URL 불일치 | 스테이징 URL로 설정 |
 | Middleware 에러 | OpenNext 호환성 | CloudFront Function 로그 확인 |
+| SSE 끊김 | Lambda Response Streaming | OpenNext 설정에서 streaming 활성화 확인 |
+| 크레딧 불일치 | DB 커넥션 풀 고갈 | RDS Proxy 커넥션 모니터링, 트랜잭션 격리 수준 확인 |
+| 얼굴 감지 실패 | Azure Face API 타임아웃 | 비동기 처리로 구현됨, Lambda 네트워크 확인 |
+| 배치 생성 실패 | 동시 Lambda 호출 | Provisioned Concurrency 또는 동시성 제한 설정 |
 
 ### 3-5. 체크리스트
 
@@ -705,21 +770,61 @@ Day 7+    정리
 ```
 신규 파일:
   + sst.config.ts              (인프라 정의)
-  + functions/cleanup.ts       (Cron 함수)
+  + functions/cleanup.ts       (Cron 함수 — EventBridge Lambda)
   + .sst/                      (자동 생성, gitignore)
 
 수정 파일:
-  ~ lib/ai/s3.ts               (IAM Role 전환 시)
+  ~ lib/ai/s3.ts               (IAM Role 전환 — credentials 제거)
+  ~ lib/ai/env.ts              (AWS_ACCESS_KEY_ID 등 optional로 변경)
   ~ .gitignore                 (.sst/ 추가)
-  ~ .env.example               (환경변수 업데이트)
+  ~ .env.example               (환경변수 업데이트 — GOOGLE_AI_API_KEY 등)
 
 삭제 파일:
   - vercel.json                (Vercel Cron 설정)
 
-변경 없음:
-  - app/ 전체 (라우트, 페이지, API)
-  - components/ 전체
-  - db/schema.ts (Drizzle 스키마)
-  - lib/ 대부분 (AI, auth, utils)
-  - stores/, hooks/, schemas/, types/
+변경 없음 (36개 API 라우트 포함):
+  - app/ 전체 (라우트, 페이지, API — SSR/SSE 포함)
+  - components/ 전체 (GenerationWizard, BatchGenerationView 등)
+  - db/schema.ts (Drizzle 스키마 — 15개 테이블, 16개 enum)
+  - lib/ai/providers/ (Replicate, OpenAI, Gemini 프로바이더)
+  - lib/ai/credits.ts (크레딧 예약/차감/환불 로직)
+  - hooks/ (useAIGeneration 등)
+  - stores/, schemas/, types/
+```
+
+### 환경변수 전체 목록 (2026-02-12 기준)
+
+```
+필수:
+  DATABASE_URL              — RDS Proxy 엔드포인트
+  NEXTAUTH_URL              — https://cuggu.com
+  NEXTAUTH_SECRET           — JWT 시크릿
+  KAKAO_CLIENT_ID           — 카카오 OAuth
+  KAKAO_CLIENT_SECRET
+  NAVER_CLIENT_ID           — 네이버 OAuth
+  NAVER_CLIENT_SECRET
+  AWS_REGION                — ap-northeast-2
+  S3_BUCKET_NAME            — cuggu-images
+  UPSTASH_REDIS_REST_URL    — 레이트 리밋
+  UPSTASH_REDIS_REST_TOKEN
+  REPLICATE_API_TOKEN       — AI 생성 (주력)
+  AZURE_FACE_API_KEY        — 얼굴 감지
+  AZURE_FACE_ENDPOINT
+  ENCRYPTION_KEY            — RSVP 개인정보 암호화
+
+선택 (있으면 해당 프로바이더 활성화):
+  OPENAI_API_KEY            — GPT Image, DALL-E 3
+  GOOGLE_AI_API_KEY         — Gemini Flash Image
+  ANTHROPIC_API_KEY         — AI 테마 생성
+  CLOUDFRONT_DOMAIN         — CDN 도메인 (없으면 S3 직접 URL)
+
+Lambda에서 불필요 (IAM Role 대체):
+  AWS_ACCESS_KEY_ID         — 삭제
+  AWS_SECRET_ACCESS_KEY     — 삭제
+
+Vercel 전용 (삭제):
+  CRON_SECRET               — EventBridge는 IAM 인증
+
+클라이언트 (NEXT_PUBLIC_):
+  NEXT_PUBLIC_KAKAO_MAP_API_KEY
 ```

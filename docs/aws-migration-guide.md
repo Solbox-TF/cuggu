@@ -1,6 +1,6 @@
 # Cuggu AWS 마이그레이션 가이드
 
-> 최종 업데이트: 2026-02-09
+> 최종 업데이트: 2026-02-12
 
 ---
 
@@ -8,18 +8,21 @@
 
 ```
 Vercel (호스팅/컴퓨팅)
-├── Next.js 16 Serverless Functions
-├── Vercel Cron (매일 3AM 만료 청첩장 정리)
+├── Next.js 16 Serverless Functions (36개 API 라우트)
+├── Vercel Cron (매일 3AM UTC 만료 청첩장 정리)
 │
 ├── Supabase PostgreSQL (DB, prepare: false)
-├── Upstash Redis REST (레이트 리밋)
+│   └── 15개 테이블, 16개 enum, 5개 마이그레이션
+├── Upstash Redis REST (레이트 리밋, AI 생성 제한)
 ├── AWS S3 + CloudFront (이미지 저장/CDN) ← 이미 AWS
+│   └── 갤러리, AI 생성 이미지, 참조 사진 저장
 │
 └── 외부 API
-    ├── Replicate (Flux Pro/Dev, PhotoMaker)
+    ├── Replicate (Flux Pro/Dev, PhotoMaker) — 주력
     ├── OpenAI (GPT Image, DALL-E 3)
-    ├── Anthropic (테마 생성)
-    ├── Azure Face API (얼굴 감지)
+    ├── Google Gemini (Gemini Flash Image)
+    ├── Anthropic (AI 테마 생성)
+    ├── Azure Face API (참조 사진 얼굴 감지)
     └── Kakao Map API
 ```
 
@@ -28,11 +31,21 @@ Vercel (호스팅/컴퓨팅)
 | 서비스 | 현재 | 마이그레이션 필요 |
 |---|---|---|
 | 컴퓨팅 | Vercel Functions | **필요** |
-| DB | Supabase PostgreSQL | **필요** |
+| DB | Supabase PostgreSQL (15테이블) | **필요** |
 | 캐시 | Upstash Redis | 선택 (REST API라 어디서든 동작) |
 | 이미지 저장 | AWS S3 | 유지 |
 | CDN | CloudFront | 유지 |
-| AI/외부 API | Replicate, OpenAI 등 | 변경 없음 |
+| AI/외부 API | Replicate, OpenAI, Gemini 등 | 변경 없음 |
+
+### 현재 규모 (2026-02-12 기준)
+
+| 항목 | 수치 |
+|---|---|
+| DB 테이블 | 15개 (users, templates, invitations, rsvps, aiGenerations, aiAlbums, aiReferencePhotos, aiGenerationJobs, aiCreditTransactions, payments, aiModelSettings, appSettings, aiThemes, accounts, sessions) |
+| DB Enum | 16개 |
+| API 라우트 | 36개 (AI 15, 청첩장 6, Admin 7, RSVP 3, Auth/Cron 5) |
+| AI 모델 | 7개 (3개 프로바이더: Replicate/OpenAI/Gemini) |
+| Drizzle 마이그레이션 | 5개 (0001~0005) |
 
 ---
 
@@ -290,7 +303,8 @@ Cold Start 시간:
 **이 프로젝트 특성상**:
 - 공개 청첩장 (`/inv/[id]`): CloudFront 캐시 가능 → cold start 영향 없음
 - 에디터 (`/editor/[id]`): 로그인 유저만 사용 → 약간의 지연 허용 가능
-- AI 생성 API: Replicate 호출 자체가 10~30초 → cold start 1~2초는 무시 가능
+- AI 생성 API: Replicate/OpenAI/Gemini 호출 자체가 10~30초 → cold start 1~2초는 무시 가능
+- **SSE 스트리밍 (/api/ai/generate/stream)**: 배치 생성 시 EventSource로 진행률 전송 → Lambda Response Streaming 필수
 
 ---
 
@@ -365,7 +379,7 @@ Cold Start 시간:
   ┌───────▼──────┐ ┌──────▼───────┐ ┌──────▼──────┐
   │   S3 Bucket  │ │   Lambda     │ │   Lambda    │
   │  정적 파일    │ │  (SSR + API) │ │  (Image     │
-  │  JS/CSS/IMG  │ │              │ │  Optimize)  │
+  │  JS/CSS/IMG  │ │  36개 라우트  │ │  Optimize)  │
   └──────────────┘ └──────┬───────┘ └─────────────┘
                           │
               ┌───────────┼───────────┐
@@ -375,11 +389,18 @@ Cold Start 시간:
       │     ↓     │ │ Redis   │ │ cuggu-images │
       │ RDS       │ │ (유지)  │ │ (이미 AWS)   │
       │ PostgreSQL│ │         │ │              │
+      │ 15 tables │ │         │ │              │
       └───────────┘ └─────────┘ └──────────────┘
 
       ┌──────────────┐
-      │ EventBridge  │ → Lambda (Cron: 만료 청첩장 정리)
+      │ EventBridge  │ → Lambda (Cron: 만료 청첩장 정리 + S3 배치 삭제)
       └──────────────┘
+
+      ┌──────────────────────────────────┐
+      │ 외부 API (변경 없음)              │
+      │  Replicate, OpenAI, Gemini,     │
+      │  Anthropic, Azure Face, Kakao   │
+      └──────────────────────────────────┘
 ```
 
 ### 코드 변경사항
@@ -387,46 +408,112 @@ Cold Start 시간:
 ```
 변경 필요:
   + sst.config.ts (신규 — 인프라 정의)
-  + DATABASE_URL → RDS 연결 문자열로 변경
+  + DATABASE_URL → RDS Proxy 연결 문자열로 변경
+  ~ lib/ai/s3.ts (IAM Role 전환 시 — credentials 제거)
 
 변경 불필요:
   - 앱 코드 전체 (그대로)
-  - Drizzle ORM 스키마 (그대로)
+  - Drizzle ORM 스키마 (그대로, 15개 테이블)
   - S3/CloudFront 로직 (이미 AWS)
   - Upstash Redis (REST API라 어디서든 동작)
-  - AI API 호출 (외부 API라 무관)
+  - AI 프로바이더 코드 (Replicate/OpenAI/Gemini — 외부 API라 무관)
+  - Azure Face API (REST API라 무관)
+  - 크레딧/Job 시스템 (DB 기반이라 연결만 바뀌면 OK)
 
 삭제:
   - vercel.json (더 이상 필요 없음)
+```
+
+### Lambda 추가 고려사항 (2026-02-12 추가)
+
+```
+1. SSE 스트리밍 (배치 생성):
+   - /api/ai/generate/stream 이 EventSource(SSE) 사용
+   - Lambda Response Streaming 필수 (OpenNext가 자동 처리)
+   - 배치 생성 중 연결이 수 분 유지될 수 있음 → 타임아웃 여유 필요
+
+2. 크레딧 트랜잭션 일관성:
+   - Job → 크레딧 예약 → 생성 → 차감/환불 흐름
+   - Lambda cold start 중 DB 커넥션 실패 시 크레딧 불일치 가능
+   - RDS Proxy 필수 (커넥션 풀링)
+
+3. 참조 사진 업로드:
+   - Azure Face API 호출 (비동기) + S3 업로드 동시 진행
+   - Lambda 메모리 1024MB 이상 권장 (이미지 처리)
+
+4. S3 배치 삭제 (Cron):
+   - DeleteObjectsCommand로 1000개씩 삭제
+   - Cron Lambda 타임아웃 5분 → 충분
 ```
 
 ---
 
 ## 5. DB 마이그레이션 (공통)
 
-Supabase PostgreSQL → RDS PostgreSQL 이동 절차:
+### 현재 DB 규모
+
+```
+테이블 15개:
+  users, templates, invitations, rsvps,
+  aiGenerations, aiAlbums, aiReferencePhotos,
+  aiGenerationJobs, aiCreditTransactions,
+  payments, aiModelSettings, appSettings,
+  aiThemes, accounts, sessions
+
+Enum 16개:
+  user_role, premium_plan, template_category, template_tier,
+  invitation_status, attendance_status, meal_option,
+  ai_style (15값), ai_generation_status, ai_theme_status,
+  ai_album_status, ai_job_mode, ai_job_status, ai_credit_tx_type,
+  payment_type, payment_status, payment_method
+
+인덱스: 각 테이블 FK + 복합 인덱스 (user_id + status 등)
+JSONB 컬럼: invitations.extendedData, aiAlbums.images, aiAlbums.groups,
+            aiGenerationJobs.config, appSettings.value, aiThemes.theme
+```
+
+### Supabase PostgreSQL → RDS PostgreSQL 이동 절차
 
 ```bash
 # 1. Supabase에서 데이터 export
 pg_dump --no-owner --no-acl \
   -h db.xxx.supabase.co -U postgres -d postgres \
-  > cuggu_backup.sql
+  -F c -f cuggu_backup.dump
 
 # 2. RDS PostgreSQL 인스턴스 생성 (ap-northeast-2)
+#    - 엔진: PostgreSQL 16
 #    - db.t4g.micro (프리티어) 또는 db.t4g.small
 #    - Multi-AZ: 초기엔 불필요
 #    - Storage: 20GB gp3
 
 # 3. RDS에 데이터 import
-psql -h cuggu-db.xxx.ap-northeast-2.rds.amazonaws.com \
+pg_restore --no-owner --no-acl \
+  -h cuggu-db.xxx.ap-northeast-2.rds.amazonaws.com \
   -U postgres -d cuggu \
-  < cuggu_backup.sql
+  cuggu_backup.dump
 
-# 4. DATABASE_URL 환경변수 변경
-DATABASE_URL="postgresql://postgres:password@cuggu-db.xxx.rds.amazonaws.com:5432/cuggu"
+# 4. 데이터 검증 (주요 테이블)
+psql -h cuggu-db.xxx.rds.amazonaws.com -U postgres -d cuggu -c "
+  SELECT 'users' as tbl, count(*) FROM users
+  UNION ALL SELECT 'invitations', count(*) FROM invitations
+  UNION ALL SELECT 'ai_generations', count(*) FROM ai_generations
+  UNION ALL SELECT 'ai_albums', count(*) FROM ai_albums
+  UNION ALL SELECT 'ai_generation_jobs', count(*) FROM ai_generation_jobs
+  UNION ALL SELECT 'ai_credit_transactions', count(*) FROM ai_credit_transactions
+  UNION ALL SELECT 'ai_reference_photos', count(*) FROM ai_reference_photos;
+"
+
+# 5. DATABASE_URL 환경변수 변경 (RDS Proxy 엔드포인트 사용)
+DATABASE_URL="postgresql://postgres:password@cuggu-db-proxy.xxx.rds.amazonaws.com:5432/cuggu"
 ```
 
 Drizzle ORM 사용 중이라 코드 변경 없음. 연결 문자열만 바꾸면 됨.
+
+### 주의사항
+
+- JSONB 컬럼 호환성: Supabase ↔ RDS 간 JSONB 동작 동일 (PostgreSQL 네이티브)
+- Enum 마이그레이션: pg_dump가 CREATE TYPE도 포함하므로 자동 처리
+- 크레딧 트랜잭션: `aiCreditTransactions.balanceAfter`가 정합성 검증용 → 마이그레이션 후 최종 잔액 크로스체크 필요
 
 ---
 

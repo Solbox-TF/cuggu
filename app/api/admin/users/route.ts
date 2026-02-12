@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/db";
-import { users, invitations, aiGenerations } from "@/db/schema";
+import { users, invitations, aiGenerations, aiCreditTransactions } from "@/db/schema";
 import { eq, sql, ilike, or, asc, desc, inArray } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth/admin";
 import {
@@ -138,10 +138,22 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
   switch (body.action) {
     case "grant_credits": {
       const newCredits = user.aiCredits + body.credits;
-      await db
-        .update(users)
-        .set({ aiCredits: newCredits, updatedAt: new Date() })
-        .where(eq(users.id, body.userId));
+
+      await db.transaction(async (tx) => {
+        await tx
+          .update(users)
+          .set({ aiCredits: newCredits, updatedAt: new Date() })
+          .where(eq(users.id, body.userId));
+
+        await tx.insert(aiCreditTransactions).values({
+          userId: body.userId,
+          type: 'BONUS',
+          amount: body.credits,
+          balanceAfter: newCredits,
+          referenceType: 'ADMIN',
+          description: `관리자 크레딧 부여 (${body.credits}크레딧)`,
+        });
+      });
 
       return successResponse({
         userId: body.userId,
