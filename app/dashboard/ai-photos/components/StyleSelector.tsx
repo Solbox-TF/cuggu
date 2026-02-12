@@ -1,25 +1,35 @@
 'use client';
 
 import { Check } from 'lucide-react';
-import { AIStyle, AI_STYLES } from '@/types/ai';
+import { AIStyle, AI_STYLES, SnapType, SNAP_TYPES } from '@/types/ai';
 
 interface StyleSelectorProps {
   selectedStyle: AIStyle | null;
   onStyleSelect: (style: AIStyle) => void;
   disabled?: boolean;
+  snapType?: SnapType | null;
 }
 
 export function StyleSelector({
   selectedStyle,
   onStyleSelect,
   disabled = false,
+  snapType,
 }: StyleSelectorProps) {
+  // snapType이 지정되면 해당 타입의 스타일만 필터링
+  const filteredStyles = snapType
+    ? AI_STYLES.filter((s) => {
+        const snap = SNAP_TYPES.find((t) => t.value === snapType);
+        return snap?.styles.includes(s.value);
+      })
+    : AI_STYLES;
+
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-medium text-stone-700">웨딩 스타일 선택</h3>
 
       <div className="grid grid-cols-2 gap-2">
-        {AI_STYLES.map((style) => {
+        {filteredStyles.map((style) => {
           const isSelected = selectedStyle === style.value;
 
           return (

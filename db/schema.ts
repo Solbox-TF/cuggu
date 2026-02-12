@@ -81,6 +81,8 @@ export const aiThemeStatusEnum = pgEnum('ai_theme_status', [
   'failed',
 ]);
 
+export const aiAlbumStatusEnum = pgEnum('ai_album_status', ['draft', 'completed', 'applied']);
+
 export const paymentTypeEnum = pgEnum('payment_type', [
   'PREMIUM_UPGRADE',
   'AI_CREDITS',
@@ -248,6 +250,9 @@ export const aiGenerations = pgTable(
     providerJobId: varchar('provider_job_id', { length: 255 }),
     providerType: varchar('provider_type', { length: 32 }), // 'replicate' | 'openai' | 'gemini'
 
+    albumId: varchar('album_id', { length: 128 })
+      .references(() => aiAlbums.id, { onDelete: 'set null' }),
+
     createdAt: timestamp('created_at').defaultNow().notNull(),
     completedAt: timestamp('completed_at'),
   },
@@ -258,6 +263,41 @@ export const aiGenerations = pgTable(
     ),
   })
 );
+
+// 5.5 AI Albums
+export const aiAlbums = pgTable('ai_albums', {
+  id: varchar('id', { length: 128 }).primaryKey().$defaultFn(() => createId()),
+  userId: varchar('user_id', { length: 128 }).notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  invitationId: varchar('invitation_id', { length: 128 })
+    .references(() => invitations.id, { onDelete: 'set null' }),
+  name: varchar('name', { length: 255 }).notNull().default('My Album'),
+  snapType: varchar('snap_type', { length: 32 }),
+  images: jsonb('images').default([]).$type<AlbumImage[]>(),
+  groups: jsonb('groups').default([]).$type<AlbumGroup[]>(),
+  status: aiAlbumStatusEnum('status').default('draft').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index('ai_albums_user_id_idx').on(table.userId),
+}));
+
+// AlbumImage/AlbumGroup types for jsonb
+export interface AlbumImage {
+  url: string;
+  generationId: string;
+  style: string;
+  role: string;
+  sortOrder: number;
+  groupId?: string;
+  tags?: string[];
+}
+
+export interface AlbumGroup {
+  id: string;
+  name: string;
+  sortOrder: number;
+}
 
 // 6. Payment
 export const payments = pgTable(
@@ -383,6 +423,7 @@ export const sessions = pgTable(
 export const usersRelations = relations(users, ({ many }) => ({
   invitations: many(invitations),
   aiGenerations: many(aiGenerations),
+  aiAlbums: many(aiAlbums),
   aiThemes: many(aiThemes),
   payments: many(payments),
   accounts: many(accounts),
@@ -418,6 +459,22 @@ export const aiGenerationsRelations = relations(aiGenerations, ({ one }) => ({
     fields: [aiGenerations.userId],
     references: [users.id],
   }),
+  album: one(aiAlbums, {
+    fields: [aiGenerations.albumId],
+    references: [aiAlbums.id],
+  }),
+}));
+
+export const aiAlbumsRelations = relations(aiAlbums, ({ one, many }) => ({
+  user: one(users, {
+    fields: [aiAlbums.userId],
+    references: [users.id],
+  }),
+  invitation: one(invitations, {
+    fields: [aiAlbums.invitationId],
+    references: [invitations.id],
+  }),
+  generations: many(aiGenerations),
 }));
 
 export const aiThemesRelations = relations(aiThemes, ({ one }) => ({

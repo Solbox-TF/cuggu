@@ -206,3 +206,38 @@ export const getStylePrompt = (style: AIStyle): { prompt: string; negativePrompt
 
   return prompts[style];
 };
+
+// ============================================================
+// Album Schemas
+// ============================================================
+
+export const CreateAlbumSchema = z.object({
+  name: z.string().min(1).max(255),
+  snapType: z.enum(['STUDIO', 'OUTDOOR', 'CONCEPT']).optional(),
+});
+
+export const AlbumGroupSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1).max(100),
+  sortOrder: z.number().int().min(0),
+});
+
+export const AlbumImageSchema = z.object({
+  url: z.string().url(),
+  generationId: z.string(),
+  style: z.string(),
+  role: z.enum(['GROOM', 'BRIDE']),
+  sortOrder: z.number().int().min(0),
+  groupId: z.string().optional(),
+  tags: z.array(z.string().max(30)).max(10).optional(),
+});
+
+export const UpdateAlbumSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  groups: z.array(AlbumGroupSchema).max(20).optional(),
+  images: z.array(AlbumImageSchema).max(50).optional(),
+});
+
+export const ApplyAlbumSchema = z.object({
+  invitationId: z.string().min(1),
+});

@@ -82,5 +82,60 @@ export const AI_STYLES: AIStyleInfo[] = [
   },
 ];
 
+// ── Album Types ──
+
+export type SnapType = 'STUDIO' | 'OUTDOOR' | 'CONCEPT';
+
+export interface SnapTypeInfo {
+  value: SnapType;
+  label: string;
+  description: string;
+  styles: AIStyle[];
+}
+
+export const SNAP_TYPES: SnapTypeInfo[] = [
+  {
+    value: 'STUDIO',
+    label: '스튜디오 스냅',
+    description: '클래식한 실내 웨딩 화보',
+    styles: ['CLASSIC_STUDIO', 'LUXURY_HOTEL', 'MINIMALIST_GALLERY', 'BLACK_AND_WHITE'],
+  },
+  {
+    value: 'OUTDOOR',
+    label: '야외 스냅',
+    description: '자연광 속 로맨틱 야외 촬영',
+    styles: ['OUTDOOR_GARDEN', 'SUNSET_BEACH', 'ENCHANTED_FOREST'],
+  },
+  {
+    value: 'CONCEPT',
+    label: '컨셉 스냅',
+    description: '한복, 빈티지, 시티 등 테마 촬영',
+    styles: ['TRADITIONAL_HANBOK', 'VINTAGE_CINEMATIC', 'CITY_LIFESTYLE'],
+  },
+];
+
+// 앨범 내 그룹 (섹션)
+export interface AlbumGroup {
+  id: string;
+  name: string;
+  sortOrder: number;
+}
+
+export interface AlbumImage {
+  url: string;
+  generationId: string;
+  style: AIStyle;
+  role: PersonRole;
+  sortOrder: number;
+  groupId?: string;
+  tags?: string[];
+}
+
+// 프리셋 태그
+export const PRESET_TAGS = ['베스트샷', '미공개', '인스타용', '청첩장용', '프로필'] as const;
+export type PresetTag = typeof PRESET_TAGS[number];
+
+// ── Constants ──
+
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];

@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { users, aiGenerations } from '@/db/schema';
-import { eq, desc, and, sql } from 'drizzle-orm';
+import { eq, desc, and, sql, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 
 const QuerySchema = z.object({
   role: z.enum(['GROOM', 'BRIDE']).optional(),
   style: z.string().optional(),
   favorites: z.enum(['true', 'false']).optional(),
+  noAlbum: z.enum(['true', 'false']).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '잘못된 쿼리 파라미터' }, { status: 400 });
     }
 
-    const { role, style, favorites, page, limit } = query.data;
+    const { role, style, favorites, noAlbum, page, limit } = query.data;
 
     // WHERE 조건 조합
     const conditions = [
@@ -52,6 +53,9 @@ export async function GET(request: NextRequest) {
     }
     if (favorites === 'true') {
       conditions.push(eq(aiGenerations.isFavorited, true));
+    }
+    if (noAlbum === 'true') {
+      conditions.push(isNull(aiGenerations.albumId));
     }
 
     const offset = (page - 1) * limit;

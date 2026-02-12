@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
       const styleRaw = formData.get('style') as string;
       const role = formData.get('role') as string;
       const modelId = formData.get('modelId') as string | null;
+      const albumId = formData.get('albumId') as string | null;
 
       if (!image || !styleRaw || !role) {
         await sendEvent('error', { error: 'Image, style, and role are required' });
@@ -217,6 +218,7 @@ export async function POST(request: NextRequest) {
             role: role as 'GROOM' | 'BRIDE',
             generatedUrls: persistedUrls,
             modelId: selectedModel?.id ?? modelId ?? null,
+            albumId: albumId || null,
             status: 'COMPLETED',
             creditsUsed: 1,
             cost: result.cost,
@@ -240,6 +242,7 @@ export async function POST(request: NextRequest) {
           originalUrl,
           generatedUrls: persistedUrls,
           style: styleData,
+          albumId: albumId || null,
           remainingCredits,
         });
 
@@ -253,6 +256,7 @@ export async function POST(request: NextRequest) {
           style: styleData,
           role: role as 'GROOM' | 'BRIDE',
           modelId: selectedModel?.id ?? modelId ?? null,
+          albumId: albumId || null,
           status: 'FAILED',
           creditsUsed: 0,
           cost: 0,
