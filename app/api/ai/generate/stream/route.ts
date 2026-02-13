@@ -11,22 +11,9 @@ import { generateWeddingPhotosStream, modelSupportsReferenceImage, type AIStyle 
 import { findModelById } from '@/lib/ai/models';
 import { rateLimit } from '@/lib/ai/rate-limit';
 import { isValidImageBuffer } from '@/lib/ai/validation';
-import { z } from 'zod';
 import { AI_CONFIG } from '@/lib/ai/constants';
 import { logger } from '@/lib/ai/logger';
-
-const AIStyleSchema = z.enum([
-  'CLASSIC_STUDIO',
-  'OUTDOOR_GARDEN',
-  'SUNSET_BEACH',
-  'TRADITIONAL_HANBOK',
-  'VINTAGE_CINEMATIC',
-  'LUXURY_HOTEL',
-  'CITY_LIFESTYLE',
-  'ENCHANTED_FOREST',
-  'BLACK_AND_WHITE',
-  'MINIMALIST_GALLERY',
-]);
+import { AIStyleSchema } from '@/schemas/ai';
 
 /**
  * SSE 스트리밍 AI 생성 API

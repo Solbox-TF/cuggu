@@ -6,11 +6,23 @@ import { z } from 'zod';
 
 // Enums
 export const AIStyleSchema = z.enum([
+  // Legacy (하위 호환)
   'CLASSIC',
   'MODERN',
   'VINTAGE',
   'ROMANTIC',
   'CINEMATIC',
+  // New styles
+  'CLASSIC_STUDIO',
+  'OUTDOOR_GARDEN',
+  'SUNSET_BEACH',
+  'TRADITIONAL_HANBOK',
+  'VINTAGE_CINEMATIC',
+  'LUXURY_HOTEL',
+  'CITY_LIFESTYLE',
+  'ENCHANTED_FOREST',
+  'BLACK_AND_WHITE',
+  'MINIMALIST_GALLERY',
 ]);
 
 export const AIGenerationStatusSchema = z.enum([
@@ -175,36 +187,6 @@ export const validateImageFile = (file: File): { valid: boolean; error?: string 
  */
 export const hasEnoughCredits = (userCredits: number, requiredCredits: number = 1): boolean => {
   return userCredits >= requiredCredits;
-};
-
-/**
- * AI 스타일별 프롬프트 생성
- */
-export const getStylePrompt = (style: AIStyle): { prompt: string; negativePrompt: string } => {
-  const prompts: Record<AIStyle, { prompt: string; negativePrompt: string }> = {
-    CLASSIC: {
-      prompt: 'professional wedding portrait, elegant traditional style, soft lighting, studio quality, high resolution',
-      negativePrompt: 'casual, candid, low quality, blurry, distorted face',
-    },
-    MODERN: {
-      prompt: 'contemporary wedding portrait, minimalist style, clean background, professional photography, sharp focus',
-      negativePrompt: 'vintage, old-fashioned, cluttered, low quality',
-    },
-    VINTAGE: {
-      prompt: 'vintage wedding portrait, retro film style, warm tones, classic photography, nostalgic atmosphere',
-      negativePrompt: 'modern, digital, neon colors, low quality',
-    },
-    ROMANTIC: {
-      prompt: 'romantic wedding portrait, soft focus, dreamy atmosphere, pastel colors, gentle lighting, ethereal',
-      negativePrompt: 'harsh lighting, dark tones, low quality, blurry',
-    },
-    CINEMATIC: {
-      prompt: 'cinematic wedding portrait, dramatic lighting, movie poster style, high contrast, professional grade',
-      negativePrompt: 'amateur, snapshot, low quality, overexposed',
-    },
-  };
-
-  return prompts[style];
 };
 
 // ============================================================
