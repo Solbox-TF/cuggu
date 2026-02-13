@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import { parseSSEEvents } from '@/lib/ai/parse-sse';
 
 interface GenerationTask {
   index: number;
@@ -81,21 +82,19 @@ export function useAIGeneration(options: UseAIGenerationOptions) {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n\n');
-        buffer = lines.pop() || '';
+        const { events, remaining } = parseSSEEvents(buffer);
+        buffer = remaining;
 
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const data = JSON.parse(line.slice(6));
-          switch (data.type) {
+        for (const event of events) {
+          switch (event.type) {
             case 'status':
-              setState(prev => ({ ...prev, statusMessage: data.message }));
+              setState(prev => ({ ...prev, statusMessage: event.message }));
               break;
             case 'image':
               setState(prev => ({
                 ...prev,
-                completedUrls: [...prev.completedUrls, data.url],
-                statusMessage: `${data.progress}/${data.total}장 완료`,
+                completedUrls: [...prev.completedUrls, event.url],
+                statusMessage: `${event.progress}/${event.total}장 완료`,
               }));
               break;
             case 'done':
@@ -103,13 +102,13 @@ export function useAIGeneration(options: UseAIGenerationOptions) {
                 ...prev,
                 isGenerating: false,
                 statusMessage: '완료!',
-                completedUrls: data.generatedUrls,
+                completedUrls: event.generatedUrls,
               }));
-              onCreditsChange?.(data.remainingCredits);
+              onCreditsChange?.(event.remainingCredits);
               onComplete?.();
               break;
             case 'error':
-              throw new Error(data.error);
+              throw new Error(event.error);
           }
         }
       }
@@ -174,23 +173,20 @@ export function useAIGeneration(options: UseAIGenerationOptions) {
           const { done, value } = await reader.read();
           if (done) break;
           buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n\n');
-          buffer = lines.pop() || '';
+          const { events, remaining } = parseSSEEvents(buffer);
+          buffer = remaining;
 
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            const data = JSON.parse(line.slice(6));
-            if (data.type === 'image') {
-              urls.push(data.url);
+          for (const event of events) {
+            if (event.type === 'image') {
+              urls.push(event.url);
               setState(prev => ({
                 ...prev,
                 completedUrls: [...urls],
               }));
-            } else if (data.type === 'done') {
-              onCreditsChange?.(data.remainingCredits);
-            } else if (data.type === 'error') {
-              // Individual task failure — continue with remaining
-              console.error(`Task ${i} failed:`, data.error);
+            } else if (event.type === 'done') {
+              onCreditsChange?.(event.remainingCredits);
+            } else if (event.type === 'error') {
+              console.error(`Task ${i} failed:`, event.error);
             }
           }
         }

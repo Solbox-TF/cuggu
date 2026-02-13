@@ -61,6 +61,25 @@ export async function uploadToS3(
 }
 
 /**
+ * 허용된 이미지 호스트인지 검증
+ *
+ * CloudFront, S3 도메인만 허용.
+ * 사용자 입력 URL을 DB에 저장하기 전에 반드시 호출.
+ */
+export function isAllowedImageHost(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const allowed = [
+      env.CLOUDFRONT_DOMAIN,
+      `${env.S3_BUCKET_NAME}.s3.${env.AWS_REGION}.amazonaws.com`,
+    ].filter(Boolean);
+    return allowed.includes(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * 외부 URL의 이미지를 다운로드하여 S3에 복사
  *
  * Replicate CDN 등 외부 URL → S3 영구 저장용.

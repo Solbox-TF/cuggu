@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { db } from '@/db';
 import { users, aiGenerations } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { ToggleFavoriteSchema } from '@/schemas/ai';
 
 /**
  * PATCH /api/ai/generations/[id]
@@ -29,12 +30,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const body = await request.json();
-    const { isFavorited } = body;
-
-    if (typeof isFavorited !== 'boolean') {
-      return NextResponse.json({ error: 'isFavorited must be a boolean' }, { status: 400 });
+    const parsed = ToggleFavoriteSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
+        { status: 400 }
+      );
     }
+    const { isFavorited } = parsed.data;
 
     const result = await db
       .update(aiGenerations)

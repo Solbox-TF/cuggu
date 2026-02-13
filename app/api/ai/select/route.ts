@@ -3,6 +3,8 @@ import { auth } from '@/auth';
 import { db } from '@/db';
 import { users, aiGenerations } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { SelectAIPhotoRequestSchema } from '@/schemas/ai';
+import { isAllowedImageHost } from '@/lib/ai/s3';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,11 +21,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const { generationId, selectedUrl } = await request.json();
-
-    if (!generationId || !selectedUrl) {
+    const parsed = SelectAIPhotoRequestSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'generationId and selectedUrl are required' },
+        { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
+        { status: 400 }
+      );
+    }
+    const { generationId, selectedUrl } = parsed.data;
+
+    if (!isAllowedImageHost(selectedUrl)) {
+      return NextResponse.json(
+        { error: 'Disallowed image URL host' },
         { status: 400 }
       );
     }

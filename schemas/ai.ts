@@ -190,6 +190,16 @@ export const hasEnoughCredits = (userCredits: number, requiredCredits: number = 
 };
 
 // ============================================================
+// Favorite Toggle Schema
+// ============================================================
+
+export const ToggleFavoriteSchema = z.object({
+  isFavorited: z.boolean(),
+});
+
+export type ToggleFavoriteRequest = z.infer<typeof ToggleFavoriteSchema>;
+
+// ============================================================
 // Album Schemas
 // ============================================================
 
@@ -308,3 +318,48 @@ export const CreditBalanceResponseSchema = z.object({
   balance: z.number().int().min(0),
   transactions: z.array(CreditTransactionSchema),
 });
+
+// ============================================================
+// SSE Stream Event Schemas
+// ============================================================
+
+export const SSEStatusEventSchema = z.object({
+  type: z.literal('status'),
+  message: z.string(),
+});
+
+export const SSEImageEventSchema = z.object({
+  type: z.literal('image'),
+  index: z.number().int().min(0),
+  url: z.string().url(),
+  progress: z.number().int().min(0),
+  total: z.number().int().min(1),
+});
+
+export const SSEDoneEventSchema = z.object({
+  type: z.literal('done'),
+  id: z.string(),
+  originalUrl: z.string().url(),
+  generatedUrls: z.array(z.string().url()),
+  style: z.string(),
+  albumId: z.string().nullable(),
+  remainingCredits: z.number().int().min(0),
+  jobProgress: z.object({
+    completed: z.number().int(),
+    total: z.number().int(),
+  }).optional(),
+});
+
+export const SSEErrorEventSchema = z.object({
+  type: z.literal('error'),
+  error: z.string(),
+});
+
+export const SSEEventSchema = z.discriminatedUnion('type', [
+  SSEStatusEventSchema,
+  SSEImageEventSchema,
+  SSEDoneEventSchema,
+  SSEErrorEventSchema,
+]);
+
+export type SSEEvent = z.infer<typeof SSEEventSchema>;

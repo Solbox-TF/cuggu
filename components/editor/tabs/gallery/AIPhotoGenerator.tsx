@@ -8,6 +8,7 @@ import { AIStreamingGallery } from '@/components/ai/AIStreamingGallery';
 import { AIResultGallery } from '@/components/ai/AIResultGallery';
 import { PersonRole, AIStyle, AIGenerationResult } from '@/types/ai';
 import { DEFAULT_MODEL } from '@/lib/ai/models';
+import { parseSSEEvents } from '@/lib/ai/parse-sse';
 
 interface AIPhotoGeneratorProps {
   role: PersonRole;
@@ -107,44 +108,36 @@ export function AIPhotoGenerator({
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n\n');
-        buffer = lines.pop() || '';
+        const { events, remaining } = parseSSEEvents(buffer);
+        buffer = remaining;
 
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
+        for (const event of events) {
+          switch (event.type) {
+            case 'status':
+              setStatusMessage(event.message);
+              break;
 
-              switch (data.type) {
-                case 'status':
-                  setStatusMessage(data.message);
-                  break;
+            case 'image':
+              setStreamingUrls((prev) => {
+                const next = [...prev];
+                next[event.index] = event.url;
+                return next;
+              });
+              setStatusMessage(`${event.progress}/${event.total}장 생성 완료`);
+              break;
 
-                case 'image':
-                  setStreamingUrls((prev) => {
-                    const next = [...prev];
-                    next[data.index] = data.url;
-                    return next;
-                  });
-                  setStatusMessage(`${data.progress}/${data.total}장 생성 완료`);
-                  break;
+            case 'done':
+              setResult({
+                id: event.id,
+                urls: event.generatedUrls,
+                selected: null,
+              });
+              onCreditsUpdate(event.remainingCredits);
+              setGenerating(false);
+              break;
 
-                case 'done':
-                  setResult({
-                    id: data.id,
-                    urls: data.generatedUrls,
-                    selected: null,
-                  });
-                  onCreditsUpdate(data.remainingCredits);
-                  setGenerating(false);
-                  break;
-
-                case 'error':
-                  throw new Error(data.error);
-              }
-            } catch (parseError) {
-              // JSON 파싱 실패 무시
-            }
+            case 'error':
+              throw new Error(event.error);
           }
         }
       }
