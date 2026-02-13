@@ -10,23 +10,9 @@ import { generateWeddingPhotos, modelSupportsReferenceImage, type AIStyle } from
 import { findModelById } from '@/lib/ai/models';
 import { rateLimit } from '@/lib/ai/rate-limit';
 import { isValidImageBuffer } from '@/lib/ai/validation';
-import { z } from 'zod';
 import { AI_CONFIG } from '@/lib/ai/constants';
 import { logger } from '@/lib/ai/logger';
-
-// Style 런타임 검증 스키마
-const AIStyleSchema = z.enum([
-  'CLASSIC_STUDIO',
-  'OUTDOOR_GARDEN',
-  'SUNSET_BEACH',
-  'TRADITIONAL_HANBOK',
-  'VINTAGE_CINEMATIC',
-  'LUXURY_HOTEL',
-  'CITY_LIFESTYLE',
-  'ENCHANTED_FOREST',
-  'BLACK_AND_WHITE',
-  'MINIMALIST_GALLERY',
-]);
+import { AIStyleSchema } from '@/schemas/ai';
 
 export async function POST(request: NextRequest) {
   let userId: string | undefined;
