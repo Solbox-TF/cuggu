@@ -201,34 +201,24 @@ export function withErrorHandler(handler: ApiHandler): ApiHandler {
 }
 
 /**
- * 인증 확인 헬퍼
+ * 인증 확인 헬퍼 — auth() + DB 유저 조회를 한번에 처리
  */
-export async function requireAuth(req: NextRequest) {
-  // TODO: NextAuth.js getServerSession으로 세션 확인
-  // const session = await getServerSession();
-  // if (!session) {
-  //   throw new UnauthorizedError();
-  // }
-  // return session;
-  throw new Error('requireAuth 미구현 - NextAuth.js 세션 확인 필요');
-}
+export async function requireAuthUser(userId?: string | null) {
+  if (!userId) {
+    throw new UnauthorizedError();
+  }
 
-/**
- * Rate Limiting 확인 (Upstash Redis)
- */
-export async function checkRateLimit(
-  req: NextRequest,
-  identifier: string,
-  limit = 10,
-  window = 60 // seconds
-): Promise<boolean> {
-  // TODO: Upstash Redis로 Rate Limiting 구현
-  // const redis = new Redis({ url: process.env.UPSTASH_REDIS_REST_URL });
-  // const key = `ratelimit:${identifier}`;
-  // const count = await redis.incr(key);
-  // if (count === 1) {
-  //   await redis.expire(key, window);
-  // }
-  // return count <= limit;
-  return true; // 임시로 항상 통과
+  const { db } = await import('@/db');
+  const { users } = await import('@/db/schema');
+  const { eq } = await import('drizzle-orm');
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+  });
+
+  if (!user) {
+    throw new NotFoundError('사용자를 찾을 수 없습니다');
+  }
+
+  return user;
 }

@@ -251,8 +251,7 @@ export const aiGenerations = pgTable(
       .primaryKey()
       .$defaultFn(() => createId()),
     userId: varchar('user_id', { length: 128 })
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+      .references(() => users.id, { onDelete: 'set null' }),
 
     originalUrl: varchar('original_url', { length: 500 }).notNull(),
     style: aiStyleEnum('style').notNull(),
@@ -281,14 +280,16 @@ export const aiGenerations = pgTable(
       table.userId,
       table.status
     ),
+    albumIdIdx: index('ai_generations_album_id_idx').on(table.albumId),
+    jobIdIdx: index('ai_generations_job_id_idx').on(table.jobId),
   })
 );
 
 // 5.5 AI Albums
 export const aiAlbums = pgTable('ai_albums', {
   id: varchar('id', { length: 128 }).primaryKey().$defaultFn(() => createId()),
-  userId: varchar('user_id', { length: 128 }).notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar('user_id', { length: 128 })
+    .references(() => users.id, { onDelete: 'set null' }),
   invitationId: varchar('invitation_id', { length: 128 })
     .references(() => invitations.id, { onDelete: 'set null' }),
   name: varchar('name', { length: 255 }).notNull().default('My Album'),
@@ -322,8 +323,8 @@ export interface AlbumGroup {
 // 5.6 AI Reference Photos (참조 사진 — 한 번 업로드 후 재사용)
 export const aiReferencePhotos = pgTable('ai_reference_photos', {
   id: varchar('id', { length: 128 }).primaryKey().$defaultFn(() => createId()),
-  userId: varchar('user_id', { length: 128 }).notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar('user_id', { length: 128 })
+    .references(() => users.id, { onDelete: 'set null' }),
   role: varchar('role', { length: 8 }).notNull(), // 'GROOM' | 'BRIDE'
   originalUrl: varchar('original_url', { length: 500 }).notNull(),
   faceDetected: boolean('face_detected').default(false).notNull(),
@@ -345,8 +346,8 @@ export interface JobConfig {
 
 export const aiGenerationJobs = pgTable('ai_generation_jobs', {
   id: varchar('id', { length: 128 }).primaryKey().$defaultFn(() => createId()),
-  userId: varchar('user_id', { length: 128 }).notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar('user_id', { length: 128 })
+    .references(() => users.id, { onDelete: 'set null' }),
   albumId: varchar('album_id', { length: 128 })
     .references(() => aiAlbums.id, { onDelete: 'set null' }),
   mode: aiJobModeEnum('mode').notNull(),
@@ -432,8 +433,8 @@ export const appSettings = pgTable('app_settings', {
 // 9. AI Themes (AI 생성 테마 라이브러리)
 export const aiThemes = pgTable('ai_themes', {
   id: varchar('id', { length: 128 }).primaryKey().$defaultFn(() => createId()),
-  userId: varchar('user_id', { length: 128 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
-  invitationId: varchar('invitation_id', { length: 128 }).references(() => invitations.id, { onDelete: 'cascade' }),
+  userId: varchar('user_id', { length: 128 }).references(() => users.id, { onDelete: 'set null' }),
+  invitationId: varchar('invitation_id', { length: 128 }).references(() => invitations.id, { onDelete: 'set null' }),
   prompt: text('prompt').notNull(),
   modelId: varchar('model_id', { length: 64 }),
   theme: jsonb('theme'),
