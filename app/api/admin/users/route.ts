@@ -137,28 +137,33 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
 
   switch (body.action) {
     case "grant_credits": {
-      const newCredits = user.aiCredits + body.credits;
-
-      await db.transaction(async (tx) => {
-        await tx
+      const result = await db.transaction(async (tx) => {
+        // atomic 연산: race condition 방지
+        const [updated] = await tx
           .update(users)
-          .set({ aiCredits: newCredits, updatedAt: new Date() })
-          .where(eq(users.id, body.userId));
+          .set({
+            aiCredits: sql`${users.aiCredits} + ${body.credits}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, body.userId))
+          .returning({ aiCredits: users.aiCredits });
 
         await tx.insert(aiCreditTransactions).values({
           userId: body.userId,
           type: 'BONUS',
           amount: body.credits,
-          balanceAfter: newCredits,
+          balanceAfter: updated.aiCredits,
           referenceType: 'ADMIN',
           description: `관리자 크레딧 부여 (${body.credits}크레딧)`,
         });
+
+        return updated.aiCredits;
       });
 
       return successResponse({
         userId: body.userId,
         action: body.action,
-        result: { newCredits },
+        result: { newCredits: result },
       });
     }
 

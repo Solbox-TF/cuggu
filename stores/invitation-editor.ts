@@ -2,8 +2,7 @@ import { create } from 'zustand';
 import { EDITOR_TABS, TAB_IDS, DEFAULT_ENABLED_SECTIONS } from '@/lib/editor/tabs';
 import { validateInvitation, type ValidationResult } from '@/lib/editor/validation';
 
-// Invitation 타입 임포트 (추후 schemas에서 가져올 예정)
-type Invitation = any; // TODO: schemas/invitation.ts에서 타입 임포트
+import type { Invitation, ExtendedData } from '@/schemas/invitation';
 
 interface ValidationStatus {
   completed: boolean;
@@ -99,7 +98,7 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
     const updated = { ...enabledSections, [sectionId]: enabled };
 
     get().updateInvitation({
-      extendedData: { ...extendedData, enabledSections: updated },
+      extendedData: { ...extendedData, enabledSections: updated as ExtendedData['enabledSections'] },
     });
 
     // 토글 off한 섹션이 현재 activeTab이면 다음 활성 탭으로 이동
