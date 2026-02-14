@@ -8,6 +8,7 @@ import {
   getInvitationMetaCached,
   incrementViewCount,
 } from '@/lib/invitation-cache';
+import { verifyVerificationToken } from '@/lib/invitation-verification';
 import { InvitationView } from './InvitationView';
 import { PasswordGate } from './PasswordGate';
 
@@ -89,12 +90,15 @@ export default async function InvitationPublicPage({
     // 본인이면 아래로 fall through → 렌더링
   }
 
-  // 비밀번호 보호 (PUBLISHED만)
+  // 비밀번호 보호 (PUBLISHED만) — HMAC 서명 검증
   if (invitation.isPasswordProtected && invitation.status === 'PUBLISHED') {
     const cookieStore = await cookies();
-    const verified = cookieStore.get(`invitation_${id}_verified`);
+    const verifiedCookie = cookieStore.get(`invitation_${id}_verified`);
+    const isVerified = verifiedCookie?.value
+      ? verifyVerificationToken(id, verifiedCookie.value)
+      : false;
 
-    if (!verified) {
+    if (!isVerified) {
       return <PasswordGate invitationId={id} />;
     }
   }

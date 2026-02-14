@@ -14,9 +14,10 @@ export const FamilyDisplayModeSchema = z.enum([
 export const TemplateCategorySchema = z.enum([
   "CLASSIC",
   "MODERN",
-  "VINTAGE",
   "FLORAL",
   "MINIMAL",
+  "ELEGANT",
+  "NATURAL",
 ]);
 
 export const InvitationStatusSchema = z.enum([

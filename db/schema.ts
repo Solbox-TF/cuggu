@@ -24,9 +24,11 @@ export const premiumPlanEnum = pgEnum('premium_plan', ['FREE', 'PREMIUM']);
 export const templateCategoryEnum = pgEnum('template_category', [
   'CLASSIC',
   'MODERN',
-  'VINTAGE',
+  'VINTAGE', // 레거시 — 컴포넌트 없음, DB 호환성 유지
   'FLORAL',
   'MINIMAL',
+  'ELEGANT',
+  'NATURAL',
 ]);
 export const templateTierEnum = pgEnum('template_tier', ['FREE', 'PREMIUM']);
 
