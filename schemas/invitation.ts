@@ -40,6 +40,7 @@ export const REORDERABLE_SECTIONS = [
   'gallery',
   'accounts',
   'rsvp',
+  'guestbook',
 ] as const;
 
 export type SectionId = typeof REORDERABLE_SECTIONS[number];
@@ -56,6 +57,7 @@ export const SECTION_LABELS: Record<SectionId, string> = {
   gallery: '갤러리',
   accounts: '계좌번호',
   rsvp: '참석 여부',
+  guestbook: '방명록',
 };
 
 // 순서 데이터 정합성 보장 (누락/중복/잘못된 값 방어)
@@ -197,6 +199,7 @@ export const ExtendedDataSchema = z.object({
     gallery: z.boolean(),
     account: z.boolean(),
     rsvp: z.boolean().optional(),
+    guestbook: z.boolean().optional(),
   }).optional(),
   customTheme: z.any().optional(),
 }).default({});

@@ -107,15 +107,7 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
       extendedData: { ...extendedData, enabledSections: updated as ExtendedData['enabledSections'] },
     });
 
-    // 토글 off한 섹션이 현재 activeTab이면 다음 활성 탭으로 이동
-    if (!enabled && get().activeTab === sectionId) {
-      const nextTab = TAB_IDS.find((id) => {
-        const tab = EDITOR_TABS.find((t) => t.id === id);
-        if (!tab?.toggleable) return true;
-        return id === sectionId ? false : updated[id] !== false;
-      });
-      if (nextTab) set({ activeTab: nextTab });
-    }
+    // 토글 off해도 현재 탭 유지 (탭 내부에서 직접 토글하므로)
   },
 
   // enabledSections 헬퍼

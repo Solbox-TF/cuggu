@@ -67,7 +67,7 @@ export function SectionPanel({ activeTab, invitation }: SectionPanelProps) {
     const status = getTabStatus(tab.id);
     const isCompleted = status === 'completed';
     const hasError = status === 'incomplete' && tab.required;
-    const isEnabled = !tab.toggleable || enabledSections[tab.id] !== false;
+    const isEnabled = !tab.toggleable || (tab.id === 'guestbook' ? enabledSections[tab.id] === true : enabledSections[tab.id] !== false);
     const Icon = tab.icon;
 
     return (
@@ -76,7 +76,6 @@ export function SectionPanel({ activeTab, invitation }: SectionPanelProps) {
         className={`
           relative transition-all
           ${isActive ? 'bg-white border-l-2 border-pink-400' : 'border-l-2 border-transparent hover:bg-stone-100'}
-          ${!isEnabled ? 'opacity-50' : ''}
         `}
       >
         <button
@@ -112,14 +111,7 @@ export function SectionPanel({ activeTab, invitation }: SectionPanelProps) {
           </div>
         </button>
 
-        {tab.toggleable && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <ToggleSwitch
-              checked={enabledSections[tab.id] !== false}
-              onChange={(checked) => toggleSection(tab.id, checked)}
-            />
-          </div>
-        )}
+        {/* 토글은 각 탭 내부에서 직접 제어 */}
       </div>
     );
   };

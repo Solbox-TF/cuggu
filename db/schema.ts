@@ -248,7 +248,33 @@ export const rsvps = pgTable(
   })
 );
 
-// 5. AIGeneration
+// 5. Guestbook Entries (방명록)
+export const guestbookEntries = pgTable(
+  'guestbook_entries',
+  {
+    id: varchar('id', { length: 128 })
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    invitationId: varchar('invitation_id', { length: 128 })
+      .notNull()
+      .references(() => invitations.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 100 }).notNull(),
+    message: text('message').notNull(),
+    isPrivate: boolean('is_private').default(false).notNull(),
+    isHidden: boolean('is_hidden').default(false).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    invitationIdIdx: index('guestbook_entries_invitation_id_idx').on(table.invitationId),
+    paginationIdx: index('guestbook_entries_pagination_idx').on(
+      table.invitationId,
+      table.createdAt,
+      table.id
+    ),
+  })
+);
+
+// 6. AIGeneration
 export const aiGenerations = pgTable(
   'ai_generations',
   {
@@ -535,12 +561,20 @@ export const invitationsRelations = relations(invitations, ({ one, many }) => ({
     references: [templates.id],
   }),
   rsvps: many(rsvps),
+  guestbookEntries: many(guestbookEntries),
   aiThemes: many(aiThemes),
 }));
 
 export const rsvpsRelations = relations(rsvps, ({ one }) => ({
   invitation: one(invitations, {
     fields: [rsvps.invitationId],
+    references: [invitations.id],
+  }),
+}));
+
+export const guestbookEntriesRelations = relations(guestbookEntries, ({ one }) => ({
+  invitation: one(invitations, {
+    fields: [guestbookEntries.invitationId],
     references: [invitations.id],
   }),
 }));

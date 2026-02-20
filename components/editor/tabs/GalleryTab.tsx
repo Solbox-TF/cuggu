@@ -14,7 +14,9 @@ import { GalleryImageGrid } from './gallery/GalleryImageGrid';
 import { AlbumPickerModal } from './gallery/AlbumPickerModal';
 
 export function GalleryTab() {
-  const { invitation, updateInvitation } = useInvitationEditor();
+  const { invitation, updateInvitation, toggleSection, getEnabledSections } = useInvitationEditor();
+  const enabledSections = getEnabledSections();
+  const galleryEnabled = enabledSections.gallery !== false;
   const [error, setError] = useState<string | null>(null);
   const [showAlbumPicker, setShowAlbumPicker] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -153,13 +155,24 @@ export function GalleryTab() {
   return (
     <div className="space-y-6">
       {/* 헤더 */}
-      <div>
-        <h2 className="text-xl font-semibold text-stone-900 tracking-tight mb-1">
-          갤러리
-        </h2>
-        <p className="text-sm text-stone-500">
-          청첩장에 담을 사진을 추가하세요 ({images.length}/{limit})
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-stone-900 tracking-tight mb-1">
+            갤러리
+          </h2>
+          <p className="text-sm text-stone-500">
+            청첩장에 담을 사진을 추가하세요 ({images.length}/{limit})
+          </p>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={galleryEnabled}
+            onChange={(e) => toggleSection('gallery', e.target.checked)}
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-stone-200 border border-stone-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-pink-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-500 peer-checked:border-pink-500"></div>
+        </label>
       </div>
 
       {/* 에러 메시지 */}

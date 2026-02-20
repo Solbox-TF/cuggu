@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { FileHeart, Sparkles, Settings, LogOut, Home, Users } from "lucide-react";
+import { FileHeart, Sparkles, Settings, LogOut, Home, Users, BookOpen } from "lucide-react";
 import { UserProfile } from "./UserProfile";
 import { useCredits } from "@/hooks/useCredits";
 
@@ -28,6 +28,11 @@ const navItems = [
     title: "RSVP 관리",
     href: "/rsvp",
     icon: Users,
+  },
+  {
+    title: "방명록",
+    href: "/guestbook",
+    icon: BookOpen,
   },
   {
     title: "설정",
