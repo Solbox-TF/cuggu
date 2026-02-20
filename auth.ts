@@ -4,7 +4,7 @@ import Kakao from "next-auth/providers/kakao";
 import Naver from "next-auth/providers/naver";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/db";
-import { users, accounts, sessions } from "@/db/schema";
+import { users, accounts, sessions, aiCreditTransactions } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { isRegistrationEnabled } from "@/lib/settings";
 
@@ -75,6 +75,19 @@ export const authConfig = {
     },
   },
   useSecureCookies: process.env.NODE_ENV === "production",
+  events: {
+    createUser: async ({ user }) => {
+      if (!user.id) return;
+      await db.insert(aiCreditTransactions).values({
+        userId: user.id,
+        type: 'BONUS',
+        amount: 5,
+        balanceAfter: 5,
+        referenceType: 'SYSTEM',
+        description: '회원가입 웰컴 보너스',
+      });
+    },
+  },
   callbacks: {
     async signIn({ account }) {
       if (!account?.provider) return true;

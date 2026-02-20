@@ -24,7 +24,12 @@ export function RsvpTab() {
     <div className="space-y-6">
       {/* 헤더 */}
       <div>
-        <h2 className="text-xl font-semibold text-stone-900 tracking-tight mb-1">참석 확인</h2>
+        <h2 className="text-xl font-semibold text-stone-900 tracking-tight mb-1 flex items-center gap-2">
+          참석 확인
+          <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full ${invitation.settings?.enableRsvp !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-400'}`}>
+            {invitation.settings?.enableRsvp !== false ? '활성' : '비활성'}
+          </span>
+        </h2>
         <p className="text-sm text-stone-500">하객이 참석 여부를 전송할 수 있습니다</p>
       </div>
 

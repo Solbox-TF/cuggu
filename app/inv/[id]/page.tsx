@@ -8,6 +8,7 @@ import {
   getInvitationMetaCached,
   incrementViewCount,
 } from '@/lib/invitation-cache';
+import { verifyVerificationToken } from '@/lib/invitation-verification';
 import { InvitationView } from './InvitationView';
 import { PasswordGate } from './PasswordGate';
 
@@ -32,15 +33,20 @@ export async function generateMetadata({
     return { title: '청첩장 | Cuggu' };
   }
 
-  const title = `${invitation.groomName} ♥ ${invitation.brideName} 결혼합니다`;
-  const description = invitation.introMessage
-    ? invitation.introMessage.slice(0, 100)
-    : `${invitation.groomName}님과 ${invitation.brideName}님의 결혼식에 초대합니다`;
+  // 커스텀 OG 설정 (extendedData.share) 우선 적용
+  const share = (invitation.extendedData as Record<string, any>)?.share;
 
-  const ogImage =
-    invitation.galleryImages?.[0] ||
-    invitation.aiPhotoUrl ||
-    `${process.env.NEXT_PUBLIC_BASE_URL || 'https://cuggu.com'}/og-default.png`;
+  const title = share?.ogTitle
+    || `${invitation.groomName} ♥ ${invitation.brideName} 결혼합니다`;
+  const description = share?.ogDescription
+    || (invitation.introMessage
+      ? invitation.introMessage.slice(0, 100)
+      : `${invitation.groomName}님과 ${invitation.brideName}님의 결혼식에 초대합니다`);
+
+  const ogImage = share?.ogImage
+    || invitation.galleryImages?.[0]
+    || invitation.aiPhotoUrl
+    || `${process.env.NEXT_PUBLIC_BASE_URL || 'https://cuggu.com'}/og-default.png`;
 
   return {
     title: `${title} | Cuggu`,
@@ -89,12 +95,15 @@ export default async function InvitationPublicPage({
     // 본인이면 아래로 fall through → 렌더링
   }
 
-  // 비밀번호 보호 (PUBLISHED만)
+  // 비밀번호 보호 (PUBLISHED만) — HMAC 서명 검증
   if (invitation.isPasswordProtected && invitation.status === 'PUBLISHED') {
     const cookieStore = await cookies();
-    const verified = cookieStore.get(`invitation_${id}_verified`);
+    const verifiedCookie = cookieStore.get(`invitation_${id}_verified`);
+    const isVerified = verifiedCookie?.value
+      ? verifyVerificationToken(id, verifiedCookie.value)
+      : false;
 
-    if (!verified) {
+    if (!isVerified) {
       return <PasswordGate invitationId={id} />;
     }
   }
@@ -118,12 +127,12 @@ export default async function InvitationPublicPage({
 function StatusPage({ type }: { type: 'draft' | 'expired' }) {
   const config = {
     draft: {
-      title: '아직 준비 중인 청첩장입니다',
-      description: '청첩장이 발행되면 이 링크에서 확인하실 수 있습니다.',
+      title: '아직 준비 중이에요',
+      description: '곧 특별한 소식을 전해드릴게요. 조금만 기다려주세요.',
     },
     expired: {
-      title: '만료된 청첩장입니다',
-      description: '이 청첩장은 더 이상 열람할 수 없습니다.',
+      title: '소중한 날의 기억',
+      description: '열람 기간이 지났지만, 두 사람의 아름다운 시작은 계속됩니다.',
     },
   }[type];
 

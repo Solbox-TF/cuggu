@@ -9,15 +9,10 @@ interface StepNavigationProps {
 }
 
 export function StepNavigation({ position }: StepNavigationProps) {
-  const { activeTab, setActiveTab, getEnabledSections } = useInvitationEditor();
-  const enabledSections = getEnabledSections();
+  const { activeTab, setActiveTab } = useInvitationEditor();
 
-  // 활성화된 탭만 필터링
-  const enabledTabIds = TAB_IDS.filter((id) => {
-    const tab = EDITOR_TABS.find((t) => t.id === id);
-    if (!tab?.toggleable) return true;
-    return enabledSections[id] !== false;
-  });
+  // 모든 탭 포함 (토글은 각 탭 내부에서 제어)
+  const enabledTabIds = TAB_IDS;
 
   const currentIndex = enabledTabIds.indexOf(activeTab);
   const isFirst = currentIndex <= 0;

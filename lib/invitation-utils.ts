@@ -168,8 +168,11 @@ export function dbRecordToInvitation(row: DbInvitationRow): Invitation {
       fontFamily: ext.settings?.fontFamily,
       sectionOrder: ext.settings?.sectionOrder,
       calendarStyle: ext.settings?.calendarStyle ?? 'calendar',
+      requirePassword: ext.settings?.requirePassword ?? false,
+      password: ext.settings?.password,
     },
 
+    extendedData: ext,
     customTheme: (ext as any).customTheme,
     aiPhotoUrl: row.aiPhotoUrl || undefined,
     isPasswordProtected: row.isPasswordProtected,
@@ -244,11 +247,17 @@ export function invitationToDbUpdate(data: Record<string, any>) {
     extendedData.customTheme = data.customTheme;
   }
 
-  // 클라이언트가 직접 보내는 extendedData (enabledSections 등)
+  // 클라이언트가 직접 보내는 extendedData (enabledSections, ending 등)
   if (data.extendedData && typeof data.extendedData === 'object') {
     const clientExt = data.extendedData as Record<string, unknown>;
     if (clientExt.enabledSections !== undefined) {
       extendedData.enabledSections = clientExt.enabledSections;
+    }
+    if (clientExt.ending !== undefined) {
+      extendedData.ending = clientExt.ending;
+    }
+    if (clientExt.share !== undefined) {
+      extendedData.share = clientExt.share;
     }
   }
 

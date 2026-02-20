@@ -1,6 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { useInvitationEditor } from '@/stores/invitation-editor';
+import {
+  GREETING_EXAMPLES,
+  GREETING_CATEGORIES,
+  GREETING_CATEGORY_LABELS,
+  type GreetingCategory,
+} from '@/lib/copy/greeting-examples';
 
 /**
  * 인사말 탭
@@ -9,7 +16,9 @@ import { useInvitationEditor } from '@/stores/invitation-editor';
  * - 미리 작성된 예시 제공
  */
 export function GreetingTab() {
-  const { invitation, updateInvitation } = useInvitationEditor();
+  const { invitation, updateInvitation, toggleSection, getEnabledSections } = useInvitationEditor();
+  const enabledSections = getEnabledSections();
+  const enabled = enabledSections.greeting !== false;
 
   const handleGreetingChange = (value: string) => {
     updateInvitation({
@@ -20,18 +29,28 @@ export function GreetingTab() {
     });
   };
 
-  const exampleGreetings = [
-    '평생을 함께할 반려자를 만났습니다.\n저희 두 사람이 사랑과 믿음으로\n한 가정을 이루게 되었습니다.\n오셔서 축복해 주시면 감사하겠습니다.',
-    '서로가 마주보며 다져온 사랑을\n이제 함께 한 곳을 바라보며\n걸어갈 수 있는 큰 사랑으로 키우고자 합니다.\n저희 두 사람의 앞날을 축복해 주십시오.',
-    '두 사람이 사랑으로 만나\n진실과 이해로 하나를 이루어\n믿음과 신의로 가정을 이루려 합니다.\n오셔서 두 사람의 앞날을 축복해 주십시오.',
-  ];
-
   return (
     <div className="space-y-6">
       {/* 헤더 */}
-      <div>
-        <h2 className="text-xl font-semibold text-stone-900 tracking-tight mb-1">인사말</h2>
-        <p className="text-sm text-stone-500">청첩장에 담을 인사말을 작성하세요</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-stone-900 tracking-tight mb-1 flex items-center gap-2">
+            인사말
+            <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full ${enabled ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-400'}`}>
+              {enabled ? '활성' : '비활성'}
+            </span>
+          </h2>
+          <p className="text-sm text-stone-500">청첩장에 담을 인사말을 작성하세요</p>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => toggleSection('greeting', e.target.checked)}
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-stone-200 border border-stone-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-pink-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-500 peer-checked:border-pink-500"></div>
+        </label>
       </div>
 
       {/* 인사말 입력 */}
@@ -54,21 +73,45 @@ export function GreetingTab() {
       </div>
 
       {/* 예시 인사말 */}
-      <div className="bg-white rounded-xl p-6 space-y-4 border border-stone-200">
-        <h3 className="text-sm font-medium text-stone-700 mb-3">예시 인사말</h3>
-        <div className="space-y-2.5">
-          {exampleGreetings.map((greeting, index) => (
-            <button
-              key={index}
-              onClick={() => handleGreetingChange(greeting)}
-              className="w-full p-3.5 text-left border border-stone-200 rounded-lg hover:border-pink-300 hover:bg-pink-50/50 transition-colors"
-            >
-              <p className="text-sm text-stone-700 whitespace-pre-line leading-relaxed">
-                {greeting}
-              </p>
-            </button>
-          ))}
-        </div>
+      <GreetingExamples onSelect={handleGreetingChange} />
+    </div>
+  );
+}
+
+function GreetingExamples({ onSelect }: { onSelect: (text: string) => void }) {
+  const [activeCategory, setActiveCategory] = useState<GreetingCategory>('formal');
+  const filtered = GREETING_EXAMPLES.filter((e) => e.category === activeCategory);
+
+  return (
+    <div className="bg-white rounded-xl p-6 space-y-4 border border-stone-200">
+      <h3 className="text-sm font-medium text-stone-700">예시 인사말</h3>
+      <div className="flex gap-1.5 flex-wrap">
+        {GREETING_CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setActiveCategory(cat)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+              activeCategory === cat
+                ? 'bg-pink-500 text-white'
+                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            }`}
+          >
+            {GREETING_CATEGORY_LABELS[cat]}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-2.5">
+        {filtered.map((example, index) => (
+          <button
+            key={index}
+            onClick={() => onSelect(example.text)}
+            className="w-full p-3.5 text-left border border-stone-200 rounded-lg hover:border-pink-300 hover:bg-pink-50/50 transition-colors"
+          >
+            <p className="text-sm text-stone-700 whitespace-pre-line leading-relaxed">
+              {example.text}
+            </p>
+          </button>
+        ))}
       </div>
     </div>
   );

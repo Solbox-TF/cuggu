@@ -9,6 +9,7 @@ import { TAB_IDS } from '@/lib/editor/tabs';
 // 모바일 전용 탭 (static import)
 import { MobileGreetingTab } from './tabs/MobileGreetingTab';
 import { MobileRsvpTab } from './tabs/MobileRsvpTab';
+import { MobileGuestbookTab } from './tabs/MobileGuestbookTab';
 
 // 데스크톱 탭 fallback (dynamic import — 모바일 번들 최적화)
 const TemplateTab = dynamic(() => import('@/components/editor/tabs/TemplateTab').then(m => ({ default: m.TemplateTab })), { ssr: false });
@@ -16,6 +17,7 @@ const BasicInfoTab = dynamic(() => import('@/components/editor/tabs/BasicInfoTab
 const VenueTab = dynamic(() => import('@/components/editor/tabs/VenueTab').then(m => ({ default: m.VenueTab })), { ssr: false });
 const GalleryTab = dynamic(() => import('@/components/editor/tabs/GalleryTab').then(m => ({ default: m.GalleryTab })), { ssr: false });
 const AccountTab = dynamic(() => import('@/components/editor/tabs/AccountTab').then(m => ({ default: m.AccountTab })), { ssr: false });
+const EndingTab = dynamic(() => import('@/components/editor/tabs/EndingTab').then(m => ({ default: m.EndingTab })), { ssr: false });
 const SettingsTab = dynamic(() => import('@/components/editor/tabs/SettingsTab').then(m => ({ default: m.SettingsTab })), { ssr: false });
 
 const TAB_COMPONENTS: Record<string, React.ComponentType> = {
@@ -26,6 +28,8 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   gallery: GalleryTab,
   account: AccountTab,
   rsvp: MobileRsvpTab,
+  guestbook: MobileGuestbookTab,
+  ending: EndingTab,
   settings: SettingsTab,
 };
 

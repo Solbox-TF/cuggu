@@ -1,12 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { useInvitationEditor } from '@/stores/invitation-editor';
-
-const EXAMPLE_GREETINGS = [
-  '평생을 함께할 반려자를 만났습니다.\n저희 두 사람이 사랑과 믿음으로\n한 가정을 이루게 되었습니다.\n오셔서 축복해 주시면 감사하겠습니다.',
-  '서로가 마주보며 다져온 사랑을\n이제 함께 한 곳을 바라보며\n걸어갈 수 있는 큰 사랑으로 키우고자 합니다.\n저희 두 사람의 앞날을 축복해 주십시오.',
-  '두 사람이 사랑으로 만나\n진실과 이해로 하나를 이루어\n믿음과 신의로 가정을 이루려 합니다.\n오셔서 두 사람의 앞날을 축복해 주십시오.',
-];
+import {
+  GREETING_EXAMPLES,
+  GREETING_CATEGORIES,
+  GREETING_CATEGORY_LABELS,
+  type GreetingCategory,
+} from '@/lib/copy/greeting-examples';
 
 /**
  * 모바일 인사말 탭
@@ -52,22 +53,46 @@ export function MobileGreetingTab() {
         </p>
       </div>
 
-      {/* 예시 인사말 - 세로 스택 */}
-      <div className="bg-white rounded-xl p-4 space-y-3 border border-stone-200">
-        <h3 className="text-sm font-medium text-stone-700">예시 인사말</h3>
-        <div className="space-y-2">
-          {EXAMPLE_GREETINGS.map((greeting, index) => (
-            <button
-              key={index}
-              onClick={() => handleGreetingChange(greeting)}
-              className="w-full p-3 text-left border border-stone-200 rounded-lg active:border-pink-300 active:bg-pink-50/50 transition-colors"
-            >
-              <p className="text-sm text-stone-700 whitespace-pre-line leading-relaxed">
-                {greeting}
-              </p>
-            </button>
-          ))}
-        </div>
+      {/* 예시 인사말 - 카테고리 탭 */}
+      <MobileGreetingExamples onSelect={handleGreetingChange} />
+    </div>
+  );
+}
+
+function MobileGreetingExamples({ onSelect }: { onSelect: (text: string) => void }) {
+  const [activeCategory, setActiveCategory] = useState<GreetingCategory>('formal');
+  const filtered = GREETING_EXAMPLES.filter((e) => e.category === activeCategory);
+
+  return (
+    <div className="bg-white rounded-xl p-4 space-y-3 border border-stone-200">
+      <h3 className="text-sm font-medium text-stone-700">예시 인사말</h3>
+      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+        {GREETING_CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setActiveCategory(cat)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors flex-shrink-0 ${
+              activeCategory === cat
+                ? 'bg-pink-500 text-white'
+                : 'bg-stone-100 text-stone-600 active:bg-stone-200'
+            }`}
+          >
+            {GREETING_CATEGORY_LABELS[cat]}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-2">
+        {filtered.map((example, index) => (
+          <button
+            key={index}
+            onClick={() => onSelect(example.text)}
+            className="w-full p-3 text-left border border-stone-200 rounded-lg active:border-pink-300 active:bg-pink-50/50 transition-colors"
+          >
+            <p className="text-sm text-stone-700 whitespace-pre-line leading-relaxed">
+              {example.text}
+            </p>
+          </button>
+        ))}
       </div>
     </div>
   );

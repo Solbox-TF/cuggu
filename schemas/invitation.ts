@@ -14,9 +14,10 @@ export const FamilyDisplayModeSchema = z.enum([
 export const TemplateCategorySchema = z.enum([
   "CLASSIC",
   "MODERN",
-  "VINTAGE",
   "FLORAL",
   "MINIMAL",
+  "ELEGANT",
+  "NATURAL",
 ]);
 
 export const InvitationStatusSchema = z.enum([
@@ -39,6 +40,7 @@ export const REORDERABLE_SECTIONS = [
   'gallery',
   'accounts',
   'rsvp',
+  'guestbook',
 ] as const;
 
 export type SectionId = typeof REORDERABLE_SECTIONS[number];
@@ -55,6 +57,7 @@ export const SECTION_LABELS: Record<SectionId, string> = {
   gallery: '갤러리',
   accounts: '계좌번호',
   rsvp: '참석 여부',
+  guestbook: '방명록',
 };
 
 // 순서 데이터 정합성 보장 (누락/중복/잘못된 값 방어)
@@ -150,6 +153,8 @@ export const SettingsSchema = z.object({
   fontFamily: z.string().optional(),
   sectionOrder: z.array(z.string()).optional(), // 섹션 표시 순서
   calendarStyle: z.enum(['none', 'calendar', 'countdown', 'minimal']).default('calendar'),
+  requirePassword: z.boolean().default(false),
+  password: z.string().optional(),
 });
 
 // ============================================================
@@ -189,11 +194,22 @@ export const ExtendedDataSchema = z.object({
     coverImage: z.string().url().optional(),
   }).optional(),
   settings: SettingsSchema.partial().optional(),
+  ending: z.object({
+    imageUrl: z.string().url().optional(),
+    message: z.string().optional(),
+  }).optional(),
+  share: z.object({
+    ogImage: z.string().url().optional(),
+    ogTitle: z.string().optional(),
+    ogDescription: z.string().optional(),
+  }).optional(),
   enabledSections: z.object({
     greeting: z.boolean(),
     gallery: z.boolean(),
     account: z.boolean(),
     rsvp: z.boolean().optional(),
+    guestbook: z.boolean().optional(),
+    ending: z.boolean().optional(),
   }).optional(),
   customTheme: z.any().optional(),
 }).default({});
@@ -398,6 +414,7 @@ export const SAMPLE_INVITATION: Invitation = {
     showMap: true,
     enableRsvp: true,
     calendarStyle: 'calendar',
+    requirePassword: false,
   },
 
   isPasswordProtected: false,

@@ -250,6 +250,11 @@ export interface SerializableTheme {
   rsvpInactiveClass?: string;
   rsvpSubmitClass?: string;
 
+  // ── 엔딩 섹션 ──
+  endingHeading?: HeadingConfig;
+  endingImageClass?: string;
+  endingMessageClass?: string;
+
   // ── 커버/푸터 ──
   cover: CoverConfig;
   footer: FooterConfig;

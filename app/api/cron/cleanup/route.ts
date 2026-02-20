@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { invitations, rsvps } from '@/db/schema';
+import { invitations } from '@/db/schema';
 import { eq, and, lt, inArray } from 'drizzle-orm';
-import { S3Client, DeleteObjectsCommand } from '@aws-sdk/client-s3';
+import { extractS3Key, deleteFromS3 } from '@/lib/ai/s3';
 
 /**
  * 만료 청첩장 자동 정리 (Vercel Cron - 매일 03:00 UTC)
@@ -100,9 +100,6 @@ function collectS3Keys(
   rows: { galleryImages: string[] | null; aiPhotoUrl: string | null }[]
 ): string[] {
   const keys: string[] = [];
-  const cloudfrontDomain = process.env.CLOUDFRONT_DOMAIN;
-  const s3Bucket = process.env.S3_BUCKET_NAME;
-  const awsRegion = process.env.AWS_REGION;
 
   for (const row of rows) {
     const urls: string[] = [];
@@ -110,83 +107,10 @@ function collectS3Keys(
     if (row.aiPhotoUrl) urls.push(row.aiPhotoUrl);
 
     for (const url of urls) {
-      const key = extractS3Key(url, cloudfrontDomain, s3Bucket, awsRegion);
+      const key = extractS3Key(url);
       if (key) keys.push(key);
     }
   }
 
   return keys;
-}
-
-/**
- * URL에서 S3 key 추출
- */
-function extractS3Key(
-  url: string,
-  cloudfrontDomain?: string,
-  s3Bucket?: string,
-  awsRegion?: string
-): string | null {
-  try {
-    const parsed = new URL(url);
-
-    // CloudFront URL: https://{domain}/{key}
-    if (cloudfrontDomain && parsed.hostname === cloudfrontDomain) {
-      return parsed.pathname.slice(1); // 앞의 '/' 제거
-    }
-
-    // S3 URL: https://{bucket}.s3.{region}.amazonaws.com/{key}
-    if (
-      s3Bucket &&
-      awsRegion &&
-      parsed.hostname === `${s3Bucket}.s3.${awsRegion}.amazonaws.com`
-    ) {
-      return parsed.pathname.slice(1);
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * S3에서 객체 일괄 삭제 (1000개씩 배치)
- */
-async function deleteFromS3(keys: string[]): Promise<number> {
-  const bucket = process.env.S3_BUCKET_NAME;
-  const region = process.env.AWS_REGION;
-
-  if (!bucket || !region) return 0;
-
-  const s3 = new S3Client({
-    region,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    },
-  });
-
-  let deleted = 0;
-
-  // S3 DeleteObjects는 한 번에 최대 1000개
-  for (let i = 0; i < keys.length; i += 1000) {
-    const batch = keys.slice(i, i + 1000);
-    try {
-      const result = await s3.send(
-        new DeleteObjectsCommand({
-          Bucket: bucket,
-          Delete: {
-            Objects: batch.map((Key) => ({ Key })),
-            Quiet: true,
-          },
-        })
-      );
-      deleted += batch.length - (result.Errors?.length || 0);
-    } catch (err) {
-      console.error(`[Cleanup] S3 삭제 실패 (batch ${i}):`, err);
-    }
-  }
-
-  return deleted;
 }

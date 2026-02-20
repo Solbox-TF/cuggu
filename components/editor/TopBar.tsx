@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Loader2, Eye, Share2, ArrowLeft, Send, Sparkles, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { useCredits } from '@/hooks/useCredits';
@@ -37,7 +38,7 @@ export function TopBar({ invitation, isSaving, lastSaved, saveError, onRetrySave
   // 발행하기
   const handlePublish = async () => {
     if (!validation.isReady) {
-      showToast(`필수 정보를 입력해주세요: ${validation.missing.join(', ')}`, 'error');
+      showToast(`조금만 더 채워주세요 — ${validation.missing.join(', ')}`, 'error');
       return;
     }
 
@@ -58,7 +59,7 @@ export function TopBar({ invitation, isSaving, lastSaved, saveError, onRetrySave
       setIsJustPublished(true);
       setShowShareModal(true);
     } catch {
-      showToast('발행에 실패했습니다. 다시 시도해주세요.', 'error');
+      showToast('발행에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
     } finally {
       setIsPublishing(false);
     }
@@ -90,9 +91,24 @@ export function TopBar({ invitation, isSaving, lastSaved, saveError, onRetrySave
       <div className="flex items-center gap-2 md:gap-4 min-w-0">
         <Link
           href="/dashboard"
-          className="text-lg font-bold text-stone-900 hover:text-stone-600 transition-colors flex-shrink-0"
+          className="flex items-center flex-shrink-0"
         >
-          Cuggu
+          <Image
+            src="/brand/cuggu-mark.svg"
+            alt="Cuggu"
+            width={28}
+            height={28}
+            className="h-7 w-7 md:hidden"
+            priority
+          />
+          <Image
+            src="/brand/cuggu-lockup.svg"
+            alt="Cuggu"
+            width={112}
+            height={36}
+            className="hidden md:block h-6 w-auto"
+            priority
+          />
         </Link>
 
         <div className="h-5 w-px bg-stone-200 hidden md:block" />

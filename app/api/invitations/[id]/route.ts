@@ -5,6 +5,8 @@ import { invitations } from '@/db/schema';
 import { UpdateInvitationSchema, ExtendedDataSchema } from '@/schemas/invitation';
 import { dbRecordToInvitation, invitationToDbUpdate } from '@/lib/invitation-utils';
 import { invalidateInvitationCache } from '@/lib/invitation-cache';
+import { refreshKakaoOgCache, getInvitationUrl } from '@/lib/kakao-og';
+import { extractS3Key, deleteFromS3 } from '@/lib/ai/s3';
 import { eq } from 'drizzle-orm';
 
 // GET /api/invitations/[id] - 단건 조회 (권한 체크)
@@ -157,6 +159,7 @@ export async function PUT(
         content: { ...(existingExt.content || {}), ...((dbUpdate.extendedData as any).content || {}) },
         gallery: { ...(existingExt.gallery || {}), ...((dbUpdate.extendedData as any).gallery || {}) },
         settings: { ...(existingExt.settings || {}), ...((dbUpdate.extendedData as any).settings || {}) },
+        share: { ...(existingExt.share || {}), ...((dbUpdate.extendedData as any).share || {}) },
       };
 
       // [cuggu-jrk] merge 결과 검증 — 실패 시 기존 데이터 보존
@@ -183,6 +186,32 @@ export async function PUT(
 
     // 공개 페이지 캐시 무효화
     invalidateInvitationCache(id);
+
+    // PUBLISHED 상태면 카카오 OG 캐시 갱신 (fire-and-forget)
+    if (updated.status === 'PUBLISHED') {
+      refreshKakaoOgCache(getInvitationUrl(id)).catch(() => {});
+    }
+
+    // 갤러리에서 제거된 이미지 S3 정리 (fire-and-forget)
+    if (updateData.galleryImages) {
+      const oldImages = new Set((existing.galleryImages as string[]) || []);
+      const newImages = new Set(updateData.galleryImages as string[]);
+      const removedUrls = [...oldImages].filter((url) => !newImages.has(url));
+
+      if (removedUrls.length > 0) {
+        const keys = removedUrls
+          .map((url) => extractS3Key(url))
+          .filter((k): k is string => k !== null);
+
+        if (keys.length > 0) {
+          deleteFromS3(keys).then((count) => {
+            console.log(`[Gallery] S3 orphan 삭제: ${count}/${keys.length}`);
+          }).catch((err) => {
+            console.error('[Gallery] S3 orphan 삭제 실패:', err);
+          });
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,

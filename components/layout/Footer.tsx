@@ -24,7 +24,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="#"
+                  href="/terms"
                   className="text-gray-600 hover:text-gray-900 transition-colors"
                 >
                   이용약관
@@ -32,7 +32,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="#"
+                  href="/privacy"
                   className="text-gray-600 hover:text-gray-900 transition-colors"
                 >
                   개인정보처리방침

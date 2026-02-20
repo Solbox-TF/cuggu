@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { createVerificationToken, VERIFICATION_COOKIE_MAX_AGE } from '@/lib/invitation-verification';
 
 // POST /api/invitations/[id]/verify - 비밀번호 검증
 export async function POST(
@@ -67,13 +68,14 @@ export async function POST(
       );
     }
 
-    // 검증 성공 - 쿠키 설정 (24시간 유효)
+    // 검증 성공 - HMAC 서명된 토큰을 쿠키에 설정
+    const token = createVerificationToken(id);
     const cookieStore = await cookies();
-    cookieStore.set(`invitation_${id}_verified`, 'true', {
+    cookieStore.set(`invitation_${id}_verified`, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24, // 24시간
+      maxAge: VERIFICATION_COOKIE_MAX_AGE,
     });
 
     return NextResponse.json({

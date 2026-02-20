@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, MessageCircle, Share2, X } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
@@ -13,9 +14,10 @@ interface ShareModalProps {
     id: string;
     groom?: { name?: string };
     bride?: { name?: string };
-    gallery?: { photos?: Array<{ url: string }> };
+    gallery?: { photos?: Array<{ url: string }>; images?: string[] };
     aiPhotoUrl?: string;
     content?: { greeting?: string };
+    extendedData?: { share?: { ogImage?: string; ogTitle?: string; ogDescription?: string } };
   };
   isJustPublished?: boolean;
 }
@@ -38,14 +40,17 @@ export function ShareModal({ isOpen, onClose, invitation, isJustPublished = fals
 
   const groomName = invitation.groom?.name || '신랑';
   const brideName = invitation.bride?.name || '신부';
-  const shareTitle = `${groomName} ♥ ${brideName} 결혼합니다`;
+  const share = invitation.extendedData?.share;
+  const shareTitle = share?.ogTitle || `${groomName} ♥ ${brideName} 결혼합니다`;
   const shareUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/inv/${invitation.id}`
     : `/inv/${invitation.id}`;
 
-  // 썸네일 이미지: AI 사진 > 갤러리 첫 번째 > 없음
-  const thumbnailUrl = invitation.aiPhotoUrl
+  // 썸네일 이미지: 커스텀 OG > 갤러리 첫 번째 > AI 사진 > 없음
+  const thumbnailUrl = share?.ogImage
+    || invitation.gallery?.images?.[0]
     || invitation.gallery?.photos?.[0]?.url
+    || invitation.aiPhotoUrl
     || null;
 
   useEffect(() => {
@@ -63,12 +68,7 @@ export function ShareModal({ isOpen, onClose, invitation, isJustPublished = fals
     };
 
     document.addEventListener('keydown', handleEscape);
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
-    };
+    return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
   const handleCopy = useCallback(async () => {
@@ -92,7 +92,7 @@ export function ShareModal({ isOpen, onClose, invitation, isJustPublished = fals
     }
     sendKakaoShare({
       title: shareTitle,
-      description: invitation.content?.greeting || `${groomName}님과 ${brideName}님의 결혼식에 초대합니다`,
+      description: share?.ogDescription || invitation.content?.greeting || `${groomName}님과 ${brideName}님의 결혼식에 초대합니다`,
       imageUrl: thumbnailUrl || '',
       shareUrl,
     });
@@ -111,7 +111,7 @@ export function ShareModal({ isOpen, onClose, invitation, isJustPublished = fals
     }
   }, [shareUrl, shareTitle, handleCopy]);
 
-  return (
+  const content = (
     <AnimatePresence>
       {isOpen && (
         <>
@@ -152,10 +152,10 @@ export function ShareModal({ isOpen, onClose, invitation, isJustPublished = fals
                   <div className="mb-5">
                     <p className="text-3xl mb-2">🎉</p>
                     <h3 className="text-lg font-semibold text-stone-900">
-                      청첩장이 발행되었습니다!
+                      청첩장이 완성되었어요!
                     </h3>
                     <p className="text-sm text-stone-500 mt-1">
-                      이제 소중한 분들에게 공유해보세요
+                      소중한 분들을 결혼식에 초대해보세요
                     </p>
                   </div>
                 )}
@@ -220,4 +220,7 @@ export function ShareModal({ isOpen, onClose, invitation, isJustPublished = fals
       )}
     </AnimatePresence>
   );
+
+  if (typeof window === 'undefined') return null;
+  return createPortal(content, document.body);
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { FileHeart, Sparkles, Settings, LogOut, Home, Users } from "lucide-react";
+import { FileHeart, Sparkles, Settings, LogOut, Home, Users, BookOpen } from "lucide-react";
 import { UserProfile } from "./UserProfile";
 import { useCredits } from "@/hooks/useCredits";
 
@@ -15,22 +16,27 @@ const navItems = [
   },
   {
     title: "내 청첩장",
-    href: "/dashboard/invitations",
+    href: "/invitations",
     icon: FileHeart,
   },
   {
     title: "AI 포토 스튜디오",
-    href: "/dashboard/ai-photos",
+    href: "/ai-photos",
     icon: Sparkles,
   },
   {
     title: "RSVP 관리",
-    href: "/dashboard/rsvp",
+    href: "/rsvp",
     icon: Users,
   },
   {
+    title: "방명록",
+    href: "/guestbook",
+    icon: BookOpen,
+  },
+  {
     title: "설정",
-    href: "/dashboard/settings",
+    href: "/settings",
     icon: Settings,
   },
 ];
@@ -45,14 +51,16 @@ export function DashboardNav() {
       <div className="px-5 py-5">
         <Link
           href="/"
-          className="flex items-center gap-2"
+          className="inline-flex items-center"
         >
-          <div className="w-7 h-7 rounded-md bg-rose-600 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">C</span>
-          </div>
-          <span className="text-base font-semibold text-stone-900">
-            Cuggu
-          </span>
+          <Image
+            src="/brand/cuggu-lockup.svg"
+            alt="Cuggu"
+            width={128}
+            height={40}
+            className="h-16 w-auto"
+            priority
+          />
         </Link>
       </div>
 
@@ -63,7 +71,9 @@ export function DashboardNav() {
       <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto mt-2">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href;
+          const isActive = item.href === "/dashboard"
+            ? pathname === "/dashboard"
+            : pathname.startsWith(item.href);
 
           return (
             <Link

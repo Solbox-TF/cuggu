@@ -61,7 +61,7 @@ function AccountForm({
           type="text"
           value={account?.accountNumber || ''}
           onChange={(e) => onChange('accountNumber', e.target.value)}
-          placeholder="1234-5678-9012"
+          placeholder="계좌번호"
           className="w-full px-4 py-3 text-sm bg-white border border-stone-200 rounded-lg focus:ring-1 focus:ring-pink-300 focus:border-pink-300 transition-colors placeholder:text-stone-400"
         />
       </div>
@@ -74,7 +74,7 @@ function AccountForm({
           type="text"
           value={account?.accountHolder || ''}
           onChange={(e) => onChange('accountHolder', e.target.value)}
-          placeholder={placeholder || '홍길동'}
+          placeholder={placeholder || '예금주 성함'}
           className="w-full px-4 py-3 text-sm bg-white border border-stone-200 rounded-lg focus:ring-1 focus:ring-pink-300 focus:border-pink-300 transition-colors placeholder:text-stone-400"
         />
       </div>
@@ -89,7 +89,7 @@ function AccountForm({
  * - 부모님(아버지/어머니) 계좌 (복수 개 가능)
  */
 export function AccountTab() {
-  const { invitation, updateInvitation } = useInvitationEditor();
+  const { invitation, updateInvitation, toggleSection, getEnabledSections } = useInvitationEditor();
   const [showGroomParentAccounts, setShowGroomParentAccounts] = useState(false);
   const [showBrideParentAccounts, setShowBrideParentAccounts] = useState(false);
 
@@ -203,9 +203,25 @@ export function AccountTab() {
   return (
     <div className="space-y-6">
       {/* 헤더 */}
-      <div>
-        <h2 className="text-xl font-semibold text-stone-900 tracking-tight mb-1">계좌 정보</h2>
-        <p className="text-sm text-stone-500">축의금을 받을 계좌를 입력하세요</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-stone-900 tracking-tight mb-1 flex items-center gap-2">
+            계좌 정보
+            <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full ${getEnabledSections().account !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-400'}`}>
+              {getEnabledSections().account !== false ? '활성' : '비활성'}
+            </span>
+          </h2>
+          <p className="text-sm text-stone-500">축의금을 받을 계좌를 입력하세요</p>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={getEnabledSections().account !== false}
+            onChange={(e) => toggleSection('account', e.target.checked)}
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-stone-200 border border-stone-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-pink-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-500 peer-checked:border-pink-500"></div>
+        </label>
       </div>
 
       {/* 신랑측 */}

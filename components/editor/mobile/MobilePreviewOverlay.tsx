@@ -70,6 +70,9 @@ export function MobilePreviewOverlay({ invitation, isOpen, onClose }: MobilePrev
       sectionOrder: invitation.settings?.sectionOrder,
       ...invitation.settings,
     },
+    extendedData: invitation.extendedData,
+    customTheme: invitation.customTheme,
+
     isPasswordProtected: invitation.isPasswordProtected || false,
     status: 'DRAFT' as const,
     viewCount: 0,
@@ -79,6 +82,7 @@ export function MobilePreviewOverlay({ invitation, isOpen, onClose }: MobilePrev
     invitation.id, invitation.userId, invitation.templateId,
     invitation.groom, invitation.bride, invitation.wedding,
     invitation.content, invitation.gallery, invitation.settings,
+    invitation.extendedData, invitation.customTheme,
     invitation.isPasswordProtected,
   ]);
 

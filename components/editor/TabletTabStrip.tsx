@@ -32,7 +32,6 @@ export function TabletTabStrip({ activeTab, invitation }: TabletTabStripProps) {
             )}
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
-              const isEnabled = !tab.toggleable || enabledSections[tab.id] !== false;
               const Icon = tab.icon;
 
               return (
@@ -42,9 +41,7 @@ export function TabletTabStrip({ activeTab, invitation }: TabletTabStripProps) {
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md mx-0.5 whitespace-nowrap transition-colors ${
                     isActive
                       ? 'bg-white text-pink-600 shadow-sm'
-                      : isEnabled
-                        ? 'text-stone-600 hover:bg-stone-100'
-                        : 'text-stone-400'
+                      : 'text-stone-600 hover:bg-stone-100'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5 flex-shrink-0" />

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR, Noto_Serif_KR, Gowun_Batang, Nanum_Myeongjo } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { ToastProvider } from "@/components/ui/Toast";
 
 const notoSans = Noto_Sans_KR({
   subsets: ["latin"],
@@ -38,6 +39,10 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Cuggu - AI 웨딩 청첩장",
   description: "AI로 만드는 특별한 모바일 청첩장",
+  icons: {
+    icon: [{ url: "/icon.png", type: "image/png", sizes: "512x512" }],
+    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+  },
 };
 
 export default async function RootLayout({
@@ -51,7 +56,9 @@ export default async function RootLayout({
       className={`${notoSans.variable} ${notoSerif.variable} ${gowunBatang.variable} ${nanumMyeongjo.variable}`}
     >
       <body className={notoSans.className}>
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </SessionProvider>
       </body>
     </html>
   );

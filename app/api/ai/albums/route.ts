@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { users, aiAlbums, aiGenerations } from '@/db/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, sql, count } from 'drizzle-orm';
 import { CreateAlbumSchema } from '@/schemas/ai';
 import { createId } from '@paralleldrive/cuid2';
 
@@ -80,31 +80,52 @@ export async function GET() {
       .where(eq(aiAlbums.userId, user.id))
       .orderBy(desc(aiAlbums.createdAt));
 
-    // 각 앨범의 generation 수도 같이 반환
-    const albumsWithCounts = await Promise.all(
-      albums.map(async (album) => {
-        const generations = await db
-          .select({
-            id: aiGenerations.id,
-            style: aiGenerations.style,
-            role: aiGenerations.role,
-            generatedUrls: aiGenerations.generatedUrls,
-            createdAt: aiGenerations.createdAt,
-          })
-          .from(aiGenerations)
-          .where(
-            and(
-              eq(aiGenerations.albumId, album.id),
-              eq(aiGenerations.status, 'COMPLETED')
-            )
+    // 앨범별 완료된 generation 수를 단일 쿼리로 조회 (N+1 제거)
+    const albumIds = albums.map((a) => a.id);
+
+    type GenerationRow = {
+      id: string;
+      albumId: string | null;
+      style: string;
+      role: string | null;
+      generatedUrls: string[] | null;
+      createdAt: Date;
+    };
+    let generationsByAlbum: Record<string, GenerationRow[]> = {};
+
+    if (albumIds.length > 0) {
+      const generations = await db
+        .select({
+          id: aiGenerations.id,
+          albumId: aiGenerations.albumId,
+          style: aiGenerations.style,
+          role: aiGenerations.role,
+          generatedUrls: aiGenerations.generatedUrls,
+          createdAt: aiGenerations.createdAt,
+        })
+        .from(aiGenerations)
+        .where(
+          and(
+            sql`${aiGenerations.albumId} IN (${sql.join(albumIds.map(id => sql`${id}`), sql`, `)})`,
+            eq(aiGenerations.status, 'COMPLETED')
           )
-          .orderBy(desc(aiGenerations.createdAt));
+        )
+        .orderBy(desc(aiGenerations.createdAt));
 
-        return { ...album, generations };
-      })
-    );
+      // 앨범별로 그룹핑
+      for (const gen of generations) {
+        const key = gen.albumId ?? '__none__';
+        if (!generationsByAlbum[key]) generationsByAlbum[key] = [];
+        generationsByAlbum[key].push(gen);
+      }
+    }
 
-    return NextResponse.json({ success: true, data: albumsWithCounts });
+    const albumsWithGenerations = albums.map((album) => ({
+      ...album,
+      generations: generationsByAlbum[album.id] ?? [],
+    }));
+
+    return NextResponse.json({ success: true, data: albumsWithGenerations });
   } catch (error) {
     console.error('Get albums error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

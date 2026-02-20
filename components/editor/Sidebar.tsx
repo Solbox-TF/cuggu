@@ -60,6 +60,17 @@ export function Sidebar({ activeTab, invitation }: SidebarProps) {
       return invitation.settings?.enableRsvp !== false ? 'completed' : 'optional';
     }
 
+    if (tabId === 'guestbook') {
+      const enabledSections = (invitation.extendedData?.enabledSections as Record<string, boolean>) ?? {};
+      return enabledSections.guestbook === true ? 'completed' : 'optional';
+    }
+
+    if (tabId === 'ending') {
+      const extData = (invitation.extendedData as Record<string, unknown>) ?? {};
+      const ending = extData.ending as { imageUrl?: string; message?: string } | undefined;
+      return ending?.imageUrl || ending?.message ? 'completed' : 'optional';
+    }
+
     return 'optional';
   };
 
