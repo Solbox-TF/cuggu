@@ -5,6 +5,7 @@ import { invitations } from '@/db/schema';
 import { UpdateInvitationSchema, ExtendedDataSchema } from '@/schemas/invitation';
 import { dbRecordToInvitation, invitationToDbUpdate } from '@/lib/invitation-utils';
 import { invalidateInvitationCache } from '@/lib/invitation-cache';
+import { extractS3Key, deleteFromS3 } from '@/lib/ai/s3';
 import { eq } from 'drizzle-orm';
 
 // GET /api/invitations/[id] - 단건 조회 (권한 체크)
@@ -183,6 +184,27 @@ export async function PUT(
 
     // 공개 페이지 캐시 무효화
     invalidateInvitationCache(id);
+
+    // 갤러리에서 제거된 이미지 S3 정리 (fire-and-forget)
+    if (updateData.galleryImages) {
+      const oldImages = new Set((existing.galleryImages as string[]) || []);
+      const newImages = new Set(updateData.galleryImages as string[]);
+      const removedUrls = [...oldImages].filter((url) => !newImages.has(url));
+
+      if (removedUrls.length > 0) {
+        const keys = removedUrls
+          .map((url) => extractS3Key(url))
+          .filter((k): k is string => k !== null);
+
+        if (keys.length > 0) {
+          deleteFromS3(keys).then((count) => {
+            console.log(`[Gallery] S3 orphan 삭제: ${count}/${keys.length}`);
+          }).catch((err) => {
+            console.error('[Gallery] S3 orphan 삭제 실패:', err);
+          });
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,

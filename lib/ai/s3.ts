@@ -1,4 +1,4 @@
-import { S3Client } from '@aws-sdk/client-s3';
+import { S3Client, DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { createId } from '@paralleldrive/cuid2';
 import { env } from './env';
@@ -98,4 +98,63 @@ export async function copyToS3(
   const contentType = response.headers.get('content-type') || 'image/png';
 
   return uploadToS3(buffer, contentType, prefix);
+}
+
+/**
+ * URL에서 S3 key 추출
+ *
+ * CloudFront URL과 S3 직접 URL 모두 지원.
+ * 유효하지 않은 URL이면 null 반환.
+ */
+export function extractS3Key(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+
+    // CloudFront URL: https://{domain}/{key}
+    if (env.CLOUDFRONT_DOMAIN && parsed.hostname === env.CLOUDFRONT_DOMAIN) {
+      return parsed.pathname.slice(1);
+    }
+
+    // S3 URL: https://{bucket}.s3.{region}.amazonaws.com/{key}
+    const s3Host = `${env.S3_BUCKET_NAME}.s3.${env.AWS_REGION}.amazonaws.com`;
+    if (parsed.hostname === s3Host) {
+      return parsed.pathname.slice(1);
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * S3에서 객체 일괄 삭제 (1000개씩 배치, best-effort)
+ *
+ * 삭제 실패해도 throw하지 않고 로그만 남김.
+ * @returns 삭제 성공 건수
+ */
+export async function deleteFromS3(keys: string[]): Promise<number> {
+  if (keys.length === 0) return 0;
+
+  let deleted = 0;
+
+  for (let i = 0; i < keys.length; i += 1000) {
+    const batch = keys.slice(i, i + 1000);
+    try {
+      const result = await s3.send(
+        new DeleteObjectsCommand({
+          Bucket: env.S3_BUCKET_NAME,
+          Delete: {
+            Objects: batch.map((Key) => ({ Key })),
+            Quiet: true,
+          },
+        })
+      );
+      deleted += batch.length - (result.Errors?.length || 0);
+    } catch (err) {
+      console.error(`[S3] 삭제 실패 (batch ${i}):`, err);
+    }
+  }
+
+  return deleted;
 }
