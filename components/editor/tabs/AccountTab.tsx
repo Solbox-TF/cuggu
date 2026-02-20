@@ -205,7 +205,12 @@ export function AccountTab() {
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-stone-900 tracking-tight mb-1">계좌 정보</h2>
+          <h2 className="text-xl font-semibold text-stone-900 tracking-tight mb-1 flex items-center gap-2">
+            계좌 정보
+            <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full ${getEnabledSections().account !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-400'}`}>
+              {getEnabledSections().account !== false ? '활성' : '비활성'}
+            </span>
+          </h2>
           <p className="text-sm text-stone-500">축의금을 받을 계좌를 입력하세요</p>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">

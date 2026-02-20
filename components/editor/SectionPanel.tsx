@@ -1,7 +1,7 @@
 'use client';
 
 import { useInvitationEditor } from '@/stores/invitation-editor';
-import { Check, AlertCircle } from 'lucide-react';
+import { Check, AlertCircle, Minus } from 'lucide-react';
 import { EDITOR_TABS, type EditorTab, type TabGroup } from '@/lib/editor/tabs';
 
 interface SectionPanelProps {
@@ -84,11 +84,6 @@ export function SectionPanel({ activeTab, invitation }: SectionPanelProps) {
         >
           <div className="relative flex-shrink-0 mt-0.5">
             <Icon className={`w-5 h-5 ${isActive ? 'text-pink-500' : 'text-stone-500'}`} />
-            {isCompleted && (
-              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full flex items-center justify-center">
-                <Check className="w-2 h-2 text-white" strokeWidth={3} />
-              </div>
-            )}
             {hasError && (
               <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
                 <AlertCircle className="w-2 h-2 text-white" strokeWidth={3} />
@@ -103,6 +98,11 @@ export function SectionPanel({ activeTab, invitation }: SectionPanelProps) {
                 <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-gradient-to-r from-violet-500 to-pink-500 text-white rounded-md leading-none">
                   {tab.badge}
                 </span>
+              )}
+              {tab.group !== 'settings' && (
+                isEnabled
+                  ? <span className="w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0"><Check className="w-2 h-2 text-white" strokeWidth={3} /></span>
+                  : <span className="w-3.5 h-3.5 bg-stone-300 rounded-full flex items-center justify-center flex-shrink-0"><Minus className="w-2 h-2 text-white" strokeWidth={3} /></span>
               )}
             </div>
             <div className="text-xs text-stone-400 mt-0.5 leading-tight">
