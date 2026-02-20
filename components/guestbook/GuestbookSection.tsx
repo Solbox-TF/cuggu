@@ -121,6 +121,9 @@ export function GuestbookSection({ invitationId, theme }: GuestbookSectionProps)
 
   const headingClass = theme?.headingClass ?? "text-lg font-medium text-stone-800 mb-2";
   const labelClass = theme?.labelClass ?? "text-sm text-stone-500";
+  const inputClass = theme?.rsvpInputClass ?? "border-stone-200 focus:ring-2 focus:ring-pink-200 focus:border-pink-300";
+  const submitClass = theme?.rsvpSubmitClass ?? "bg-pink-500 hover:bg-pink-600 text-white";
+  const iconColor = theme?.iconColor ?? "text-pink-500";
 
   return (
     <div className="max-w-md mx-auto">
@@ -136,7 +139,7 @@ export function GuestbookSection({ invitationId, theme }: GuestbookSectionProps)
           <input
             {...register("name")}
             placeholder="이름"
-            className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-200 focus:border-pink-300"
+            className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none ${inputClass}`}
           />
           {errors.name && (
             <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>
@@ -149,7 +152,7 @@ export function GuestbookSection({ invitationId, theme }: GuestbookSectionProps)
             placeholder="축하 메시지를 남겨주세요"
             rows={3}
             maxLength={500}
-            className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-pink-200 focus:border-pink-300"
+            className={`w-full px-3 py-2.5 border rounded-lg text-sm resize-none focus:outline-none ${inputClass}`}
           />
           {errors.message && (
             <p className="text-xs text-red-500 mt-1">{errors.message.message}</p>
@@ -161,7 +164,7 @@ export function GuestbookSection({ invitationId, theme }: GuestbookSectionProps)
             <input
               type="checkbox"
               {...register("isPrivate")}
-              className="w-4 h-4 text-pink-500 border-stone-300 rounded focus:ring-pink-200"
+              className={`w-4 h-4 border-stone-300 rounded ${iconColor}`}
             />
             <span className="text-xs text-stone-500 flex items-center gap-1">
               <Lock className="w-3 h-3" />
@@ -172,7 +175,7 @@ export function GuestbookSection({ invitationId, theme }: GuestbookSectionProps)
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex items-center gap-1.5 px-4 py-2 bg-pink-500 text-white text-sm font-medium rounded-lg hover:bg-pink-600 transition-colors disabled:opacity-50"
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 ${submitClass}`}
           >
             {isSubmitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />

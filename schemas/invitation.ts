@@ -194,12 +194,17 @@ export const ExtendedDataSchema = z.object({
     coverImage: z.string().url().optional(),
   }).optional(),
   settings: SettingsSchema.partial().optional(),
+  ending: z.object({
+    imageUrl: z.string().url().optional(),
+    message: z.string().optional(),
+  }).optional(),
   enabledSections: z.object({
     greeting: z.boolean(),
     gallery: z.boolean(),
     account: z.boolean(),
     rsvp: z.boolean().optional(),
     guestbook: z.boolean().optional(),
+    ending: z.boolean().optional(),
   }).optional(),
   customTheme: z.any().optional(),
 }).default({});

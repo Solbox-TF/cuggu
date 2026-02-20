@@ -96,6 +96,9 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
         ...invitation.settings,
       },
 
+      extendedData: invitation.extendedData,
+      customTheme: invitation.customTheme,
+
       isPasswordProtected: invitation.isPasswordProtected || false,
       status: 'DRAFT' as const,
       viewCount: 0,
@@ -113,6 +116,8 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
     invitation.content,
     invitation.gallery,
     invitation.settings,
+    invitation.extendedData,
+    invitation.customTheme,
     invitation.isPasswordProtected,
   ]);
 
