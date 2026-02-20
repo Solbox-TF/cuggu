@@ -33,15 +33,20 @@ export async function generateMetadata({
     return { title: '청첩장 | Cuggu' };
   }
 
-  const title = `${invitation.groomName} ♥ ${invitation.brideName} 결혼합니다`;
-  const description = invitation.introMessage
-    ? invitation.introMessage.slice(0, 100)
-    : `${invitation.groomName}님과 ${invitation.brideName}님의 결혼식에 초대합니다`;
+  // 커스텀 OG 설정 (extendedData.share) 우선 적용
+  const share = (invitation.extendedData as Record<string, any>)?.share;
 
-  const ogImage =
-    invitation.galleryImages?.[0] ||
-    invitation.aiPhotoUrl ||
-    `${process.env.NEXT_PUBLIC_BASE_URL || 'https://cuggu.com'}/og-default.png`;
+  const title = share?.ogTitle
+    || `${invitation.groomName} ♥ ${invitation.brideName} 결혼합니다`;
+  const description = share?.ogDescription
+    || (invitation.introMessage
+      ? invitation.introMessage.slice(0, 100)
+      : `${invitation.groomName}님과 ${invitation.brideName}님의 결혼식에 초대합니다`);
+
+  const ogImage = share?.ogImage
+    || invitation.galleryImages?.[0]
+    || invitation.aiPhotoUrl
+    || `${process.env.NEXT_PUBLIC_BASE_URL || 'https://cuggu.com'}/og-default.png`;
 
   return {
     title: `${title} | Cuggu`,

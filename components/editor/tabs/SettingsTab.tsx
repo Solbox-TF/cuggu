@@ -1,6 +1,8 @@
 'use client';
 
-import { RotateCcw, Lock, GripVertical } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+import { RotateCcw, Lock, GripVertical, ImagePlus, X, RefreshCw } from 'lucide-react';
+import { useToast } from '@/components/ui/Toast';
 import {
   DndContext,
   closestCenter,
@@ -23,6 +25,7 @@ import {
   DEFAULT_SECTION_ORDER,
   SECTION_LABELS,
   type SectionId,
+  type ExtendedData,
 } from '@/schemas/invitation';
 
 interface SortableItemProps {
@@ -94,6 +97,90 @@ function SortableItem({ id, index, isActive, note }: SortableItemProps) {
  */
 export function SettingsTab() {
   const { invitation, updateInvitation } = useInvitationEditor();
+  const [ogUploading, setOgUploading] = useState(false);
+  const [ogRefreshing, setOgRefreshing] = useState(false);
+  const ogFileRef = useRef<HTMLInputElement>(null);
+
+  // 현재 OG 설정
+  const ext = (invitation.extendedData as ExtendedData) || {};
+  const share = ext.share || {};
+
+  // 자동 OG 이미지 (커스텀 없을 때 사용되는 값)
+  const autoOgImage =
+    (invitation.gallery as any)?.images?.[0]
+    || invitation.aiPhotoUrl
+    || null;
+
+  const currentOgImage = share.ogImage || autoOgImage;
+  const defaultTitle = `${(invitation as any).groom?.name || '신랑'} ♥ ${(invitation as any).bride?.name || '신부'} 결혼합니다`;
+
+  const updateShare = useCallback(
+    (updates: Partial<ExtendedData['share'] & object>) => {
+      updateInvitation({
+        extendedData: {
+          ...ext,
+          share: { ...share, ...updates },
+        },
+      });
+    },
+    [ext, share, updateInvitation],
+  );
+
+  const handleOgImageUpload = useCallback(
+    async (file: File) => {
+      if (!invitation.id) return;
+      setOgUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('invitationId', invitation.id);
+
+        const res = await fetch('/api/upload/og-image', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await res.json();
+        if (data.success && data.url) {
+          updateShare({ ogImage: data.url });
+        }
+      } finally {
+        setOgUploading(false);
+      }
+    },
+    [invitation.id, updateShare],
+  );
+
+  const handleOgFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) handleOgImageUpload(file);
+      e.target.value = '';
+    },
+    [handleOgImageUpload],
+  );
+
+  const removeOgImage = useCallback(() => {
+    updateShare({ ogImage: undefined });
+  }, [updateShare]);
+
+  const { showToast } = useToast();
+  const isPublished = invitation.status === 'PUBLISHED';
+
+  const handleRefreshOgCache = useCallback(async () => {
+    setOgRefreshing(true);
+    try {
+      const res = await fetch(`/api/invitations/${invitation.id}/refresh-og`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      showToast(data.message || (data.success ? '갱신 완료' : '갱신 실패'), data.success ? 'success' : 'error');
+    } catch {
+      showToast('캐시 갱신에 실패했습니다', 'error');
+    } finally {
+      setOgRefreshing(false);
+    }
+  }, [invitation.id, showToast]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -289,6 +376,148 @@ export function SettingsTab() {
             개인정보 보호를 위해 결혼식 후 90일이 지나면 청첩장이 자동으로 삭제됩니다
           </p>
         </div>
+      </div>
+
+      {/* 공유 미리보기 설정 */}
+      <div className="bg-white rounded-xl p-6 space-y-4 border border-stone-200">
+        <div>
+          <h3 className="text-sm font-medium text-stone-700">공유 미리보기</h3>
+          <p className="text-xs text-stone-500 mt-1">
+            카카오톡, 문자로 공유할 때 보이는 미리보기를 설정하세요
+          </p>
+        </div>
+
+        {/* OG 이미지 */}
+        <div>
+          <label className="block text-xs font-medium text-stone-600 mb-2">
+            썸네일 이미지
+          </label>
+          {currentOgImage ? (
+            <div className="relative rounded-lg overflow-hidden border border-stone-200">
+              <div className="aspect-[2/1] bg-stone-100">
+                <img
+                  src={currentOgImage}
+                  alt="공유 미리보기"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="absolute top-2 right-2 flex gap-1">
+                {share.ogImage && (
+                  <button
+                    onClick={removeOgImage}
+                    className="p-1.5 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+                    aria-label="커스텀 이미지 제거"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              {!share.ogImage && (
+                <div className="absolute bottom-2 left-2">
+                  <span className="text-[10px] px-1.5 py-0.5 bg-black/40 text-white rounded">
+                    자동
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="aspect-[2/1] rounded-lg border-2 border-dashed border-stone-200 bg-stone-50 flex items-center justify-center">
+              <span className="text-sm text-stone-400">이미지 없음</span>
+            </div>
+          )}
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={() => ogFileRef.current?.click()}
+              disabled={ogUploading}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <ImagePlus className="w-3.5 h-3.5" />
+              {ogUploading ? '업로드 중...' : '이미지 변경'}
+            </button>
+            <input
+              ref={ogFileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleOgFileChange}
+              className="hidden"
+            />
+          </div>
+        </div>
+
+        {/* OG 제목 */}
+        <div>
+          <label className="block text-xs font-medium text-stone-600 mb-2">
+            제목
+          </label>
+          <input
+            type="text"
+            value={share.ogTitle || ''}
+            onChange={(e) => updateShare({ ogTitle: e.target.value || undefined })}
+            placeholder={defaultTitle}
+            className="w-full px-4 py-3 text-sm bg-white border border-stone-200 rounded-lg focus:ring-1 focus:ring-pink-300 focus:border-pink-300 transition-colors placeholder:text-stone-400"
+          />
+        </div>
+
+        {/* OG 설명 */}
+        <div>
+          <label className="block text-xs font-medium text-stone-600 mb-2">
+            설명
+          </label>
+          <input
+            type="text"
+            value={share.ogDescription || ''}
+            onChange={(e) => updateShare({ ogDescription: e.target.value || undefined })}
+            placeholder="결혼식에 초대합니다"
+            maxLength={100}
+            className="w-full px-4 py-3 text-sm bg-white border border-stone-200 rounded-lg focus:ring-1 focus:ring-pink-300 focus:border-pink-300 transition-colors placeholder:text-stone-400"
+          />
+        </div>
+
+        {/* 미리보기 카드 */}
+        <div>
+          <p className="text-xs font-medium text-stone-600 mb-2">미리보기</p>
+          <div className="rounded-xl border border-stone-200 overflow-hidden bg-stone-50">
+            {currentOgImage ? (
+              <div className="aspect-[2/1] bg-stone-100 overflow-hidden">
+                <img
+                  src={currentOgImage}
+                  alt="미리보기"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="aspect-[2/1] bg-gradient-to-br from-pink-50 to-rose-50 flex items-center justify-center">
+                <span className="text-3xl">💌</span>
+              </div>
+            )}
+            <div className="p-3 bg-white">
+              <p className="text-sm font-medium text-stone-900 truncate">
+                {share.ogTitle || defaultTitle}
+              </p>
+              <p className="text-xs text-stone-500 mt-0.5 truncate">
+                {share.ogDescription || '결혼식에 초대합니다'}
+              </p>
+              <p className="text-[10px] text-stone-400 mt-1">cuggu.com</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 카카오톡 캐시 갱신 */}
+        {isPublished && (
+          <div className="pt-3 border-t border-stone-100">
+            <button
+              onClick={handleRefreshOgCache}
+              disabled={ogRefreshing}
+              className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-stone-600 bg-stone-50 hover:bg-stone-100 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${ogRefreshing ? 'animate-spin' : ''}`} />
+              {ogRefreshing ? '갱신 중...' : '카카오톡 미리보기 갱신'}
+            </button>
+            <p className="text-[10px] text-stone-400 mt-1.5 text-center">
+              수정 후 카카오톡 미리보기가 안 바뀔 때 눌러주세요
+            </p>
+          </div>
+        )}
       </div>
 
       {/* 통계 */}

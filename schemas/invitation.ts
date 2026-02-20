@@ -198,6 +198,11 @@ export const ExtendedDataSchema = z.object({
     imageUrl: z.string().url().optional(),
     message: z.string().optional(),
   }).optional(),
+  share: z.object({
+    ogImage: z.string().url().optional(),
+    ogTitle: z.string().optional(),
+    ogDescription: z.string().optional(),
+  }).optional(),
   enabledSections: z.object({
     greeting: z.boolean(),
     gallery: z.boolean(),

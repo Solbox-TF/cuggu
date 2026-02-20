@@ -256,6 +256,9 @@ export function invitationToDbUpdate(data: Record<string, any>) {
     if (clientExt.ending !== undefined) {
       extendedData.ending = clientExt.ending;
     }
+    if (clientExt.share !== undefined) {
+      extendedData.share = clientExt.share;
+    }
   }
 
   if (Object.keys(extendedData).length > 0) {

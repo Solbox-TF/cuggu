@@ -14,9 +14,10 @@ interface ShareModalProps {
     id: string;
     groom?: { name?: string };
     bride?: { name?: string };
-    gallery?: { photos?: Array<{ url: string }> };
+    gallery?: { photos?: Array<{ url: string }>; images?: string[] };
     aiPhotoUrl?: string;
     content?: { greeting?: string };
+    extendedData?: { share?: { ogImage?: string; ogTitle?: string; ogDescription?: string } };
   };
   isJustPublished?: boolean;
 }
@@ -39,14 +40,17 @@ export function ShareModal({ isOpen, onClose, invitation, isJustPublished = fals
 
   const groomName = invitation.groom?.name || '신랑';
   const brideName = invitation.bride?.name || '신부';
-  const shareTitle = `${groomName} ♥ ${brideName} 결혼합니다`;
+  const share = invitation.extendedData?.share;
+  const shareTitle = share?.ogTitle || `${groomName} ♥ ${brideName} 결혼합니다`;
   const shareUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/inv/${invitation.id}`
     : `/inv/${invitation.id}`;
 
-  // 썸네일 이미지: AI 사진 > 갤러리 첫 번째 > 없음
-  const thumbnailUrl = invitation.aiPhotoUrl
+  // 썸네일 이미지: 커스텀 OG > 갤러리 첫 번째 > AI 사진 > 없음
+  const thumbnailUrl = share?.ogImage
+    || invitation.gallery?.images?.[0]
     || invitation.gallery?.photos?.[0]?.url
+    || invitation.aiPhotoUrl
     || null;
 
   useEffect(() => {
@@ -88,7 +92,7 @@ export function ShareModal({ isOpen, onClose, invitation, isJustPublished = fals
     }
     sendKakaoShare({
       title: shareTitle,
-      description: invitation.content?.greeting || `${groomName}님과 ${brideName}님의 결혼식에 초대합니다`,
+      description: share?.ogDescription || invitation.content?.greeting || `${groomName}님과 ${brideName}님의 결혼식에 초대합니다`,
       imageUrl: thumbnailUrl || '',
       shareUrl,
     });
