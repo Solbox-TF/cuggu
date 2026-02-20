@@ -1,5 +1,17 @@
 export type GreetingCategory = 'formal' | 'casual' | 'seasonal' | 'religious' | 'humorous';
 
+export const GREETING_CATEGORY_LABELS: Record<GreetingCategory, string> = {
+  formal: '격식',
+  casual: '캐주얼',
+  seasonal: '계절',
+  religious: '종교',
+  humorous: '유머',
+};
+
+export const GREETING_CATEGORIES: GreetingCategory[] = [
+  'formal', 'casual', 'seasonal', 'religious', 'humorous',
+];
+
 export interface GreetingExample {
   text: string;
   category: GreetingCategory;

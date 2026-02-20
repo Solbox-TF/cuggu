@@ -1,7 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { useInvitationEditor } from '@/stores/invitation-editor';
-import { GREETING_EXAMPLE_TEXTS } from '@/lib/copy/greeting-examples';
+import {
+  GREETING_EXAMPLES,
+  GREETING_CATEGORIES,
+  GREETING_CATEGORY_LABELS,
+  type GreetingCategory,
+} from '@/lib/copy/greeting-examples';
 
 /**
  * 인사말 탭
@@ -67,21 +73,45 @@ export function GreetingTab() {
       </div>
 
       {/* 예시 인사말 */}
-      <div className="bg-white rounded-xl p-6 space-y-4 border border-stone-200">
-        <h3 className="text-sm font-medium text-stone-700 mb-3">예시 인사말</h3>
-        <div className="space-y-2.5">
-          {GREETING_EXAMPLE_TEXTS.map((greeting, index) => (
-            <button
-              key={index}
-              onClick={() => handleGreetingChange(greeting)}
-              className="w-full p-3.5 text-left border border-stone-200 rounded-lg hover:border-pink-300 hover:bg-pink-50/50 transition-colors"
-            >
-              <p className="text-sm text-stone-700 whitespace-pre-line leading-relaxed">
-                {greeting}
-              </p>
-            </button>
-          ))}
-        </div>
+      <GreetingExamples onSelect={handleGreetingChange} />
+    </div>
+  );
+}
+
+function GreetingExamples({ onSelect }: { onSelect: (text: string) => void }) {
+  const [activeCategory, setActiveCategory] = useState<GreetingCategory>('formal');
+  const filtered = GREETING_EXAMPLES.filter((e) => e.category === activeCategory);
+
+  return (
+    <div className="bg-white rounded-xl p-6 space-y-4 border border-stone-200">
+      <h3 className="text-sm font-medium text-stone-700">예시 인사말</h3>
+      <div className="flex gap-1.5 flex-wrap">
+        {GREETING_CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setActiveCategory(cat)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+              activeCategory === cat
+                ? 'bg-pink-500 text-white'
+                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            }`}
+          >
+            {GREETING_CATEGORY_LABELS[cat]}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-2.5">
+        {filtered.map((example, index) => (
+          <button
+            key={index}
+            onClick={() => onSelect(example.text)}
+            className="w-full p-3.5 text-left border border-stone-200 rounded-lg hover:border-pink-300 hover:bg-pink-50/50 transition-colors"
+          >
+            <p className="text-sm text-stone-700 whitespace-pre-line leading-relaxed">
+              {example.text}
+            </p>
+          </button>
+        ))}
       </div>
     </div>
   );
