@@ -171,6 +171,7 @@ export function dbRecordToInvitation(row: DbInvitationRow): Invitation {
       rsvpFields: ext.settings?.rsvpFields,
       backgroundColor: ext.settings?.backgroundColor,
       fontFamily: ext.settings?.fontFamily,
+      textScale: ext.settings?.textScale ?? 'md',
       sectionOrder: ext.settings?.sectionOrder,
       calendarStyle: ext.settings?.calendarStyle ?? 'calendar',
       requirePassword: ext.settings?.requirePassword ?? false,

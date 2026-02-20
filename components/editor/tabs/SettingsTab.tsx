@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
-import { RotateCcw, Lock, GripVertical, ImagePlus, X, RefreshCw } from 'lucide-react';
+import { RotateCcw, Lock, GripVertical, ImagePlus, X, RefreshCw, Type, ALargeSmall } from 'lucide-react';
+import { FONT_REGISTRY, TEXT_SCALE_LABELS, type FontId, type TextScale } from '@/lib/fonts/registry';
 import { useToast } from '@/components/ui/Toast';
 import {
   DndContext,
@@ -302,6 +303,92 @@ export function SettingsTab() {
               ))}
             </SortableContext>
           </DndContext>
+        </div>
+      </div>
+
+      {/* 폰트 & 텍스트 크기 */}
+      <div className="bg-white rounded-xl p-4 md:p-6 space-y-5 border border-stone-200">
+        <div className="flex items-center gap-2">
+          <Type className="w-4 h-4 text-stone-500" />
+          <div>
+            <h3 className="text-sm font-medium text-stone-700">폰트 & 텍스트 크기</h3>
+            <p className="text-xs text-stone-500 mt-0.5">청첩장 전체에 적용됩니다</p>
+          </div>
+        </div>
+
+        {/* 폰트 선택 */}
+        <div>
+          <label className="block text-xs font-medium text-stone-600 mb-2">
+            폰트
+          </label>
+          <div className="space-y-1">
+            {FONT_REGISTRY.map((font) => {
+              const isSelected = invitation.settings?.fontFamily === font.id;
+              return (
+                <button
+                  key={font.id}
+                  type="button"
+                  onClick={() => handleSettingsChange('fontFamily', isSelected ? undefined : font.id)}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg border transition-all text-left ${
+                    isSelected
+                      ? 'border-pink-300 bg-pink-50/50 ring-1 ring-pink-200'
+                      : 'border-stone-150 hover:border-stone-300 hover:bg-stone-50'
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <span
+                      className="block text-base text-stone-800 truncate"
+                      style={{ fontFamily: `var(${font.cssVariable})` }}
+                    >
+                      사랑으로 하나 되는 날
+                    </span>
+                    <span className="text-[10px] text-stone-400 mt-0.5">
+                      {font.nameKo} · {font.name}
+                    </span>
+                  </div>
+                  {isSelected && (
+                    <div className="flex-shrink-0 w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center ml-2">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {!invitation.settings?.fontFamily && (
+            <p className="text-[10px] text-stone-400 mt-1.5">
+              선택하지 않으면 템플릿 기본 폰트가 사용됩니다
+            </p>
+          )}
+        </div>
+
+        {/* 텍스트 크기 */}
+        <div>
+          <label className="flex items-center gap-1.5 text-xs font-medium text-stone-600 mb-2">
+            <ALargeSmall className="w-3.5 h-3.5" />
+            텍스트 크기
+          </label>
+          <div className="flex rounded-lg bg-stone-100 p-0.5">
+            {(['sm', 'md', 'lg'] as TextScale[]).map((scale) => {
+              const isActive = (invitation.settings?.textScale ?? 'md') === scale;
+              return (
+                <button
+                  key={scale}
+                  type="button"
+                  onClick={() => handleSettingsChange('textScale', scale)}
+                  className={`flex-1 px-3 py-2 rounded-md text-xs font-medium transition-all ${
+                    isActive
+                      ? 'bg-white text-stone-900 shadow-sm'
+                      : 'text-stone-500 hover:text-stone-700'
+                  }`}
+                >
+                  {TEXT_SCALE_LABELS[scale]}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
