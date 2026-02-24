@@ -82,9 +82,9 @@ export function ShareBar({ invitationId, groomName, brideName, imageUrl, descrip
   return (
     <div
       className="fixed bottom-0 inset-x-0 z-40 pointer-events-none"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
     >
-      <div className="flex gap-2 justify-center px-5 pb-3 pointer-events-auto max-w-sm mx-auto">
+      <div className="flex gap-2 justify-center px-5 pb-1 pointer-events-auto max-w-sm mx-auto">
         <button
           onClick={handleCopy}
           className="flex items-center gap-1.5 py-3 px-4 rounded-full bg-white/85 backdrop-blur-md border border-stone-200/60 text-stone-600 text-[13px] tracking-wide font-medium shadow-lg shadow-black/[0.06] active:scale-[0.96] transition-all"

@@ -27,11 +27,21 @@ export function InvitationView({ data, isPremium: isPremiumProp = false }: Invit
     setIsPremium(isPremiumProp);
   }, [isPremiumProp, setIsPremium]);
 
+  // 모바일 Safari 100vh 버그 대응: window.innerHeight 기반 CSS 변수 설정
+  useEffect(() => {
+    function setScreenHeight() {
+      document.documentElement.style.setProperty('--screen-height', `${window.innerHeight}px`);
+    }
+    setScreenHeight();
+    window.addEventListener('resize', setScreenHeight);
+    return () => window.removeEventListener('resize', setScreenHeight);
+  }, []);
+
   const isCustom = data.templateId === 'custom' && (data as any).customTheme;
   const TemplateComponent = getTemplateComponent(data.templateId);
 
   return (
-    <main className="min-h-screen pb-16">
+    <main className="min-h-screen" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}>
       <PremiumToggle />
       {isCustom ? (
         <BaseTemplate data={data} theme={(data as any).customTheme} />

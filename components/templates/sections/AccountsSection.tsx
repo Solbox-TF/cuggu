@@ -1,14 +1,50 @@
 "use client";
 
+import { useCallback } from "react";
 import { motion } from "framer-motion";
+import { Copy } from "lucide-react";
 import type { Invitation } from "@/schemas/invitation";
 import type { SerializableTheme } from "@/lib/templates/types";
 import { HeadingRenderer } from "../renderers/HeadingRenderer";
 import { DividerRenderer } from "../renderers/DividerRenderer";
+import { useToast } from "@/components/ui/Toast";
 
 interface AccountsSectionProps {
   data: Invitation;
   theme: SerializableTheme;
+}
+
+function CopyButton({ text }: { text: string }) {
+  const { showToast } = useToast();
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('계좌번호가 복사되었습니다');
+    } catch {
+      // fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      showToast('계좌번호가 복사되었습니다');
+    }
+  }, [text, showToast]);
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-stone-300 bg-stone-50 hover:bg-stone-100 text-stone-600 active:scale-[0.97] transition-all"
+    >
+      <Copy className="w-3 h-3" />
+      복사하기
+    </button>
+  );
 }
 
 function AccountCard({
@@ -26,6 +62,8 @@ function AccountCard({
   accountHolder: string;
   theme: SerializableTheme;
 }) {
+  const copyText = `${bank} ${accountNumber} (${accountHolder})`;
+
   return (
     <div className={theme.accountCardClass}>
       <p className={theme.accountTypeLabel}>{label}</p>
@@ -36,6 +74,7 @@ function AccountCard({
       <p className={theme.accountHolder}>
         예금주: {accountHolder}
       </p>
+      <CopyButton text={copyText} />
     </div>
   );
 }

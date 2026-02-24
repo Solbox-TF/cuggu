@@ -60,7 +60,7 @@ export async function generateMetadata({
       title,
       description,
       type: 'website',
-      images: [{ url: ogImage }],
+      images: [{ url: ogImage, width: 1200, height: 630 }],
     },
   };
 }
