@@ -9,6 +9,11 @@ import { encrypt, decrypt, isEncrypted } from '@/lib/crypto';
 function encryptAccountNumbers(personData: Record<string, any>): Record<string, any> {
   const data = { ...personData };
 
+  // 전화번호 암호화
+  if (data.phone && !isEncrypted(data.phone)) {
+    data.phone = encrypt(data.phone);
+  }
+
   if (data.account?.accountNumber) {
     data.account = {
       ...data.account,
@@ -121,7 +126,7 @@ export function dbRecordToInvitation(row: DbInvitationRow): Invitation {
       fatherName: ext.groom?.fatherName,
       motherName: ext.groom?.motherName,
       isDeceased: ext.groom?.isDeceased,
-      phone: ext.groom?.phone,
+      phone: decryptAccountNumber(ext.groom?.phone),
       relation: ext.groom?.relation,
       displayMode: ext.groom?.displayMode,
       account: decryptAccountData(ext.groom?.account),
@@ -133,7 +138,7 @@ export function dbRecordToInvitation(row: DbInvitationRow): Invitation {
       fatherName: ext.bride?.fatherName,
       motherName: ext.bride?.motherName,
       isDeceased: ext.bride?.isDeceased,
-      phone: ext.bride?.phone,
+      phone: decryptAccountNumber(ext.bride?.phone),
       relation: ext.bride?.relation,
       displayMode: ext.bride?.displayMode,
       account: decryptAccountData(ext.bride?.account),

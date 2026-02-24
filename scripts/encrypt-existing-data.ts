@@ -49,6 +49,12 @@ function encryptAccountInData(data: any): { changed: boolean; data: any } {
   for (const side of ['groom', 'bride'] as const) {
     if (!data[side]) continue;
 
+    // 전화번호
+    if (data[side].phone && !isEncrypted(data[side].phone)) {
+      data[side].phone = encrypt(data[side].phone);
+      changed = true;
+    }
+
     // 본인 계좌
     if (data[side].account?.accountNumber && !isEncrypted(data[side].account.accountNumber)) {
       data[side].account.accountNumber = encrypt(data[side].account.accountNumber);
