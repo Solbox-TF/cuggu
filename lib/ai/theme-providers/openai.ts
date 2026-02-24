@@ -19,10 +19,11 @@ function getClient(): OpenAI {
 export const openaiThemeProvider: ThemeProvider = {
   providerType: 'openai',
 
-  async generateTheme({ systemPrompt, userPrompt, jsonSchema, model }): Promise<ThemeProviderResult> {
+  async generateTheme({ systemPrompt, userPrompt, jsonSchema, model, temperature }): Promise<ThemeProviderResult> {
     const response = await getClient().chat.completions.create({
       model: model.providerModel,
       max_tokens: 8192,
+      temperature,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },

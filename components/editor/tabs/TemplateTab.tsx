@@ -16,9 +16,60 @@ interface SavedTheme {
   prompt: string;
   modelId: string | null;
   theme: Record<string, unknown>;
-  status: 'completed' | 'safelist_failed';
+  status: 'queued' | 'processing' | 'completed' | 'safelist_failed' | 'failed';
   failReason: string | null;
   createdAt: string;
+}
+
+type ThemeSectionId =
+  | 'cover'
+  | 'greeting'
+  | 'parents'
+  | 'ceremony'
+  | 'map'
+  | 'gallery'
+  | 'accounts'
+  | 'rsvp'
+  | 'ending'
+  | 'guestbook';
+
+interface ThemeSectionPlanItem {
+  id: ThemeSectionId;
+  enabled: boolean;
+  required: boolean;
+  dataSummary?: string;
+  uxGoal?: string;
+}
+
+function buildSectionPlan(invitation: any): { sections: ThemeSectionPlanItem[] } {
+  const enabled = invitation?.extendedData?.enabledSections ?? {};
+  const settings = invitation?.settings ?? {};
+  const introMessage = invitation?.content?.greeting ?? '';
+  const galleryCount = invitation?.gallery?.images?.length ?? 0;
+
+  const greetingEnabled = enabled.greeting ?? Boolean(introMessage);
+  const galleryEnabled = enabled.gallery ?? galleryCount > 0;
+  const accountsEnabled = enabled.account ?? settings.showAccounts ?? true;
+  const rsvpEnabled = enabled.rsvp ?? settings.enableRsvp ?? true;
+  const guestbookEnabled = enabled.guestbook ?? false;
+  const endingEnabled = enabled.ending ?? false;
+  const parentsEnabled = settings.showParents ?? true;
+  const mapEnabled = settings.showMap ?? true;
+
+  return {
+    sections: [
+      { id: 'cover', enabled: true, required: true, dataSummary: `${invitation?.groom?.name || ''}&${invitation?.bride?.name || ''}`, uxGoal: '핵심 정보 즉시 인지' },
+      { id: 'greeting', enabled: greetingEnabled, required: false, dataSummary: introMessage ? `본문 ${introMessage.length}자` : '미입력', uxGoal: '본문 가독성 유지' },
+      { id: 'parents', enabled: parentsEnabled, required: true, dataSummary: '양가 정보', uxGoal: '관계 정보 위계 명확' },
+      { id: 'ceremony', enabled: true, required: true, dataSummary: invitation?.wedding?.venue?.name || '예식장 미입력', uxGoal: '날짜/장소 정보 강조' },
+      { id: 'map', enabled: mapEnabled, required: true, dataSummary: invitation?.wedding?.venue?.address || '주소 미입력', uxGoal: '길찾기 CTA 명확' },
+      { id: 'gallery', enabled: galleryEnabled, required: false, dataSummary: `${galleryCount}장`, uxGoal: '사진 중심 레이아웃' },
+      { id: 'accounts', enabled: accountsEnabled, required: false, dataSummary: '계좌 안내', uxGoal: '복사 UX 명확' },
+      { id: 'rsvp', enabled: rsvpEnabled, required: false, dataSummary: '참석 여부', uxGoal: '입력 폼 터치 친화' },
+      { id: 'ending', enabled: endingEnabled, required: false, dataSummary: endingEnabled ? '엔딩 사용' : '엔딩 미사용', uxGoal: '마무리 톤 정리' },
+      { id: 'guestbook', enabled: guestbookEnabled, required: false, dataSummary: guestbookEnabled ? '방명록 사용' : '방명록 미사용', uxGoal: '본문 대비 확보' },
+    ],
+  };
 }
 
 // ── 미니 프리뷰 ──
@@ -183,6 +234,11 @@ export function TemplateTab() {
 
   const [prompt, setPrompt] = useState('');
   const [mode, setMode] = useState<'fast' | 'quality'>('fast');
+  const [tone, setTone] = useState<'romantic' | 'modern' | 'classic' | 'natural' | 'minimal' | 'luxury' | ''>('');
+  const [animationIntensity, setAnimationIntensity] = useState<'none' | 'subtle' | 'medium'>('subtle');
+  const [readabilityPriority, setReadabilityPriority] = useState<'balanced' | 'readability'>('balanced');
+  const [colorPreference, setColorPreference] = useState('');
+  const [colorAvoid, setColorAvoid] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
   // 테마 라이브러리 상태
@@ -227,6 +283,21 @@ export function TemplateTab() {
     fetchThemes();
   }, [fetchThemes]);
 
+  const pendingThemeCount = savedThemes.filter(
+    (theme) => theme.status === 'queued' || theme.status === 'processing'
+  ).length;
+
+  // 백그라운드 생성 중인 테마가 있으면 자동 갱신
+  useEffect(() => {
+    if (!invitation.id || pendingThemeCount === 0) return;
+
+    const timer = setInterval(() => {
+      fetchThemes();
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [invitation.id, pendingThemeCount, fetchThemes]);
+
   // ── 핸들러 ──
 
   const handleSelectBuiltin = (templateId: string) => {
@@ -243,6 +314,15 @@ export function TemplateTab() {
           prompt: prompt.trim(),
           invitationId: invitation.id,
           mode,
+          background: true,
+          userIntent: {
+            tone: tone || undefined,
+            colorPreference: colorPreference.trim() || undefined,
+            colorAvoid: colorAvoid.trim() || undefined,
+            animationIntensity,
+            readabilityPriority,
+          },
+          sectionPlan: buildSectionPlan(invitation),
         }),
       });
 
@@ -253,19 +333,41 @@ export function TemplateTab() {
         return;
       }
 
-      // 프리뷰에 반영
-      updateInvitation({
-        templateId: 'custom',
-        customTheme: data.theme,
-      });
-
       refreshCredits();
-      fetchThemes(); // 라이브러리 갱신
+      await fetchThemes(); // 라이브러리에 queued 반영
+      showToast('AI 테마 생성을 백그라운드에서 시작했습니다');
 
-      if (data.status === 'safelist_failed') {
-        showToast('AI 테마가 생성되었지만 일부 스타일이 미적용될 수 있습니다', 'info');
-      } else {
-        showToast('AI 테마가 생성되었습니다!');
+      // 폴링: 최대 90초 (3초 x 30회)
+      const themeId = data.themeId as string | undefined;
+      if (themeId) {
+        for (let attempt = 0; attempt < 30; attempt += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          const statusRes = await fetch(`/api/ai/theme?invitationId=${invitation.id}`);
+          if (!statusRes.ok) continue;
+          const statusData = await statusRes.json();
+          const found = (statusData.themes as SavedTheme[] | undefined)?.find((t) => t.id === themeId);
+          if (!found) continue;
+
+          setSavedThemes(statusData.themes || []);
+
+          if (found.status === 'completed' || found.status === 'safelist_failed') {
+            updateInvitation({
+              templateId: 'custom',
+              customTheme: found.theme,
+            });
+            if (found.status === 'safelist_failed') {
+              showToast('AI 테마가 생성되었지만 일부 스타일이 미적용될 수 있습니다', 'info');
+            } else {
+              showToast('AI 테마가 생성되었습니다!');
+            }
+            break;
+          }
+
+          if (found.status === 'failed') {
+            showToast(found.failReason || 'AI 테마 생성에 실패했습니다', 'error');
+            break;
+          }
+        }
       }
     } catch {
       showToast('AI 테마 생성 중 오류가 발생했습니다', 'error');
@@ -341,6 +443,12 @@ export function TemplateTab() {
             <h3 className="text-sm font-semibold text-stone-800">AI 테마 생성</h3>
             <p className="text-xs text-stone-500">원하는 분위기를 설명하면 AI가 테마를 디자인합니다</p>
           </div>
+          {pendingThemeCount > 0 && (
+            <div className="ml-auto inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-violet-100 text-violet-700 text-xs font-medium">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              {pendingThemeCount}개 생성 중
+            </div>
+          )}
         </div>
 
         {/* 모드 선택 세그먼트 컨트롤 */}
@@ -383,6 +491,79 @@ export function TemplateTab() {
           maxLength={250}
           disabled={isGenerating}
         />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <select
+            value={tone}
+            onChange={(e) => setTone(e.target.value as typeof tone)}
+            disabled={isGenerating}
+            className="px-3 py-2 text-sm bg-white border border-violet-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-300"
+          >
+            <option value="">톤 선택 (선택)</option>
+            <option value="romantic">로맨틱</option>
+            <option value="modern">모던</option>
+            <option value="classic">클래식</option>
+            <option value="natural">내추럴</option>
+            <option value="minimal">미니멀</option>
+            <option value="luxury">럭셔리</option>
+          </select>
+
+          <select
+            value={animationIntensity}
+            onChange={(e) => setAnimationIntensity(e.target.value as typeof animationIntensity)}
+            disabled={isGenerating}
+            className="px-3 py-2 text-sm bg-white border border-violet-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-300"
+          >
+            <option value="none">애니메이션 없음</option>
+            <option value="subtle">애니메이션 은은하게</option>
+            <option value="medium">애니메이션 보통</option>
+          </select>
+
+          <input
+            value={colorPreference}
+            onChange={(e) => setColorPreference(e.target.value)}
+            disabled={isGenerating}
+            maxLength={80}
+            placeholder="선호 색상(예: 세이지 그린, 샴페인 골드)"
+            className="px-3 py-2 text-sm bg-white border border-violet-200 rounded-lg placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-violet-300"
+          />
+
+          <input
+            value={colorAvoid}
+            onChange={(e) => setColorAvoid(e.target.value)}
+            disabled={isGenerating}
+            maxLength={80}
+            placeholder="피하고 싶은 색상(예: 보라, 형광 톤)"
+            className="px-3 py-2 text-sm bg-white border border-violet-200 rounded-lg placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-violet-300"
+          />
+        </div>
+
+        <div className="flex rounded-lg bg-white border border-violet-200 p-0.5">
+          <button
+            type="button"
+            onClick={() => setReadabilityPriority('balanced')}
+            disabled={isGenerating}
+            className={`flex-1 px-3 py-2 rounded-md text-xs font-medium transition-all ${
+              readabilityPriority === 'balanced'
+                ? 'bg-violet-100 text-violet-700 shadow-sm'
+                : 'text-stone-500 hover:text-stone-700'
+            }`}
+          >
+            균형형 디자인
+          </button>
+          <button
+            type="button"
+            onClick={() => setReadabilityPriority('readability')}
+            disabled={isGenerating}
+            className={`flex-1 px-3 py-2 rounded-md text-xs font-medium transition-all ${
+              readabilityPriority === 'readability'
+                ? 'bg-violet-100 text-violet-700 shadow-sm'
+                : 'text-stone-500 hover:text-stone-700'
+            }`}
+          >
+            가독성 우선
+          </button>
+        </div>
 
         <p className="text-xs text-stone-400 -mt-1">
           입력된 예식 정보(계절, 장소 유형)를 참고하여 테마를 생성합니다. 개인정보는 전달되지 않습니다.
@@ -500,10 +681,28 @@ export function TemplateTab() {
                             </span>
                           );
                         })()}
+                        {theme.status === 'queued' && (
+                          <span className="inline-flex items-center gap-1 text-xs text-sky-600">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            생성 대기 중
+                          </span>
+                        )}
+                        {theme.status === 'processing' && (
+                          <span className="inline-flex items-center gap-1 text-xs text-violet-600">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            생성 중
+                          </span>
+                        )}
                         {theme.status === 'safelist_failed' && (
                           <span className="inline-flex items-center gap-1 text-xs text-amber-600">
                             <AlertTriangle className="w-3 h-3" />
                             일부 스타일 미적용
+                          </span>
+                        )}
+                        {theme.status === 'failed' && (
+                          <span className="inline-flex items-center gap-1 text-xs text-red-600">
+                            <AlertTriangle className="w-3 h-3" />
+                            생성 실패
                           </span>
                         )}
                       </div>
@@ -511,7 +710,7 @@ export function TemplateTab() {
 
                     {/* 액션 */}
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      {!isApplied && (
+                      {!isApplied && theme.status !== 'queued' && theme.status !== 'processing' && theme.status !== 'failed' && (
                         <button
                           onClick={() => handleApplyTheme(theme)}
                           className="px-3 py-1.5 text-xs font-medium text-violet-700 bg-violet-100 rounded-md hover:bg-violet-200 transition-colors"

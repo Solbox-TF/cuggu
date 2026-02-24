@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Camera, Video, Palette } from "lucide-react";
+import { ChevronLeft, ChevronRight, Camera, Video, Palette, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PaginationMeta } from "@/schemas/admin";
 
@@ -30,11 +30,14 @@ interface GenerationItem {
 interface ThemeItem {
   id: string;
   prompt: string;
-  status: "completed" | "safelist_failed";
+  modelId: string | null;
+  modelName: string;
+  status: "completed" | "safelist_failed" | "failed";
   failReason: string | null;
   inputTokens: number | null;
   outputTokens: number | null;
   cost: number | null;
+  durationMs: number | null;
   creditsUsed: number;
   createdAt: string;
   userEmail: string;
@@ -45,6 +48,7 @@ interface Stats {
   totalCount: number;
   totalCost: number;
   failRate: number;
+  avgDurationMs?: number;
 }
 
 // ── Status Badges ──
@@ -55,6 +59,22 @@ const GENERATION_STATUS: Record<string, { label: string; color: string }> = {
   PROCESSING: { label: "처리중", color: "bg-blue-100 text-blue-700" },
   PENDING: { label: "대기", color: "bg-stone-100 text-stone-600" },
 };
+
+const THEME_STATUS: Record<string, { label: string; color: string }> = {
+  completed: { label: "완료", color: "bg-green-100 text-green-700" },
+  safelist_failed: { label: "Safelist 실패", color: "bg-amber-100 text-amber-700" },
+  failed: { label: "생성 실패", color: "bg-red-100 text-red-700" },
+  pending: { label: "생성중", color: "bg-blue-100 text-blue-700" },
+};
+
+function ThemeStatusBadge({ status }: { status: string }) {
+  const badge = THEME_STATUS[status] ?? { label: status, color: "bg-stone-100 text-stone-600" };
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
+      {badge.label}
+    </span>
+  );
+}
 
 // ── Page ──
 
@@ -163,7 +183,7 @@ function PhotoHistoryTab() {
       )}
 
       {/* 필터 */}
-      <div className="flex gap-4">
+      <div className="flex items-center gap-4">
         <select
           value={status}
           onChange={(e) => {
@@ -177,11 +197,19 @@ function PhotoHistoryTab() {
           <option value="FAILED">실패</option>
           <option value="PROCESSING">처리중</option>
         </select>
+        <button
+          onClick={() => fetchData()}
+          disabled={isLoading}
+          className="flex items-center gap-1.5 px-3 py-2 border border-stone-200 rounded-lg text-sm text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+        >
+          <RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
+          새로고침
+        </button>
       </div>
 
       {/* 테이블 */}
       <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-        {isLoading ? (
+        {isLoading && generations.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-stone-500">
             로딩 중...
           </div>
@@ -190,7 +218,7 @@ function PhotoHistoryTab() {
             데이터가 없습니다
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className={cn("overflow-x-auto", isLoading && "opacity-60 pointer-events-none")}>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-stone-200 bg-stone-50">
@@ -260,7 +288,7 @@ function ThemeHistoryTab() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [status, setStatus] = useState<"" | "completed" | "safelist_failed">("");
+  const [status, setStatus] = useState<"" | "completed" | "safelist_failed" | "failed">("");
   const [page, setPage] = useState(1);
 
   const fetchThemes = useCallback(async () => {
@@ -290,7 +318,7 @@ function ThemeHistoryTab() {
     <>
       {/* 통계 카드 */}
       {stats && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-4 gap-4">
           <div className="bg-white rounded-xl border border-stone-200 p-4">
             <div className="text-sm text-stone-500">총 생성 수</div>
             <div className="text-2xl font-bold text-stone-900 mt-1">{stats.totalCount}</div>
@@ -303,15 +331,21 @@ function ThemeHistoryTab() {
             <div className="text-sm text-stone-500">Safelist 실패율</div>
             <div className="text-2xl font-bold text-stone-900 mt-1">{stats.failRate}%</div>
           </div>
+          <div className="bg-white rounded-xl border border-stone-200 p-4">
+            <div className="text-sm text-stone-500">평균 소요시간</div>
+            <div className="text-2xl font-bold text-stone-900 mt-1">
+              {stats.avgDurationMs ? `${(stats.avgDurationMs / 1000).toFixed(1)}s` : "-"}
+            </div>
+          </div>
         </div>
       )}
 
       {/* 필터 */}
-      <div className="flex gap-4">
+      <div className="flex items-center gap-4">
         <select
           value={status}
           onChange={(e) => {
-            setStatus(e.target.value as "" | "completed" | "safelist_failed");
+            setStatus(e.target.value as "" | "completed" | "safelist_failed" | "failed");
             setPage(1);
           }}
           className="px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-stone-900"
@@ -319,12 +353,21 @@ function ThemeHistoryTab() {
           <option value="">전체 상태</option>
           <option value="completed">정상</option>
           <option value="safelist_failed">Safelist 실패</option>
+          <option value="failed">생성 실패</option>
         </select>
+        <button
+          onClick={() => fetchThemes()}
+          disabled={isLoading}
+          className="flex items-center gap-1.5 px-3 py-2 border border-stone-200 rounded-lg text-sm text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+        >
+          <RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
+          새로고침
+        </button>
       </div>
 
       {/* 테이블 */}
       <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-        {isLoading ? (
+        {isLoading && themes.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-stone-500">
             로딩 중...
           </div>
@@ -333,13 +376,15 @@ function ThemeHistoryTab() {
             데이터가 없습니다
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className={cn("overflow-x-auto", isLoading && "opacity-60 pointer-events-none")}>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-stone-200 bg-stone-50">
                   <th className="px-4 py-3 text-left font-medium text-stone-600">유저</th>
                   <th className="px-4 py-3 text-left font-medium text-stone-600">프롬프트</th>
+                  <th className="px-4 py-3 text-left font-medium text-stone-600">모델</th>
                   <th className="px-4 py-3 text-left font-medium text-stone-600">상태</th>
+                  <th className="px-4 py-3 text-right font-medium text-stone-600">소요시간</th>
                   <th className="px-4 py-3 text-right font-medium text-stone-600">토큰 (in/out)</th>
                   <th className="px-4 py-3 text-right font-medium text-stone-600">비용</th>
                   <th className="px-4 py-3 text-left font-medium text-stone-600">생성일</th>
@@ -352,19 +397,19 @@ function ThemeHistoryTab() {
                       <div className="text-stone-900">{theme.userName || "-"}</div>
                       <div className="text-xs text-stone-400">{theme.userEmail}</div>
                     </td>
-                    <td className="px-4 py-3 max-w-[240px]">
+                    <td className="px-4 py-3 max-w-[200px]">
                       <p className="text-stone-700 truncate">{theme.prompt}</p>
                     </td>
+                    <td className="px-4 py-3 text-stone-600 text-xs whitespace-nowrap">
+                      {theme.modelName}
+                    </td>
                     <td className="px-4 py-3">
-                      {theme.status === "completed" ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                          정상
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                          실패
-                        </span>
-                      )}
+                      <ThemeStatusBadge status={theme.status} />
+                    </td>
+                    <td className="px-4 py-3 text-right text-stone-600 tabular-nums whitespace-nowrap">
+                      {theme.durationMs != null
+                        ? `${(theme.durationMs / 1000).toFixed(1)}s`
+                        : "-"}
                     </td>
                     <td className="px-4 py-3 text-right text-stone-600 tabular-nums">
                       {theme.inputTokens?.toLocaleString() ?? "-"} /{" "}

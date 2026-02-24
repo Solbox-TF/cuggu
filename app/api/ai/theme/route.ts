@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { users, aiThemes, invitations } from '@/db/schema';
@@ -6,6 +6,9 @@ import { eq, and, desc } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import { checkCreditsFromUser, deductCredits, refundCredits } from '@/lib/ai/credits';
 import { generateTheme } from '@/lib/ai/theme-generation';
+import type { ThemeUserIntent } from '@/lib/ai/theme-generation';
+import type { ThemeSectionPlan } from '@/lib/ai/theme-sections';
+import { createSectionPlanFromInvitation } from '@/lib/ai/theme-sections';
 import { DEFAULT_THEME_CONFIG, findThemeModelById } from '@/lib/ai/theme-models';
 import type { AIThemeModel, ThemeMode, ThemeGenerationConfig } from '@/lib/ai/theme-models';
 import { extractThemeContext } from '@/lib/ai/theme-context';
@@ -14,6 +17,9 @@ import { checkThemeClasses } from '@/lib/templates/safelist';
 import { getAppSetting } from '@/lib/settings';
 import { rateLimit } from '@/lib/rate-limit';
 import { z } from 'zod';
+
+const QUEUED_MARKER = '__AI_THEME_QUEUED__';
+const PROCESSING_MARKER = '__AI_THEME_PROCESSING__';
 
 // ── 모델 해석 ──
 
@@ -47,6 +53,23 @@ const CreateRequestSchema = z.object({
   prompt: z.string().min(2, '프롬프트는 2자 이상 입력해주세요').max(250, '프롬프트는 250자 이내로 입력해주세요'),
   invitationId: z.string().optional(),
   mode: z.enum(['fast', 'quality']).optional(),
+  background: z.boolean().optional(),
+  userIntent: z.object({
+    tone: z.enum(['romantic', 'modern', 'classic', 'natural', 'minimal', 'luxury']).optional(),
+    colorPreference: z.string().max(80).optional(),
+    colorAvoid: z.string().max(80).optional(),
+    animationIntensity: z.enum(['none', 'subtle', 'medium']).optional(),
+    readabilityPriority: z.enum(['balanced', 'readability']).optional(),
+  }).optional(),
+  sectionPlan: z.object({
+    sections: z.array(z.object({
+      id: z.enum(['cover', 'greeting', 'parents', 'ceremony', 'map', 'gallery', 'accounts', 'rsvp', 'ending', 'guestbook']),
+      enabled: z.boolean(),
+      required: z.boolean(),
+      dataSummary: z.string().max(180).optional(),
+      uxGoal: z.string().max(180).optional(),
+    })).max(12),
+  }).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -117,9 +140,11 @@ export async function POST(request: NextRequest) {
       referenceId: themeId,
       description: 'AI 테마 생성',
     });
+    const background = parsed.data.background ?? true;
 
     // 7.5. 청첩장 컨텍스트 추출 (invitationId가 있을 때만)
     let themeContext: ThemeContextResult | null = null;
+    let sectionPlan: ThemeSectionPlan | null = parsed.data.sectionPlan ?? null;
     if (parsed.data.invitationId) {
       try {
         const inv = await db.query.invitations.findFirst({
@@ -128,10 +153,14 @@ export async function POST(request: NextRequest) {
             eq(invitations.userId, user.id),
           ),
           columns: {
+            groomName: true,
+            brideName: true,
             weddingDate: true,
             venueName: true,
+            venueAddress: true,
             introMessage: true,
             galleryImages: true,
+            extendedData: true,
           },
         });
 
@@ -142,72 +171,135 @@ export async function POST(request: NextRequest) {
             introMessage: inv.introMessage,
             galleryImages: inv.galleryImages,
           });
+          if (!sectionPlan) {
+            sectionPlan = createSectionPlanFromInvitation({
+              groomName: inv.groomName,
+              brideName: inv.brideName,
+              weddingDate: inv.weddingDate,
+              venueName: inv.venueName,
+              venueAddress: inv.venueAddress,
+              introMessage: inv.introMessage,
+              galleryImages: inv.galleryImages,
+              extendedData: (inv.extendedData as Record<string, unknown> | null) ?? null,
+            });
+          }
         }
       } catch {
         // 컨텍스트 추출 실패 시 null 폴백
       }
     }
 
-    // 8. AI 테마 생성 (컨텍스트 + 랜덤 페르소나/레이아웃 시드 자동 주입)
-    let result;
-    try {
-      result = await generateTheme(parsed.data.prompt, themeModel, {
-        context: themeContext,
-      });
-    } catch (error) {
-      // 생성 실패 — 크레딧 환불 + DB에 실패 기록 (API 비용은 이미 발생)
-      await refundCredits(user.id, 1, {
-        referenceType: 'THEME',
-        referenceId: themeId,
-        description: 'AI 테마 생성 실패 환불',
-      });
-
-      const failMessage = error instanceof Error ? error.message : String(error);
-      await db.insert(aiThemes).values({
-        id: themeId,
-        userId: user.id,
-        invitationId: parsed.data.invitationId || null,
-        prompt: parsed.data.prompt,
-        modelId: themeModel.id,
-        theme: null,
-        status: 'failed',
-        failReason: failMessage.slice(0, 2000),
-        creditsUsed: 0,
-      }).catch(() => {}); // DB 기록 실패해도 원래 에러 유지
-
-      throw error;
-    }
-
-    // 9. DB 저장
-    const safelistResult = checkThemeClasses(result.theme as unknown as Record<string, unknown>);
-    const themeStatus = safelistResult.valid ? 'completed' as const : 'safelist_failed' as const;
-
-    const [inserted] = await db.insert(aiThemes).values({
+    await db.insert(aiThemes).values({
       id: themeId,
       userId: user.id,
       invitationId: parsed.data.invitationId || null,
       prompt: parsed.data.prompt,
-      modelId: result.modelId,
-      theme: result.theme,
-      status: themeStatus,
-      failReason: safelistResult.valid ? null : safelistResult.violations.slice(0, 20).join('\n'),
+      modelId: themeModel.id,
+      theme: null,
+      status: 'completed',
+      failReason: QUEUED_MARKER,
       creditsUsed: 1,
-      inputTokens: result.usage.inputTokens,
-      outputTokens: result.usage.outputTokens,
-      cost: result.cost,
-    }).returning({ id: aiThemes.id });
+      inputTokens: null,
+      outputTokens: null,
+      cost: null,
+      durationMs: null,
+    });
+
+    // 8. AI 테마 생성 실행 함수 (동기/백그라운드 공용)
+    const temperature = parsed.data.mode === 'quality' ? 0.45 : 0.8;
+    const runGeneration = async () => {
+      const started = Date.now();
+      await db.update(aiThemes)
+        .set({ status: 'completed', failReason: PROCESSING_MARKER })
+        .where(and(eq(aiThemes.id, themeId), eq(aiThemes.userId, user.id)));
+
+      try {
+        const result = await generateTheme(parsed.data.prompt, themeModel, {
+          context: themeContext,
+          sectionPlan,
+          userIntent: (parsed.data.userIntent ?? null) as ThemeUserIntent | null,
+          temperature,
+        });
+
+        const safelistResult = checkThemeClasses(result.theme as unknown as Record<string, unknown>);
+        const themeStatus = safelistResult.valid ? 'completed' as const : 'safelist_failed' as const;
+
+        await db.update(aiThemes).set({
+          modelId: result.modelId,
+          theme: result.theme,
+          status: themeStatus,
+          failReason: safelistResult.valid ? null : safelistResult.violations.slice(0, 20).join('\n'),
+          creditsUsed: 1,
+          inputTokens: result.usage.inputTokens,
+          outputTokens: result.usage.outputTokens,
+          cost: result.cost,
+          durationMs: Date.now() - started,
+        }).where(and(eq(aiThemes.id, themeId), eq(aiThemes.userId, user.id)));
+
+        return {
+          theme: result.theme,
+          modelId: result.modelId,
+          status: themeStatus,
+          failReason: safelistResult.valid ? undefined : '일부 스타일이 safelist에 포함되지 않아 적용 시 누락될 수 있습니다',
+        };
+      } catch (error) {
+        await refundCredits(user.id, 1, {
+          referenceType: 'THEME',
+          referenceId: themeId,
+          description: 'AI 테마 생성 실패 환불',
+        });
+
+        const failMessage = error instanceof Error ? error.message : String(error);
+        await db.update(aiThemes).set({
+          theme: null,
+          status: 'failed',
+          failReason: failMessage.slice(0, 2000),
+          creditsUsed: 0,
+          durationMs: Date.now() - started,
+        }).where(and(eq(aiThemes.id, themeId), eq(aiThemes.userId, user.id)));
+
+        throw error;
+      }
+    };
 
     // 10. 잔여 크레딧 (deductCredits 반환값 사용)
     const remainingCredits = isDev ? 999 : creditBalance;
 
+    if (background) {
+      after(async () => {
+        try {
+          await runGeneration();
+        } catch (error) {
+          console.error('[AI Theme] Background generation failed:', {
+            userId: user.id,
+            themeId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      });
+
+      return NextResponse.json({
+        success: true,
+        queued: true,
+        themeId,
+        modelId: themeModel.id,
+        mode: parsed.data.mode || 'fast',
+        status: 'queued',
+        remainingCredits,
+      });
+    }
+
+    const completed = await runGeneration();
+
     return NextResponse.json({
       success: true,
-      themeId: inserted.id,
-      theme: result.theme,
-      modelId: result.modelId,
+      queued: false,
+      themeId,
+      theme: completed.theme,
+      modelId: completed.modelId,
       mode: parsed.data.mode || 'fast',
-      status: themeStatus,
-      failReason: safelistResult.valid ? undefined : '일부 스타일이 safelist에 포함되지 않아 적용 시 누락될 수 있습니다',
+      status: completed.status,
+      failReason: completed.failReason,
       remainingCredits,
     });
 
@@ -282,7 +374,17 @@ export async function GET(request: NextRequest) {
       .catch(() => {});
   }
 
-  return NextResponse.json({ themes });
+  const themedWithRuntimeStatus = themes.map((theme) => {
+    if (!theme.theme && theme.failReason === QUEUED_MARKER) {
+      return { ...theme, status: 'queued' as const };
+    }
+    if (!theme.theme && theme.failReason === PROCESSING_MARKER) {
+      return { ...theme, status: 'processing' as const };
+    }
+    return theme;
+  });
+
+  return NextResponse.json({ themes: themedWithRuntimeStatus });
 }
 
 // ── DELETE: 테마 삭제 ──

@@ -3,12 +3,13 @@ import { aiThemes, users } from '@/db/schema';
 import { eq, desc, sql, and } from 'drizzle-orm';
 import { requireAdmin } from '@/lib/auth/admin';
 import { withErrorHandler, successResponse, validateQuery } from '@/lib/api-utils';
+import { findThemeModelById } from '@/lib/ai/theme-models';
 import { z } from 'zod';
 
 const QuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
-  status: z.enum(['completed', 'safelist_failed']).optional(),
+  status: z.enum(['completed', 'safelist_failed', 'failed']).optional(),
 });
 
 export const GET = withErrorHandler(async (req) => {
@@ -24,11 +25,13 @@ export const GET = withErrorHandler(async (req) => {
       .select({
         id: aiThemes.id,
         prompt: aiThemes.prompt,
+        modelId: aiThemes.modelId,
         status: aiThemes.status,
         failReason: aiThemes.failReason,
         inputTokens: aiThemes.inputTokens,
         outputTokens: aiThemes.outputTokens,
         cost: aiThemes.cost,
+        durationMs: aiThemes.durationMs,
         creditsUsed: aiThemes.creditsUsed,
         createdAt: aiThemes.createdAt,
         userEmail: users.email,
@@ -51,14 +54,21 @@ export const GET = withErrorHandler(async (req) => {
         totalCount: sql<number>`count(*)::int`,
         totalCost: sql<number>`coalesce(sum(${aiThemes.cost}), 0)::real`,
         failedCount: sql<number>`count(*) filter (where ${aiThemes.status} = 'safelist_failed')::int`,
+        avgDurationMs: sql<number>`coalesce(avg(${aiThemes.durationMs})::int, 0)`,
       })
       .from(aiThemes),
   ]);
 
   const total = countResult.count;
 
+  // modelId → 표시명 resolve
+  const themesWithModelName = themes.map((t) => {
+    const model = t.modelId ? findThemeModelById(t.modelId) : null;
+    return { ...t, modelName: model?.name ?? t.modelId ?? '-' };
+  });
+
   return successResponse({
-    themes,
+    themes: themesWithModelName,
     pagination: {
       page,
       pageSize,
@@ -71,6 +81,7 @@ export const GET = withErrorHandler(async (req) => {
       failRate: statsResult.totalCount > 0
         ? Math.round((statsResult.failedCount / statsResult.totalCount) * 100)
         : 0,
+      avgDurationMs: statsResult.avgDurationMs,
     },
   });
 });

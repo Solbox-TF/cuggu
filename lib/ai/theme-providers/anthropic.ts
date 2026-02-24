@@ -19,10 +19,11 @@ function getClient(): Anthropic {
 export const anthropicThemeProvider: ThemeProvider = {
   providerType: 'anthropic',
 
-  async generateTheme({ systemPrompt, userPrompt, jsonSchema, model }): Promise<ThemeProviderResult> {
+  async generateTheme({ systemPrompt, userPrompt, jsonSchema, model, temperature }): Promise<ThemeProviderResult> {
     const response = await getClient().messages.create({
       model: model.providerModel,
       max_tokens: 8192,
+      temperature,
       system: systemPrompt,
       tools: [{
         name: 'create_wedding_theme',

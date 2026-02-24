@@ -102,7 +102,9 @@ const CONSTRAINTS = `## RULES
 - Every string field = Tailwind CSS classes only, never raw CSS
 - Use responsive md: prefixes for text sizes and spacing (mobile-first)
 - Always provide: cover config, footer config, D-Day calendar fields, RSVP form fields
-- Omit optional fields you genuinely don't need (don't set to null)
+- If [User Intent] is present in user message, prioritize it over random layout seed
+- readabilityPriority=readability means stronger text contrast and simpler decoration density
+- animationIntensity=none means prefer "fade" and avoid directional motion combinations
 - Available Tailwind colors: rose, pink, amber, emerald, stone, zinc, slate, teal, purple, indigo, sky, violet, fuchsia, red, orange, yellow, lime, green, cyan, blue, gray, neutral
 - Available shades: 50, 100, 200, 300, 400, 500, 600, 700, 800, 900
 - Output valid JSON matching the SerializableTheme schema exactly`;
@@ -135,6 +137,7 @@ You push boundaries while maintaining elegance—never generic, never boring.`;
     '## TASK',
     'Create a SerializableTheme JSON for a Korean mobile wedding invitation.',
     'Sections: Cover > Greeting > Parents > Ceremony > Map > Gallery > Accounts > RSVP > Footer',
+    'Process: Design section-by-section first, then unify into one coherent theme system.',
     '',
     COLOR_RULES,
     '',

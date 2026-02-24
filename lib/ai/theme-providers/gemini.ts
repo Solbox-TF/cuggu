@@ -58,7 +58,7 @@ function stripUnsupportedKeys(schema: Record<string, unknown>): Record<string, u
 export const geminiThemeProvider: ThemeProvider = {
   providerType: 'gemini',
 
-  async generateTheme({ systemPrompt, userPrompt, jsonSchema, model }): Promise<ThemeProviderResult> {
+  async generateTheme({ systemPrompt, userPrompt, jsonSchema, model, temperature }): Promise<ThemeProviderResult> {
     const ai = getClient();
     const cleanSchema = stripUnsupportedKeys(jsonSchema);
 
@@ -67,6 +67,7 @@ export const geminiThemeProvider: ThemeProvider = {
       contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
       config: {
         systemInstruction: systemPrompt,
+        temperature,
         tools: [{
           functionDeclarations: [{
             name: 'create_wedding_theme',

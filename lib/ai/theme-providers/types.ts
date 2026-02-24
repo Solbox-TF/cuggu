@@ -19,5 +19,6 @@ export interface ThemeProvider {
     userPrompt: string;
     jsonSchema: Record<string, unknown>;
     model: AIThemeModel;
+    temperature?: number;
   }): Promise<ThemeProviderResult>;
 }

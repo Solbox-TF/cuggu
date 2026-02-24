@@ -6,6 +6,8 @@ import { calculateThemeCost } from './theme-models';
 import type { AIThemeModel } from './theme-models';
 import type { SerializableTheme } from '@/lib/templates/types';
 import type { ThemeContextResult } from './theme-context';
+import type { ThemeSectionPlan } from './theme-sections';
+import { formatSectionPlanHint } from './theme-sections';
 
 // ── Enum 교정 (AI가 하이픈을 underscore/space로 출력하는 경우) ──
 
@@ -236,10 +238,43 @@ export interface ThemeGenerationResult {
 export interface ThemeGenerationOptions {
   /** 청첩장 데이터에서 추출한 컨텍스트 (계절, 장소, 톤 등) */
   context?: ThemeContextResult | null;
+  /** 섹션별 생성 지시 (필수/선택 + ON/OFF + UX 목표) */
+  sectionPlan?: ThemeSectionPlan | null;
+  /** 사용자가 직접 선택한 의도 (UI 구조화 입력) */
+  userIntent?: ThemeUserIntent | null;
   /** 디자이너 페르소나 고정 (미지정 시 랜덤) */
   designerVariant?: DesignerVariant;
   /** 레이아웃 시드 고정 (미지정 시 랜덤 생성) */
   layoutSeed?: LayoutSeed;
+  /** 모델 창의성 조절 */
+  temperature?: number;
+}
+
+export interface ThemeUserIntent {
+  tone?: 'romantic' | 'modern' | 'classic' | 'natural' | 'minimal' | 'luxury';
+  colorPreference?: string;
+  colorAvoid?: string;
+  animationIntensity?: 'none' | 'subtle' | 'medium';
+  readabilityPriority?: 'balanced' | 'readability';
+}
+
+function buildIntentHint(intent: ThemeUserIntent | null | undefined): string {
+  if (!intent) return '';
+
+  const rows: string[] = [];
+  if (intent.tone) rows.push(`tone=${intent.tone}`);
+  if (intent.colorPreference) rows.push(`preferredColors=${intent.colorPreference}`);
+  if (intent.colorAvoid) rows.push(`avoidColors=${intent.colorAvoid}`);
+  if (intent.animationIntensity) rows.push(`animationIntensity=${intent.animationIntensity}`);
+  if (intent.readabilityPriority) rows.push(`readabilityPriority=${intent.readabilityPriority}`);
+
+  if (rows.length === 0) return '';
+
+  return [
+    '[User Intent]',
+    ...rows,
+    'Priority: Respect User Intent first, then invitation context, then layout seed.',
+  ].join('\n');
 }
 
 /**
@@ -268,8 +303,14 @@ export async function generateTheme(
   // 유저 프롬프트 조립: 컨셉 + 컨텍스트 힌트 + 레이아웃 시드
   const layoutSeed = options?.layoutSeed ?? generateLayoutSeed();
   const contextHint = buildContextHint(options?.context ?? null);
+  const sectionPlanHint = formatSectionPlanHint(options?.sectionPlan ?? null);
+  const intentHint = buildIntentHint(options?.userIntent ?? null);
   const userMessage = [
     `다음 컨셉으로 웨딩 청첩장 테마를 만들어주세요: ${userPrompt}`,
+    '',
+    intentHint,
+    '',
+    sectionPlanHint,
     contextHint,
     '',
     formatLayoutSeed(layoutSeed),
@@ -283,6 +324,7 @@ export async function generateTheme(
     userPrompt: userMessage,
     jsonSchema,
     model,
+    temperature: options?.temperature,
   });
 
   // AI 출력 정규화 (하이픈 enum 값 교정) → Zod 구조 검증
