@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { users, aiGenerationJobs, aiGenerations } from '@/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import { releaseCredits } from '@/lib/ai/credits';
 import { logger } from '@/lib/ai/logger';
 import { z } from 'zod';
@@ -131,15 +131,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       );
     }
 
-    // 4. 상태 확인 — PENDING 또는 PROCESSING만 완료 처리 가능
-    if (job.status !== 'PENDING' && job.status !== 'PROCESSING') {
-      return NextResponse.json(
-        { error: '이미 완료된 작업입니다' },
-        { status: 400 }
-      );
-    }
-
-    // 5. 최종 상태 결정
+    // 4. 최종 상태 결정
     let finalStatus: 'COMPLETED' | 'FAILED' | 'PARTIAL';
     if (job.failedImages === 0) {
       finalStatus = 'COMPLETED';
@@ -149,28 +141,41 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       finalStatus = 'PARTIAL';
     }
 
-    // 6. 미사용 크레딧 환불
-    const unusedCredits = job.creditsReserved - job.creditsUsed;
-    if (unusedCredits > 0) {
-      await releaseCredits(user.id, unusedCredits, job.id);
-    }
-
-    // 7. Job 상태 업데이트
+    // 5. 원자적 상태 업데이트 (CAS: PENDING/PROCESSING인 경우만 성공)
     const [updated] = await db
       .update(aiGenerationJobs)
       .set({
         status: finalStatus,
         completedAt: new Date(),
       })
-      .where(eq(aiGenerationJobs.id, id))
+      .where(
+        and(
+          eq(aiGenerationJobs.id, id),
+          eq(aiGenerationJobs.userId, user.id),
+          sql`${aiGenerationJobs.status} IN ('PENDING', 'PROCESSING')`
+        )
+      )
       .returning();
+
+    if (!updated) {
+      return NextResponse.json(
+        { error: '이미 완료된 작업입니다' },
+        { status: 400 }
+      );
+    }
+
+    // 6. 미사용 크레딧 환불 (CAS 성공한 요청만 실행 → 이중 환불 방지)
+    const unusedCredits = updated.creditsReserved - updated.creditsUsed;
+    if (unusedCredits > 0) {
+      await releaseCredits(user.id, unusedCredits, updated.id);
+    }
 
     logger.info('Job completed', {
       userId: user.id,
       jobId: id,
       status: finalStatus,
-      completedImages: job.completedImages,
-      failedImages: job.failedImages,
+      completedImages: updated.completedImages,
+      failedImages: updated.failedImages,
       unusedCredits,
     });
 

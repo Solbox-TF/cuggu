@@ -24,11 +24,13 @@ export default function InvitationEditorPage() {
   const {
     invitation,
     setInvitation,
+    setLoadError,
     updateInvitation,
     activeTab,
     isSaving,
     lastSaved,
     saveError,
+    loadError,
     retrySave,
     reset,
   } = useInvitationEditor();
@@ -46,30 +48,10 @@ export default function InvitationEditorPage() {
         const result = await response.json();
 
         if (result.success && result.data) {
-          console.log('[Editor] loaded invitation:', result.data);
-          console.log('[Editor] templateId:', result.data.templateId);
-          console.log('[Editor] venue:', result.data.wedding?.venue);
           setInvitation(result.data);
         }
-      } catch (error) {
-        console.error('청첩장 로드 실패:', error);
-
-        // API 없을 때 기본값으로 초기화 (임시)
-        setInvitation({
-          id: id,
-          userId: 'temp-user',
-          templateId: 'classic',
-          groom: { name: '' },
-          bride: { name: '' },
-          wedding: { date: '', venue: { name: '', address: '' } },
-          content: {},
-          gallery: { images: [] },
-          settings: { showParents: false, showAccounts: false, showMap: false, enableRsvp: false, calendarStyle: 'none' as const },
-          status: 'DRAFT',
-          viewCount: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
+      } catch {
+        setLoadError('청첩장을 불러올 수 없습니다.');
       }
     }
 
@@ -81,7 +63,24 @@ export default function InvitationEditorPage() {
     return () => {
       reset();
     };
-  }, [id, setInvitation, reset]);
+  }, [id, setInvitation, setLoadError, reset]);
+
+  // 로드 에러
+  if (loadError) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{loadError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-700 transition-colors"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // 로딩 중
   if (!invitation.id) {

@@ -12,10 +12,7 @@ export default async function AdminLayout({
 }) {
   const session = await auth();
 
-  console.log("[Admin] session:", session?.user?.email);
-
   if (!session?.user?.email) {
-    console.log("[Admin] No session, redirecting");
     redirect("/dashboard");
   }
 
@@ -24,10 +21,7 @@ export default async function AdminLayout({
     columns: { id: true, role: true },
   });
 
-  console.log("[Admin] user from DB:", user);
-
   if (!user || user.role !== "ADMIN") {
-    console.log("[Admin] Not admin, redirecting");
     redirect("/dashboard");
   }
 

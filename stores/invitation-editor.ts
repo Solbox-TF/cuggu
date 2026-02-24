@@ -18,6 +18,26 @@ interface ValidationStatus {
 const MAX_RETRY = 3;
 const RETRY_DELAY = 5000; // 5초
 
+/** 배열은 교체, 객체는 재귀 병합 */
+function deepMerge<T extends Record<string, any>>(target: T, source: DeepPartial<T>): T {
+  const result = { ...target };
+  for (const key in source) {
+    const sv = source[key];
+    const tv = target[key];
+    if (
+      sv !== null && sv !== undefined &&
+      typeof sv === 'object' && !Array.isArray(sv) &&
+      tv !== null && tv !== undefined &&
+      typeof tv === 'object' && !Array.isArray(tv)
+    ) {
+      result[key] = deepMerge(tv, sv as any);
+    } else if (sv !== undefined) {
+      result[key] = sv as any;
+    }
+  }
+  return result;
+}
+
 interface InvitationEditorStore {
   // 상태
   invitation: DeepPartial<Invitation>;
@@ -26,12 +46,14 @@ interface InvitationEditorStore {
   lastSaved: Date | null;
   hasUnsavedChanges: boolean;
   saveError: string | null;
+  loadError: string | null;
   retryCount: number;
   validation: Record<string, ValidationStatus>;
   validationResult: ValidationResult;
 
   // 액션
   setInvitation: (data: DeepPartial<Invitation>) => void;
+  setLoadError: (error: string) => void;
   updateInvitation: (data: DeepPartial<Invitation>) => void;
   setActiveTab: (tab: string) => void;
   toggleSection: (sectionId: string, enabled: boolean) => void;
@@ -45,6 +67,7 @@ interface InvitationEditorStore {
 // 자동 저장 타이머
 let autoSaveTimer: NodeJS.Timeout | null = null;
 let retryTimer: NodeJS.Timeout | null = null;
+let disposed = false;
 
 export const useInvitationEditor = create<InvitationEditorStore>((set, get) => ({
   // 초기 상태
@@ -54,25 +77,32 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
   lastSaved: null,
   hasUnsavedChanges: false,
   saveError: null,
+  loadError: null,
   retryCount: 0,
   validation: {},
   validationResult: { isReady: false, missing: [], tabStatus: {} },
 
   // 전체 교체 (초기 로드 시)
   setInvitation: (data) => {
+    disposed = false;
     set({
       invitation: data,
       hasUnsavedChanges: false,
       lastSaved: null,
       saveError: null,
+      loadError: null,
       retryCount: 0,
       validationResult: validateInvitation(data),
     });
   },
 
+  setLoadError: (error) => {
+    set({ loadError: error });
+  },
+
   // 부분 업데이트 (편집 시 - 자동 저장 트리거)
   updateInvitation: (data) => {
-    const updated = { ...get().invitation, ...data };
+    const updated = deepMerge(get().invitation as Record<string, any>, data as Record<string, any>) as DeepPartial<Invitation>;
     set({
       invitation: updated,
       hasUnsavedChanges: true,
@@ -84,9 +114,12 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
       clearTimeout(autoSaveTimer);
     }
 
+    // disposed 후에는 새 타이머 생성 금지
+    if (disposed) return;
+
     // 2초 후 자동 저장
     autoSaveTimer = setTimeout(() => {
-      get().save();
+      if (!disposed) get().save();
     }, 2000);
   },
 
@@ -185,10 +218,10 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
         // 백업 실패는 무시
       }
 
-      // 재시도 가능하면 자동 재시도
-      if (currentRetry + 1 < MAX_RETRY) {
+      // 재시도 가능하면 자동 재시도 (disposed 후에는 금지)
+      if (currentRetry + 1 < MAX_RETRY && !disposed) {
         retryTimer = setTimeout(() => {
-          get().save();
+          if (!disposed) get().save();
         }, RETRY_DELAY);
       }
     }
@@ -202,7 +235,8 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
 
   // 초기화
   reset: () => {
-    // 타이머 취소
+    // 타이머 취소 + 이후 타이머 생성 방지
+    disposed = true;
     if (autoSaveTimer) {
       clearTimeout(autoSaveTimer);
       autoSaveTimer = null;
@@ -219,6 +253,7 @@ export const useInvitationEditor = create<InvitationEditorStore>((set, get) => (
       lastSaved: null,
       hasUnsavedChanges: false,
       saveError: null,
+      loadError: null,
       retryCount: 0,
       validation: {},
       validationResult: { isReady: false, missing: [], tabStatus: {} },
