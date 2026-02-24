@@ -9,6 +9,7 @@ import { AccountTab } from './tabs/AccountTab';
 import { RsvpTab } from './tabs/RsvpTab';
 import { GuestbookTab } from './tabs/GuestbookTab';
 import { EndingTab } from './tabs/EndingTab';
+import { BgmTab } from './tabs/BgmTab';
 import { SettingsTab } from './tabs/SettingsTab';
 import { StepNavigation } from './StepNavigation';
 
@@ -43,6 +44,8 @@ export function EditorPanel({ activeTab, invitation }: EditorPanelProps) {
         return <GuestbookTab />;
       case 'ending':
         return <EndingTab />;
+      case 'bgm':
+        return <BgmTab />;
       case 'settings':
         return <SettingsTab />;
       default:

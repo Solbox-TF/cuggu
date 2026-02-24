@@ -37,12 +37,14 @@ export async function uploadToS3(
   contentType: string,
   prefix: string = 'ai-photos'
 ): Promise<{ key: string; url: string }> {
-  const ext =
-    contentType === 'image/webp'
-      ? 'webp'
-      : contentType === 'image/png'
-        ? 'png'
-        : 'jpg';
+  const EXT_MAP: Record<string, string> = {
+    'image/webp': 'webp',
+    'image/png': 'png',
+    'audio/mpeg': 'mp3',
+    'audio/mp4': 'm4a',
+    'audio/x-m4a': 'm4a',
+  };
+  const ext = EXT_MAP[contentType] ?? 'jpg';
   const key = `${prefix}/${createId()}.${ext}`;
 
   const upload = new Upload({

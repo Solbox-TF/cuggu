@@ -205,6 +205,13 @@ export const ExtendedDataSchema = z.object({
     ogTitle: z.string().optional(),
     ogDescription: z.string().optional(),
   }).optional(),
+  bgm: z.object({
+    url: z.string(),
+    title: z.string().optional(),
+    autoplay: z.boolean().default(true),
+    loop: z.boolean().default(true),
+    volume: z.number().min(0).max(1).default(0.5),
+  }).optional(),
   enabledSections: z.object({
     greeting: z.boolean(),
     gallery: z.boolean(),
@@ -212,6 +219,7 @@ export const ExtendedDataSchema = z.object({
     rsvp: z.boolean().optional(),
     guestbook: z.boolean().optional(),
     ending: z.boolean().optional(),
+    bgm: z.boolean().optional(),
   }).optional(),
   customTheme: z.any().optional(),
 }).default({});

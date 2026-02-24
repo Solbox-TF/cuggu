@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   BookOpen,
   Heart,
+  Music,
   Settings,
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
@@ -35,6 +36,7 @@ export const EDITOR_TABS: EditorTab[] = [
   { id: 'rsvp', label: '참석 확인', description: '하객 참석 여부 수집', icon: ClipboardCheck, toggleable: true, group: 'optional' },
   { id: 'guestbook', label: '방명록', description: '하객 축하 메시지 수집', icon: BookOpen, toggleable: true, group: 'optional' },
   { id: 'ending', label: '엔딩', description: '마무리 사진과 인사', icon: Heart, toggleable: true, group: 'optional' },
+  { id: 'bgm', label: '배경음악', description: 'BGM 설정', icon: Music, toggleable: true, group: 'optional' },
   { id: 'settings', label: '설정', description: '추가 옵션 및 공개 설정', icon: Settings, group: 'settings' },
 ];
 
@@ -47,4 +49,5 @@ export const DEFAULT_ENABLED_SECTIONS: Record<string, boolean> = {
   rsvp: true,
   guestbook: false,
   ending: false,
+  bgm: false,
 };

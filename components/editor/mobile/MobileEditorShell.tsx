@@ -18,6 +18,7 @@ const VenueTab = dynamic(() => import('@/components/editor/tabs/VenueTab').then(
 const GalleryTab = dynamic(() => import('@/components/editor/tabs/GalleryTab').then(m => ({ default: m.GalleryTab })), { ssr: false });
 const AccountTab = dynamic(() => import('@/components/editor/tabs/AccountTab').then(m => ({ default: m.AccountTab })), { ssr: false });
 const EndingTab = dynamic(() => import('@/components/editor/tabs/EndingTab').then(m => ({ default: m.EndingTab })), { ssr: false });
+const BgmTab = dynamic(() => import('@/components/editor/tabs/BgmTab').then(m => ({ default: m.BgmTab })), { ssr: false });
 const SettingsTab = dynamic(() => import('@/components/editor/tabs/SettingsTab').then(m => ({ default: m.SettingsTab })), { ssr: false });
 
 const TAB_COMPONENTS: Record<string, React.ComponentType> = {
@@ -30,6 +31,7 @@ const TAB_COMPONENTS: Record<string, React.ComponentType> = {
   rsvp: MobileRsvpTab,
   guestbook: MobileGuestbookTab,
   ending: EndingTab,
+  bgm: BgmTab,
   settings: SettingsTab,
 };
 
