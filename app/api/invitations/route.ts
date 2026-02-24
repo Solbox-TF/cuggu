@@ -143,7 +143,7 @@ export async function GET(req: NextRequest) {
     // 페이지네이션 파라미터
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    const pageSize = Math.min(50, Math.max(1, parseInt(searchParams.get('pageSize') || '10')));
     const offset = (page - 1) * pageSize;
 
     // 본인 청첩장만 조회 (삭제된 것 제외)
