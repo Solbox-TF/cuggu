@@ -40,7 +40,7 @@
 | 1-6 | **Job 완료 TOCTOU 레이스 컨디션** — 동시 완료 시 이중 처리 가능 | `cuggu-ctcn` P0 | 1시간 |
 
 **참고 파일:**
-- `stores/useEditorStore.ts` — 1-2, 1-3, 1-4
+- `stores/invitation-editor.ts` — 1-2, 1-3, 1-4
 - `lib/ai/credits.ts` — 1-5
 - `app/api/ai/generate/stream/route.ts` — 1-5, 1-6
 - `app/api/ai/jobs/[id]/route.ts` — 1-6
