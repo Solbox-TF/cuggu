@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { getTemplateComponent } from '@/lib/templates/get-template';
+import { resolveTheme } from '@/lib/templates/get-template';
 import { BaseTemplate } from '@/components/templates/BaseTemplate';
 import { PreviewViewport } from '@/components/preview/PreviewViewport';
 import { Smartphone, Monitor } from 'lucide-react';
@@ -121,10 +121,7 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
     invitation.isPasswordProtected,
   ]);
 
-  const TemplateComponent = getTemplateComponent(invitation.templateId || 'classic');
-
-  // customTheme이 있으면 BaseTemplate 직접 사용
-  const isCustom = invitation.templateId === 'custom' && invitation.customTheme;
+  const theme = resolveTheme(invitation.templateId || 'classic', invitation.customTheme);
 
   return (
     <aside className="w-[420px] bg-stone-50 border-l border-stone-200 flex flex-col flex-shrink-0">
@@ -197,11 +194,7 @@ export function PreviewPanel({ invitation }: PreviewPanelProps) {
           phoneModel={phoneModel}
           zoom={device === 'mobile' ? 85 : 100}
         >
-          {isCustom ? (
-            <BaseTemplate data={previewData} theme={invitation.customTheme} isPreview />
-          ) : (
-            <TemplateComponent data={previewData} isPreview />
-          )}
+          <BaseTemplate data={previewData} theme={theme} isPreview />
         </PreviewViewport>
       </div>
 

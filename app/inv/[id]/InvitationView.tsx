@@ -2,9 +2,10 @@
 
 import { useEffect } from 'react';
 import type { Invitation } from '@/schemas/invitation';
-import { getTemplateComponent } from '@/lib/templates/get-template';
+import { resolveTheme } from '@/lib/templates/get-template';
 import { BaseTemplate } from '@/components/templates/BaseTemplate';
 import { ShareBar } from '@/components/invitation/ShareBar';
+import { BgmPlayer } from '@/components/invitation/BgmPlayer';
 import { FloatingBadge } from '@/components/invitation/FloatingBadge';
 import { PremiumToggle } from '@/components/dev/PremiumToggle';
 import { useInvitationView } from '@/stores/invitation-view';
@@ -37,18 +38,16 @@ export function InvitationView({ data, isPremium: isPremiumProp = false }: Invit
     return () => window.removeEventListener('resize', setScreenHeight);
   }, []);
 
-  const isCustom = data.templateId === 'custom' && (data as any).customTheme;
-  const TemplateComponent = getTemplateComponent(data.templateId);
+  const theme = resolveTheme(data.templateId, (data as any).customTheme);
 
   return (
     <main className="min-h-screen" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}>
       <PremiumToggle />
-      {isCustom ? (
-        <BaseTemplate data={data} theme={(data as any).customTheme} />
-      ) : (
-        <TemplateComponent data={data} />
-      )}
+      <BaseTemplate data={data} theme={theme} />
       {!isPremium && <FloatingBadge />}
+      {(data.extendedData as any)?.bgm?.url && (data.extendedData as any)?.enabledSections?.bgm && (
+        <BgmPlayer bgm={(data.extendedData as any).bgm} />
+      )}
       <ShareBar
         invitationId={data.id}
         groomName={data.groom.name}

@@ -1,7 +1,7 @@
 import type { SerializableTheme } from './types';
-import * as allThemes from './themes';
+import { getAllPresets } from './presets';
 
-// ── 빌트인 테마에서 클래스 자동 추출 ──
+// ── 프리셋 테마에서 클래스 자동 추출 ──
 
 function extractClassesFromValue(value: unknown): string[] {
   if (typeof value === 'string') {
@@ -17,81 +17,16 @@ function extractAllClasses(theme: SerializableTheme): Set<string> {
   return new Set(extractClassesFromValue(theme));
 }
 
-// 6개 빌트인 테마에서 사용되는 모든 클래스
-const builtinClasses = new Set<string>();
-for (const theme of Object.values(allThemes.themes)) {
-  for (const cls of extractAllClasses(theme)) {
-    builtinClasses.add(cls);
+// 모든 프리셋 테마에서 사용되는 클래스
+const presetClasses = new Set<string>();
+for (const preset of getAllPresets()) {
+  for (const cls of extractAllClasses(preset.theme)) {
+    presetClasses.add(cls);
   }
 }
 
-// ── 웨딩 색상 팔레트 확장 ──
+// ── 레이아웃/타이포/유틸 (테마 공통) ──
 
-const WEDDING_COLORS = [
-  'rose', 'pink', 'amber', 'emerald', 'stone', 'zinc', 'slate',
-  'teal', 'purple', 'indigo', 'sky', 'violet', 'fuchsia',
-  'red', 'orange', 'yellow', 'lime', 'green', 'cyan', 'blue',
-  'gray', 'neutral', 'warm-gray', 'cool-gray',
-];
-
-const SHADES = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950'];
-const OPACITIES = ['20', '30', '40', '50', '60', '70', '80'];
-
-const expandedClasses = new Set<string>();
-
-for (const color of WEDDING_COLORS) {
-  for (const shade of SHADES) {
-    // text, bg, border
-    expandedClasses.add(`text-${color}-${shade}`);
-    expandedClasses.add(`bg-${color}-${shade}`);
-    expandedClasses.add(`border-${color}-${shade}`);
-
-    // gradient stops
-    expandedClasses.add(`from-${color}-${shade}`);
-    expandedClasses.add(`via-${color}-${shade}`);
-    expandedClasses.add(`to-${color}-${shade}`);
-
-    // ring
-    expandedClasses.add(`ring-${color}-${shade}`);
-
-    // hover text/bg (AI가 링크/버튼에 자주 사용)
-    expandedClasses.add(`hover:text-${color}-${shade}`);
-    expandedClasses.add(`hover:bg-${color}-${shade}`);
-
-    // focus ring (RSVP 등 폼 입력 필드)
-    expandedClasses.add(`focus:ring-${color}-${shade}`);
-
-    // opacity variants
-    for (const opacity of OPACITIES) {
-      expandedClasses.add(`text-${color}-${shade}/${opacity}`);
-      expandedClasses.add(`bg-${color}-${shade}/${opacity}`);
-      expandedClasses.add(`border-${color}-${shade}/${opacity}`);
-      expandedClasses.add(`from-${color}-${shade}/${opacity}`);
-      expandedClasses.add(`via-${color}-${shade}/${opacity}`);
-      expandedClasses.add(`to-${color}-${shade}/${opacity}`);
-      expandedClasses.add(`ring-${color}-${shade}/${opacity}`);
-    }
-  }
-}
-
-// 기본 white/black/transparent
-for (const base of ['white', 'black', 'transparent']) {
-  expandedClasses.add(`text-${base}`);
-  expandedClasses.add(`bg-${base}`);
-  expandedClasses.add(`border-${base}`);
-  expandedClasses.add(`from-${base}`);
-  expandedClasses.add(`via-${base}`);
-  expandedClasses.add(`to-${base}`);
-}
-for (const opacity of OPACITIES) {
-  expandedClasses.add(`bg-white/${opacity}`);
-  expandedClasses.add(`bg-black/${opacity}`);
-  expandedClasses.add(`from-white/${opacity}`);
-  expandedClasses.add(`via-white/${opacity}`);
-  expandedClasses.add(`to-white/${opacity}`);
-}
-
-// 레이아웃/타이포/유틸 (AI가 자주 사용할 안전한 클래스)
 const UTILITY_CLASSES = [
   // font
   'font-serif', 'font-sans', 'font-mono', 'font-batang', 'font-myeongjo', 'font-thin', 'font-extralight', 'font-light', 'font-normal', 'font-medium', 'font-semibold', 'font-bold',
@@ -200,50 +135,28 @@ const UTILITY_CLASSES = [
 // ── 최종 safelist ──
 
 export const THEME_SAFELIST: string[] = [
-  ...builtinClasses,
-  ...expandedClasses,
+  ...presetClasses,
   ...UTILITY_CLASSES,
 ];
 
-// ── 클래스 검증 ──
+// ── 클래스 검증 (기존 custom 테마 backward compat용) ──
 
 const safelistSet = new Set(THEME_SAFELIST);
 
-// 무시해도 되는 패턴 (동적 클래스가 아닌 고정값)
 const SKIP_PATTERNS = [
-  /^\d/, // 숫자로 시작 (opacity 값 등)
-  /^[a-z]+$/, // 'center', 'bottom-left' 같은 enum 값
-  /^[A-Z]/, // 대문자로 시작하는 단어
-  /^#/, // hex color
-  /^&/, // ampersand 문자
-  /^[✨🌸🌺🌿🍃❀✦◇]/, // 이모지/심볼 문자
+  /^\d/,
+  /^[a-z]+$/,
+  /^[A-Z]/,
+  /^#/,
+  /^&/,
+  /^[✨🌸🌺🌿🍃❀✦◇]/,
 ];
 
 function isClassName(str: string): boolean {
-  // 빈 문자열이나 non-class 패턴은 무시
   if (!str || SKIP_PATTERNS.some(p => p.test(str))) return false;
-  // Tailwind 클래스는 보통 알파벳/하이픈/숫자/슬래시/대괄호로 구성
   return /^[a-z!-]/.test(str);
 }
 
-/**
- * 테마의 모든 string 필드에서 Tailwind 클래스를 추출하여
- * safelist에 포함되어 있는지 검증
- *
- * @throws Error 허용되지 않은 클래스 발견 시
- */
-export function validateThemeClasses(theme: Record<string, unknown>): void {
-  const result = checkThemeClasses(theme);
-  if (!result.valid) {
-    throw new Error(
-      `Theme contains ${result.violations.length} disallowed Tailwind classes:\n${result.violations.slice(0, 10).join('\n')}`
-    );
-  }
-}
-
-/**
- * safelist 검증 — throw하지 않고 결과 반환
- */
 export function checkThemeClasses(theme: Record<string, unknown>): {
   valid: boolean;
   violations: string[];

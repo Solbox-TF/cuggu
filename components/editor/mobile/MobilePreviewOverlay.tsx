@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { X, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getTemplateComponent } from '@/lib/templates/get-template';
+import { resolveTheme } from '@/lib/templates/get-template';
 import { BaseTemplate } from '@/components/templates/BaseTemplate';
 
 interface MobilePreviewOverlayProps {
@@ -86,8 +86,7 @@ export function MobilePreviewOverlay({ invitation, isOpen, onClose }: MobilePrev
     invitation.isPasswordProtected,
   ]);
 
-  const TemplateComponent = getTemplateComponent(invitation.templateId || 'classic');
-  const isCustom = invitation.templateId === 'custom' && invitation.customTheme;
+  const theme = resolveTheme(invitation.templateId || 'classic', invitation.customTheme);
 
   return (
     <AnimatePresence>
@@ -112,11 +111,7 @@ export function MobilePreviewOverlay({ invitation, isOpen, onClose }: MobilePrev
 
           {/* 미리보기 콘텐츠 */}
           <div className="flex-1 overflow-y-auto">
-            {isCustom ? (
-              <BaseTemplate data={previewData} theme={invitation.customTheme} isPreview />
-            ) : (
-              <TemplateComponent data={previewData} isPreview />
-            )}
+            <BaseTemplate data={previewData} theme={theme} isPreview />
           </div>
         </motion.div>
       )}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { Invitation } from '@/schemas/invitation';
-import { getTemplateComponent } from '@/lib/templates/get-template';
+import { resolveTheme } from '@/lib/templates/get-template';
 import { BaseTemplate } from '@/components/templates/BaseTemplate';
 import { PreviewViewport } from '@/components/preview/PreviewViewport';
 import { FloatingBadge } from '@/components/invitation/FloatingBadge';
@@ -59,8 +59,7 @@ export function PreviewClient({ data, isPremium: isPremiumProp = false }: Previe
   const [zoom, setZoom] = useLocalStorage<number>('cuggu-preview-phone-zoom', 92);
 
 
-  const isCustom = data.templateId === 'custom' && (data as any).customTheme;
-  const TemplateComponent = getTemplateComponent(data.templateId);
+  const theme = resolveTheme(data.templateId, (data as any).customTheme);
 
   const modeButtons: { value: ViewMode; label: string; icon: typeof Monitor }[] = [
     { value: 'desktop', label: 'Desktop', icon: Monitor },
@@ -173,11 +172,7 @@ export function PreviewClient({ data, isPremium: isPremiumProp = false }: Previe
             phoneModel={phoneModel}
             zoom={mode === 'phone' ? zoom : 100}
           >
-            {isCustom ? (
-              <BaseTemplate data={data} theme={(data as any).customTheme} isPreview />
-            ) : (
-              <TemplateComponent data={data} isPreview />
-            )}
+            <BaseTemplate data={data} theme={theme} isPreview />
             {!isPremium && mode === 'phone' && <FloatingBadge />}
           </PreviewViewport>
         </div>

@@ -1,8 +1,9 @@
 "use client";
 
-import { ClassicTemplate } from "@/components/templates/ClassicTemplate";
+import { BaseTemplate } from "@/components/templates/BaseTemplate";
+import { getTheme } from "@/lib/templates/presets";
 import { SAMPLE_INVITATION } from "@/schemas/invitation";
 
 export default function TemplatePreviewPage() {
-  return <ClassicTemplate data={SAMPLE_INVITATION} isPreview />;
+  return <BaseTemplate data={SAMPLE_INVITATION} theme={getTheme('classic')} isPreview />;
 }

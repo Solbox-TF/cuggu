@@ -3,7 +3,7 @@ import { aiThemes, users } from '@/db/schema';
 import { eq, desc, sql, and } from 'drizzle-orm';
 import { requireAdmin } from '@/lib/auth/admin';
 import { withErrorHandler, successResponse, validateQuery } from '@/lib/api-utils';
-import { findThemeModelById } from '@/lib/ai/theme-models';
+// AI 테마 모델 레지스트리 제거됨 — modelId를 그대로 표시
 import { z } from 'zod';
 
 const QuerySchema = z.object({
@@ -61,11 +61,11 @@ export const GET = withErrorHandler(async (req) => {
 
   const total = countResult.count;
 
-  // modelId → 표시명 resolve
-  const themesWithModelName = themes.map((t) => {
-    const model = t.modelId ? findThemeModelById(t.modelId) : null;
-    return { ...t, modelName: model?.name ?? t.modelId ?? '-' };
-  });
+  // modelId를 그대로 표시명으로 사용 (AI 테마 모델 레지스트리 제거됨)
+  const themesWithModelName = themes.map((t) => ({
+    ...t,
+    modelName: t.modelId ?? '-',
+  }));
 
   return successResponse({
     themes: themesWithModelName,
