@@ -477,6 +477,7 @@ export const aiThemes = pgTable('ai_themes', {
   inputTokens: integer('input_tokens'),
   outputTokens: integer('output_tokens'),
   cost: real('cost'),
+  durationMs: integer('duration_ms'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => [
   index('ai_themes_user_id_idx').on(table.userId),
