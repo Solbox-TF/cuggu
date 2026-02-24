@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
 import {
   generateWithInternalModel,
   checkInternalServerHealth,
@@ -26,12 +27,12 @@ import { uploadToS3 } from '@/lib/ai/s3';
  * { url: string, seed: number }
  */
 export async function POST(request: NextRequest) {
-  // 개발 환경 체크
-  if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json(
-      { error: 'This endpoint is only available in development' },
-      { status: 403 }
-    );
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (process.env.ENABLE_TEST_ENDPOINTS !== 'true') {
+    return NextResponse.json({ error: 'Test endpoints are disabled' }, { status: 403 });
   }
 
   try {
@@ -115,17 +116,17 @@ export async function POST(request: NextRequest) {
  * 서버 상태 확인
  */
 export async function GET() {
-  if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json(
-      { error: 'This endpoint is only available in development' },
-      { status: 403 }
-    );
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (process.env.ENABLE_TEST_ENDPOINTS !== 'true') {
+    return NextResponse.json({ error: 'Test endpoints are disabled' }, { status: 403 });
   }
 
   const isHealthy = await checkInternalServerHealth();
 
   return NextResponse.json({
     status: isHealthy ? 'ok' : 'unavailable',
-    serverUrl: process.env.INTERNAL_AI_URL || 'http://192.168.0.208:19010',
   });
 }
