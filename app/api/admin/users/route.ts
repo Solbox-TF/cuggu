@@ -17,6 +17,10 @@ import {
   type PaginationMeta,
 } from "@/schemas/admin";
 
+function escapeLike(str: string): string {
+  return str.replace(/[%_\\]/g, '\\$&');
+}
+
 export const GET = withErrorHandler(async (req: NextRequest) => {
   await requireAdmin();
 
@@ -27,7 +31,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
   const conditions = [];
   if (search) {
     conditions.push(
-      or(ilike(users.email, `%${search}%`), ilike(users.name, `%${search}%`))
+      or(ilike(users.email, `%${escapeLike(search)}%`), ilike(users.name, `%${escapeLike(search)}%`))
     );
   }
   if (plan) {
