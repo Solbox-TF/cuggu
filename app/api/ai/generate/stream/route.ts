@@ -144,17 +144,49 @@ export async function POST(request: NextRequest) {
       // generationId 미리 생성 (감사 추적 referenceId용)
       const generationId = createId();
 
+      // 6. 크레딧 확인 & 차감 (jobId가 없을 때만 — Job은 이미 예약됨)
+      let deductedBalance: number | undefined;
+      if (!jobId) {
+        const { hasCredits, balance } = checkCreditsFromUser(user);
+        if (!hasCredits) {
+          await sendEvent('error', { error: 'Insufficient credits', balance });
+          await writer.close();
+          return;
+        }
+
+        deductedBalance = await deductCredits(user.id, 1, {
+          referenceType: 'GENERATION',
+          referenceId: generationId,
+          description: 'AI 사진 생성 (스트리밍)',
+        });
+        creditsDeducted = true;
+      }
+
       // 5. 파일 검증 (referencePhotoIds가 없을 때만)
       if (referencePhotoIds.length === 0) {
         const uploadedImage = image!;
 
         if (!AI_CONFIG.ALLOWED_MIME_TYPES.includes(uploadedImage.type as any)) {
+          if (creditsDeducted) {
+            await refundCredits(user.id, 1, {
+              referenceType: 'GENERATION',
+              referenceId: generationId,
+              description: '파일 검증 실패 환불',
+            });
+          }
           await sendEvent('error', { error: 'JPG, PNG 파일만 업로드 가능합니다' });
           await writer.close();
           return;
         }
 
         if (uploadedImage.size > AI_CONFIG.MAX_FILE_SIZE) {
+          if (creditsDeducted) {
+            await refundCredits(user.id, 1, {
+              referenceType: 'GENERATION',
+              referenceId: generationId,
+              description: '파일 검증 실패 환불',
+            });
+          }
           await sendEvent('error', { error: 'File too large (max 10MB)' });
           await writer.close();
           return;
@@ -164,6 +196,13 @@ export async function POST(request: NextRequest) {
         const buffer = Buffer.from(arrayBuffer);
 
         if (!isValidImageBuffer(buffer)) {
+          if (creditsDeducted) {
+            await refundCredits(user.id, 1, {
+              referenceType: 'GENERATION',
+              referenceId: generationId,
+              description: '파일 검증 실패 환불',
+            });
+          }
           await sendEvent('error', { error: '유효하지 않은 이미지 파일입니다' });
           await writer.close();
           return;
@@ -174,6 +213,13 @@ export async function POST(request: NextRequest) {
           await sendEvent('status', { message: '얼굴 분석 중...' });
           const faceResult = await detectFace(buffer);
           if (!faceResult.success) {
+            if (creditsDeducted) {
+              await refundCredits(user.id, 1, {
+                referenceType: 'GENERATION',
+                referenceId: generationId,
+                description: '얼굴 감지 실패 환불',
+              });
+            }
             await sendEvent('error', { error: faceResult.error });
             await writer.close();
             return;
@@ -197,25 +243,6 @@ export async function POST(request: NextRequest) {
           await writer.close();
           return;
         }
-      }
-
-      // 6. 크레딧 확인 & 차감 (jobId가 없을 때만 — Job은 이미 예약됨)
-      let deductedBalance: number | undefined;
-      if (!jobId) {
-        const { hasCredits, balance } = checkCreditsFromUser(user);
-        if (!hasCredits) {
-          await sendEvent('error', { error: 'Insufficient credits', balance });
-          await writer.close();
-          return;
-        }
-
-        // 8. 크레딧 차감 (감사 추적 포함)
-        deductedBalance = await deductCredits(user.id, 1, {
-          referenceType: 'GENERATION',
-          referenceId: generationId,
-          description: 'AI 사진 생성 (스트리밍)',
-        });
-        creditsDeducted = true;
       }
 
       // 10. AI 생성 (스트리밍)
@@ -264,38 +291,45 @@ export async function POST(request: NextRequest) {
           })
           .returning();
 
-        // 11.5 Job 진행 상황 업데이트 + 자동 완료 체크
+        // 11.5 Job 진행 상황 업데이트 + 자동 완료 체크 (RETURNING으로 원자적 읽기)
         let jobProgress: { completed: number; total: number } | undefined;
         if (jobId) {
-          await db.update(aiGenerationJobs).set({
+          const [updatedJob] = await db.update(aiGenerationJobs).set({
             completedImages: sql`${aiGenerationJobs.completedImages} + 1`,
             creditsUsed: sql`${aiGenerationJobs.creditsUsed} + 1`,
             status: 'PROCESSING',
-          }).where(eq(aiGenerationJobs.id, jobId));
-
-          const updatedJob = await db.query.aiGenerationJobs.findFirst({
-            where: eq(aiGenerationJobs.id, jobId),
-            columns: {
-              completedImages: true, failedImages: true, totalImages: true,
-              creditsReserved: true, creditsUsed: true, status: true, userId: true,
-            },
+          }).where(eq(aiGenerationJobs.id, jobId)).returning({
+            completedImages: aiGenerationJobs.completedImages,
+            failedImages: aiGenerationJobs.failedImages,
+            totalImages: aiGenerationJobs.totalImages,
+            userId: aiGenerationJobs.userId,
           });
+
           if (updatedJob) {
             jobProgress = { completed: updatedJob.completedImages, total: updatedJob.totalImages };
 
-            // 모든 이미지 처리 완료 → 서버 사이드 자동 완료
-            if (updatedJob.status === 'PROCESSING' &&
-                updatedJob.completedImages + updatedJob.failedImages >= updatedJob.totalImages) {
+            // 모든 이미지 처리 완료 → CAS로 단 한 worker만 완료 처리
+            if (updatedJob.completedImages + updatedJob.failedImages >= updatedJob.totalImages) {
               const finalStatus = updatedJob.completedImages === 0 ? 'FAILED'
                                 : updatedJob.failedImages === 0 ? 'COMPLETED' : 'PARTIAL';
-              const unusedCredits = updatedJob.creditsReserved - updatedJob.creditsUsed;
-              if (unusedCredits > 0 && updatedJob.userId) {
-                await releaseCredits(updatedJob.userId, unusedCredits, jobId);
-              }
-              await db.update(aiGenerationJobs).set({
+
+              const [claimed] = await db.update(aiGenerationJobs).set({
                 status: finalStatus,
                 completedAt: new Date(),
-              }).where(and(eq(aiGenerationJobs.id, jobId), eq(aiGenerationJobs.status, 'PROCESSING')));
+              }).where(
+                and(eq(aiGenerationJobs.id, jobId), eq(aiGenerationJobs.status, 'PROCESSING'))
+              ).returning({
+                creditsReserved: aiGenerationJobs.creditsReserved,
+                creditsUsed: aiGenerationJobs.creditsUsed,
+                userId: aiGenerationJobs.userId,
+              });
+
+              if (claimed) {
+                const unusedCredits = claimed.creditsReserved - claimed.creditsUsed;
+                if (unusedCredits > 0 && claimed.userId) {
+                  await releaseCredits(claimed.userId, unusedCredits, jobId);
+                }
+              }
             }
           }
         }
@@ -333,31 +367,39 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        // Job 실패 카운트 업데이트 + 자동 완료 체크
+        // Job 실패 카운트 업데이트 + 자동 완료 체크 (RETURNING + CAS)
         if (jobId) {
-          await db.update(aiGenerationJobs).set({
+          const [failedJob] = await db.update(aiGenerationJobs).set({
             failedImages: sql`${aiGenerationJobs.failedImages} + 1`,
-          }).where(eq(aiGenerationJobs.id, jobId));
-
-          const failedJob = await db.query.aiGenerationJobs.findFirst({
-            where: eq(aiGenerationJobs.id, jobId),
-            columns: {
-              completedImages: true, failedImages: true, totalImages: true,
-              creditsReserved: true, creditsUsed: true, status: true, userId: true,
-            },
+          }).where(eq(aiGenerationJobs.id, jobId)).returning({
+            completedImages: aiGenerationJobs.completedImages,
+            failedImages: aiGenerationJobs.failedImages,
+            totalImages: aiGenerationJobs.totalImages,
+            userId: aiGenerationJobs.userId,
           });
-          if (failedJob && failedJob.status === 'PROCESSING' &&
+
+          if (failedJob &&
               failedJob.completedImages + failedJob.failedImages >= failedJob.totalImages) {
             const finalStatus = failedJob.completedImages === 0 ? 'FAILED'
                               : failedJob.failedImages === 0 ? 'COMPLETED' : 'PARTIAL';
-            const unusedCredits = failedJob.creditsReserved - failedJob.creditsUsed;
-            if (unusedCredits > 0 && failedJob.userId) {
-              await releaseCredits(failedJob.userId, unusedCredits, jobId);
-            }
-            await db.update(aiGenerationJobs).set({
+
+            const [claimed] = await db.update(aiGenerationJobs).set({
               status: finalStatus,
               completedAt: new Date(),
-            }).where(and(eq(aiGenerationJobs.id, jobId), eq(aiGenerationJobs.status, 'PROCESSING')));
+            }).where(
+              and(eq(aiGenerationJobs.id, jobId), eq(aiGenerationJobs.status, 'PROCESSING'))
+            ).returning({
+              creditsReserved: aiGenerationJobs.creditsReserved,
+              creditsUsed: aiGenerationJobs.creditsUsed,
+              userId: aiGenerationJobs.userId,
+            });
+
+            if (claimed) {
+              const unusedCredits = claimed.creditsReserved - claimed.creditsUsed;
+              if (unusedCredits > 0 && claimed.userId) {
+                await releaseCredits(claimed.userId, unusedCredits, jobId);
+              }
+            }
           }
         }
 
