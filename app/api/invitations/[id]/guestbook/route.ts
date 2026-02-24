@@ -178,7 +178,11 @@ export async function GET(
     ];
 
     if (cursor) {
-      conditions.push(lt(guestbookEntries.createdAt, new Date(cursor)));
+      const cursorDate = new Date(cursor);
+      if (isNaN(cursorDate.getTime())) {
+        return NextResponse.json({ error: '잘못된 cursor 값입니다' }, { status: 400 });
+      }
+      conditions.push(lt(guestbookEntries.createdAt, cursorDate));
     }
 
     const entries = await db

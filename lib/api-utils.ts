@@ -170,7 +170,7 @@ export function withErrorHandler(handler: ApiHandler): ApiHandler {
     try {
       return await handler(req, context);
     } catch (error) {
-      console.error('API Error:', error);
+      console.error('API Error:', error instanceof Error ? error.message : String(error));
 
       if (error instanceof ApiError) {
         return errorResponse(error.code, error.message, error.status, error.details);

@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '*.amazonaws.com',
+        hostname: 'cuggu-images.s3.ap-northeast-2.amazonaws.com',
       },
       {
         protocol: 'https',
